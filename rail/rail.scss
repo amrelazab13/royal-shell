@@ -124,8 +124,8 @@
    humberger menu bigger and more visible". It carried --ink-3, the colour
    this palette uses for switched-off labels. */
 .burger {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--rs);
   display: grid;
   place-items: center;
@@ -154,8 +154,8 @@ html[dir='rtl'] .burger svg {
   transform: scaleX(-1);
 }
 .burger svg {
-  width: 23px;
-  height: 23px;
+  width: 27px;
+  height: 27px;
   stroke: currentColor;
   fill: none;
   stroke-width: 2;
