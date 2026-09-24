@@ -93,6 +93,15 @@
     padding: 9px 10px;
   }
 
+  /* A sub-entry is indented under the thing it belongs to, which is right
+     while there is a label to indent from and wrong the moment there is not:
+     in the rail it pushes the icon off the centre every other icon sits on.
+     Only while it is actually a rail — the open panel has its labels back,
+     and with them the reason for the indent. */
+  body.side-collapsed:not(.side-peek) .nav.sub {
+    padding-inline-start: 0;
+  }
+
   body.side-collapsed.side-peek .side .grp {
     opacity: 1;
     height: auto;
