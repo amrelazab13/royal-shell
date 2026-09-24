@@ -1,0 +1,181 @@
+/* ---------------------------------------------------------------------------
+   The Royal design system — the tokens, and only the tokens.
+
+   Shared by every module: CRM, CEO, HR, and whatever comes next. One palette,
+   one type scale, one set of radii and shadows, in one place, so a colour
+   changed here is changed everywhere.
+
+   These values were already the same in all three apps wherever they
+   overlapped — `--ground: #04161F`, `--line: #1C4157`, `--ink: #EAF2F6`,
+   `--navy`, `--gold`, `--good`, the shadows, `--sw: 236px`. What differed was
+   coverage: the CRM defined 118, HR 74, the CEO portal 47. The apps with
+   fewer reached for hardcoded values instead, which is how the CEO's own
+   hamburger ended up with an English-only label while the others were
+   translated.
+
+   What is deliberately NOT here: component rules. The CRM's stylesheet is
+   3,781 lines, most of it the leads table and the lead panel — screens the HR
+   app does not have and never will. A shared stylesheet carrying those would
+   make every module pay for every other module's furniture. Each app keeps
+   its own components and imports these tokens above them.
+
+   The light theme arrives two ways on purpose: by the reader's own system
+   setting, and by an explicit toggle, because every app here has one.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* The browser draws some things itself and takes no instruction about their
+     colour: the clock inside a time field, the calendar inside a date field,
+     the spinners, the scrollbars, the dropdown a <select> opens. It paints
+     them for a light page unless the page says otherwise, which is why those
+     icons came out near-black on the navy surface.
+     `color-scheme` is the only way to tell it, and it has to travel with the
+     theme — so it is declared here beside the tokens, and again in each of the
+     two light blocks below. */
+  color-scheme: dark;
+  --ground: #04161f;
+  --surface: #0a2233;
+  --surface-2: #0f2c40;
+  --surface-3: #164058;
+  --line: #1c4157;
+  --line-soft: #132f42;
+  --ink: #eaf2f6;
+  --ink-2: #b9ccd6;
+  --ink-3: #8aa3b1;
+  /* Lighter than the prototype's #728c9a: that read at 3.1:1 on --surface-3
+     and 4.1:1 on --surface-2. This passes 4.5:1 on every surface. */
+  --ink-4: #94aab6;
+  /* Aliases kept for the two rules that were written against them. */
+  --ink-1: var(--ink);
+  --font-display: Unbounded, Nunito, sans-serif;
+  /* Royal navy carries the interface, and `--accent` is what almost every
+     screen actually reaches for — 265 places against navy's own 82.
+     
+     It was called `--bronze` until 21 Sep 2026, aliased to navy on the very
+     first commit: the CRM was drawn in bronze, the brand became navy-led, and
+     one line re-skinned the lot rather than editing 265 references. A clever
+     move that left the name lying for three weeks, and it caught me. Renamed
+     to what it does.
+
+     The rename moves no colour, and that is checked rather than asserted: a
+     custom property's NAME is emitted into the built stylesheet, so the two
+     builds are not byte-identical. Map the new names back in the new build
+     and it matches the old one character for character.
+     
+     `--bronze` below is now the colour of that name. */
+  --navy: #2e6ba8;
+  --navy-hi: #6ba3dc;
+  /* The primary button's hover. --navy-hi is right for text on the surface
+     and wrong under white text (2.5:1); this stays dark enough for 4.5:1. */
+  --navy-hover: #3574b2;
+  --on-navy: #f2f8ff;
+  --accent: var(--navy);
+  --accent-hi: var(--navy-hi);
+  --on-accent: var(--on-navy);
+  --bronze: #c89264;
+  --bronze-soft: #a57549;
+  --good: #3ebe92;
+  --warn: #e0a44e;
+  --bad: #ee8071;
+  --info: #5c9fe0;
+  /* Text on a --good / --bad fill. White on these pale dark-theme tones
+     fails (2.3:1 and 2.6:1); the ground colour passes at 7:1. */
+  --on-good: #04161f;
+  --on-bad: #04161f;
+  /* chart series — validated for this surface (blue, orange, aqua, yellow, magenta, green) */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sh-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  --sh-pop: 0 4px 10px rgba(0, 0, 0, 0.4), 0 24px 60px -20px rgba(0, 0, 0, 0.95);
+  --r: 7px;
+  --rs: 5px;
+  --fast: 0.13s cubic-bezier(0.4, 0, 0.2, 1);
+  --sw: 236px;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --ground: #edf2f5;
+    --surface: #ffffff;
+    --surface-2: #f5f9fb;
+    --surface-3: #e7eff4;
+    --line: #d2e0e8;
+    --line-soft: #e6eef2;
+    --ink: #04161f;
+    --ink-2: #26414f;
+    --ink-3: #5a7382;
+    --ink-4: #586f7b;
+    --navy: #13416e;
+    --navy-hi: #1d5fb5;
+    --navy-hover: var(--navy-hi);
+    --on-navy: #ffffff;
+    --accent: var(--navy);
+    --accent-hi: var(--navy-hi);
+    --on-accent: var(--on-navy);
+    --bronze: #8a5f36;
+    --bronze-soft: #a57549;
+    --good: #0f7056;
+    --warn: #8e6415;
+    --bad: #b24a38;
+    --info: #3279bc;
+    --on-good: #ffffff;
+    --on-bad: #ffffff;
+    --chart-1: #2a78d6;
+    --chart-2: #eb6834;
+    --chart-3: #1baf7a;
+    --chart-4: #eda100;
+    --chart-5: #e87ba4;
+    --chart-6: #008300;
+    --chart-1: #2a78d6;
+    --chart-2: #eb6834;
+    --chart-3: #1baf7a;
+    --chart-4: #eda100;
+    --chart-5: #e87ba4;
+    --chart-6: #008300;
+    --sh-1: 0 1px 2px rgba(4, 22, 31, 0.07);
+    --sh-2: 0 2px 6px rgba(4, 22, 31, 0.07), 0 18px 40px -26px rgba(4, 22, 31, 0.35);
+    --sh-pop: 0 4px 10px rgba(4, 22, 31, 0.1), 0 24px 60px -20px rgba(4, 22, 31, 0.35);
+  }
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --ground: #edf2f5;
+  --surface: #ffffff;
+  --surface-2: #f5f9fb;
+  --surface-3: #e7eff4;
+  --line: #d2e0e8;
+  --line-soft: #e6eef2;
+  --ink: #04161f;
+  --ink-2: #26414f;
+  --ink-3: #5a7382;
+  --ink-4: #586f7b;
+  --navy: #13416e;
+  --navy-hi: #1d5fb5;
+  --navy-hover: var(--navy-hi);
+  --on-navy: #ffffff;
+  --accent: var(--navy);
+  --accent-hi: var(--navy-hi);
+  --on-accent: var(--on-navy);
+  --bronze: #8a5f36;
+  --bronze-soft: #a57549;
+  --good: #0f7056;
+  --warn: #8e6415;
+  --bad: #b24a38;
+  --info: #3279bc;
+  --on-good: #ffffff;
+  --on-bad: #ffffff;
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  --sh-1: 0 1px 2px rgba(4, 22, 31, 0.07);
+  --sh-2: 0 2px 6px rgba(4, 22, 31, 0.07), 0 18px 40px -26px rgba(4, 22, 31, 0.35);
+  --sh-pop: 0 4px 10px rgba(4, 22, 31, 0.1), 0 24px 60px -20px rgba(4, 22, 31, 0.35);
+}
