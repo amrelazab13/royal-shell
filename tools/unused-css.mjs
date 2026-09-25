@@ -92,6 +92,10 @@ for (const sheet of SHEETS) {
   }
   const lines = css.split('\n');
   const seen = new Set();
+  // A family built at run time (`'st-' + state`) is declared once, beside its
+  // rules, so it is not reported as dead: /* built: st-* */. Only a prefix
+  // somebody wrote down is trusted — the tool never guesses one. (SalesOps.)
+  const built = [...css.matchAll(/\/\*\s*built:\s*([\w-]+)\*\s*\*\//g)].map((m) => m[1]);
   const stripped = uncomment(css).split('\n');
   stripped.forEach((line, i) => {
     // Only a selector line, not a declaration: `border-bottom: 1px` holds no
@@ -101,7 +105,7 @@ for (const sheet of SHEETS) {
       if (seen.has(name)) continue;
       seen.add(name);
       total += 1;
-      if (!haystack.includes(name)) {
+      if (!haystack.includes(name) && !built.some((prefix) => name.startsWith(prefix))) {
         dead.push({ sheet, line: i + 1, name, text: lines[i].trim() });
       }
     }
