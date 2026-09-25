@@ -244,7 +244,18 @@ import { Component, input } from '@angular/core';
 })
 export class IconSprite {}
 
-/** One icon. `name` is a key of the sprite above, without the `i-` prefix. */
+/**
+ * One icon. `name` is a key of the sprite above, without the `i-` prefix.
+ *
+ * The icon draws itself as a line icon out of the box. A module's COMPONENT
+ * stylesheet cannot reach this `<svg>` — emulated encapsulation stamps the
+ * module's `svg` selector with the module's attribute, and this svg carries
+ * this component's — so an icon whose look lived only in a component sheet
+ * came out as a solid black blob, with a clean build and passing tests
+ * (Royal Me, 26 Sep 2026; INCONSISTENCIES §11, F16). The defaults below sit
+ * inside `:where()`, so they weigh nothing: any rule in a module's GLOBAL
+ * stylesheet (`.nav svg`, `.btn svg`) still sizes and restyles them.
+ */
 @Component({
   selector: 'app-icon',
   template: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -253,6 +264,16 @@ export class IconSprite {}
   styles: `
     :host {
       display: contents;
+    }
+    :where(svg) {
+      inline-size: 16px;
+      block-size: 16px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
   `,
 })
