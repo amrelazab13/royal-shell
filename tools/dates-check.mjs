@@ -81,6 +81,12 @@ function walk(dir, out = []) {
  * message quotes back, so it is the matched text trimmed to something short
  * enough to read at the end of a line.
  */
+// A value that came out of one of the shared Cairo helpers is already the
+// company's day or clock (a call, possibly with one level of nested call in
+// its arguments, ending right where the slice begins).
+const CAIRO_SOURCE =
+  /(?:toCairoInput|isoDateInCairo|toCairoIso|cairoClock|todayInCairo)\((?:[^()]|\([^()]*\))*\)\s*$/;
+
 const RULES = [
   {
     kind: 'reads the UTC day of a timestamp',
@@ -104,6 +110,7 @@ const RULES = [
     // A plain yyyy-mm-dd day is fine — say so on the line; a timestamp is F14.
     find: /\.(?:slice|substring|substr)\(\s*0\s*,\s*10\s*\)/g,
     catchAll: true,
+    slicesAString: true,
     instead: () =>
       `a TIMESTAMP becomes isoDateInCairo(new Date(x)); otherwise say why the line is right — a plain day, or a fault kept on purpose in a spec: // dates-ok: <reason>`,
   },
@@ -113,6 +120,7 @@ const RULES = [
     // two or three hours behind the office. The phone's duplicates screen
     // showed the minute two records were entered on a clock nobody keeps.
     find: /\.(?:slice|substring|substr)\(\s*11\s*,\s*(?:16|19)\s*\)/g,
+    slicesAString: true,
     instead: () =>
       `format the instant in Cairo (the shared dates helpers / the when pipe) — the characters after the T are UTC; or say why the line is right: // dates-ok: <reason>`,
   },
@@ -154,6 +162,10 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
         // The catch-all names only what no specific rule already named.
         const end = m.index + m[0].length;
         if (rule.catchAll && taken.has(end)) continue;
+        // Slicing what a Cairo helper just returned is the recommended idiom,
+        // not the fault: `toCairoInput(x).slice(11, 16)` IS the Cairo minute.
+        // Asking about right code teaches people to mark without reading.
+        if (rule.slicesAString && CAIRO_SOURCE.test(code.slice(0, m.index))) continue;
         taken.add(end);
         problems.push({
           file: shown,
