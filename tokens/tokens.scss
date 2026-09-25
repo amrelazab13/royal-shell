@@ -23,7 +23,15 @@
    setting, and by an explicit toggle, because every app here has one.
    --------------------------------------------------------------------------- */
 
-:root {
+/* The dark palette, and any island of dark inside a light page.
+   A sign-in card that must stay dark whatever theme the browser is in used to
+   redeclare all twenty-one colours for itself — in the CEO portal, and it is
+   the kind of copy that is right on the day it is written and wrong the first
+   time a colour moves here. `data-theme="dark"` on any element now dresses
+   that element and everything under it, because a declaration on the element
+   beats a value inherited from `:root` whichever theme `:root` is in. */
+:root,
+[data-theme='dark'] {
   /* The browser draws some things itself and takes no instruction about their
      colour: the clock inside a time field, the calendar inside a date field,
      the spinners, the scrollbars, the dropdown a <select> opens. It paints
