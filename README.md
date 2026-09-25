@@ -38,6 +38,11 @@ Only the parts that are genuinely the same everywhere:
   by construction, then compare the rendered pages before and after on the
   fixture server — same origin, same fixtures, same minute, geometry left out.
   (Written by the CEO portal, 26 Sep 2026, after removing 40% of its sheet.)
+  The first pass (whole top-level rules whose every class is dead) is a clean
+  cut; the second (a selector with ANY dead class, inside `@media` and comma
+  lists) needs a real CSS parser such as postcss, not a hand-rolled brace
+  matcher. Keep a known-good copy, and prune → build → compare renders, in
+  that order: a mangled sheet fails the build loudly, cheaply, first.
 - `tools/fixture-server.mjs` — look at a module's real production build in a
   browser without anyone's password: serves `dist/` on 127.0.0.1 only, with
   API answers from the module's own `fixtures/local.mjs` (**invented people
