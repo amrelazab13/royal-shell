@@ -26,6 +26,12 @@ Only the parts that are genuinely the same everywhere:
   component) and `<app-icon name="…" />`. 54 symbols.
 - `words.ts` — `SHELL_WORDS`, how a shared control asks the module for words.
 - `tools/design-system-check.mjs` — the gate.
+- `tools/dates-check.mjs` — the dates gate: a timestamp's UTC day, calendar
+  arithmetic through the reader's midnight, or a day parsed as local midnight
+  fails the build, naming the `dates/` helper to use. Opt out per line with
+  `// dates-ok: <reason>`. Run it beside the design gate:
+  `node src/shared/tools/dates-check.mjs`. (Written by the CEO portal, 26 Sep
+  2026, after F14.)
 
 What is **not** in here, deliberately: the nav items, the counts, the
 capabilities and the routes. Those differ per module and belong to it. A
