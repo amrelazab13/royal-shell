@@ -43,6 +43,11 @@ Only the parts that are genuinely the same everywhere:
   lists) needs a real CSS parser such as postcss, not a hand-rolled brace
   matcher. Keep a known-good copy, and prune → build → compare renders, in
   that order: a mangled sheet fails the build loudly, cheaply, first.
+  A matching before/after capture proves nothing on its own — a server that
+  never rebuilt gives the same answer twice. Also record what was actually
+  SERVED (the phone: 917 rules before, 725 after): same rendering,
+  demonstrably different stylesheet. And read every place the app builds a
+  class name; no report can do that for you.
 - `tools/fixture-server.mjs` — look at a module's real production build in a
   browser without anyone's password: serves `dist/` on 127.0.0.1 only, with
   API answers from the module's own `fixtures/local.mjs` (**invented people
