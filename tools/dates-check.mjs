@@ -95,6 +95,16 @@ const RULES = [
       `isoDateInCairo(instant) for a timestamp, or say why the UTC day IS the day — a Date built with Date.UTC has no timezone in it`,
   },
   {
+    kind: 'takes the first ten characters of an unknown value',
+    // Whatever the name. The phone's repeat queue called its timestamp `iso`,
+    // so the named rule above passed it and the fault stayed (26 Sep 2026).
+    // A plain yyyy-mm-dd day is fine — say so on the line; a timestamp is F14.
+    find: /\.(?:slice|substring|substr)\(\s*0\s*,\s*10\s*\)/g,
+    catchAll: true,
+    instead: () =>
+      `if this is a TIMESTAMP, isoDateInCairo(new Date(x)); if it is already a plain day, say so: // dates-ok: <why it is a day>`,
+  },
+  {
     kind: "moves a day through the reader's midnight",
     // `.setUTCDate(` and friends are deliberate and do not match.
     find: /\.set(?:Date|Month|FullYear)\(/g,
@@ -125,9 +135,14 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
     // line has nowhere left to put it.
     if (EXCUSED.test(line) || (i > 0 && EXCUSED.test(lines[i - 1]))) return;
 
+    const taken = new Set();
     for (const rule of RULES) {
       rule.find.lastIndex = 0;
       for (const m of code.matchAll(rule.find)) {
+        // The catch-all names only what no specific rule already named.
+        const end = m.index + m[0].length;
+        if (rule.catchAll && taken.has(end)) continue;
+        taken.add(end);
         problems.push({
           file: shown,
           line: i + 1,
