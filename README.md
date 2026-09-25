@@ -32,6 +32,12 @@ Only the parts that are genuinely the same everywhere:
   `// dates-ok: <reason>`. Run it beside the design gate:
   `node src/shared/tools/dates-check.mjs`. (Written by the CEO portal, 26 Sep
   2026, after F14.)
+- `tools/unused-css.mjs` — REPORT ONLY, never a gate: lists class names in a
+  global stylesheet that the app never draws, and the places that build class
+  names at run time, which it cannot see. Deleting is the dangerous half: do it
+  by construction, then compare the rendered pages before and after on the
+  fixture server — same origin, same fixtures, same minute, geometry left out.
+  (Written by the CEO portal, 26 Sep 2026, after removing 40% of its sheet.)
 - `tools/fixture-server.mjs` — look at a module's real production build in a
   browser without anyone's password: serves `dist/` on 127.0.0.1 only, with
   API answers from the module's own `fixtures/local.mjs` (**invented people
