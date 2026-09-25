@@ -32,6 +32,13 @@ Only the parts that are genuinely the same everywhere:
   `// dates-ok: <reason>`. Run it beside the design gate:
   `node src/shared/tools/dates-check.mjs`. (Written by the CEO portal, 26 Sep
   2026, after F14.)
+- `tools/fixture-server.mjs` — look at a module's real production build in a
+  browser without anyone's password: serves `dist/` on 127.0.0.1 only, with
+  API answers from the module's own `fixtures/local.mjs` (**invented people
+  only — never data copied from production**). `ng build --configuration
+  production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
+  (F17) cannot be caught in jsdom; this is how they are looked at. (Written by
+  the CEO portal, 26 Sep 2026.)
 
 What is **not** in here, deliberately: the nav items, the counts, the
 capabilities and the routes. Those differ per module and belong to it. A
