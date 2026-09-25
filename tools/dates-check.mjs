@@ -108,6 +108,15 @@ const RULES = [
       `a TIMESTAMP becomes isoDateInCairo(new Date(x)); otherwise say why the line is right — a plain day, or a fault kept on purpose in a spec: // dates-ok: <reason>`,
   },
   {
+    kind: 'takes the clock out of a timestamp string',
+    // The other half of F14: `iso.slice(11, 16)` is the UTC hour and minute,
+    // two or three hours behind the office. The phone's duplicates screen
+    // showed the minute two records were entered on a clock nobody keeps.
+    find: /\.(?:slice|substring|substr)\(\s*11\s*,\s*(?:16|19)\s*\)/g,
+    instead: () =>
+      `format the instant in Cairo (the shared dates helpers / the when pipe) — the characters after the T are UTC; or say why the line is right: // dates-ok: <reason>`,
+  },
+  {
     kind: "moves a day through the reader's midnight",
     // `.setUTCDate(` and friends are deliberate and do not match.
     find: /\.set(?:Date|Month|FullYear)\(/g,
