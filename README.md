@@ -16,6 +16,17 @@ Only the parts that are genuinely the same everywhere:
 - `rail/rail-burger.ts` — the button's glyph, three lines and a chevron
   pointing the way the rail will move.
 
+- `date-range/` — the one date control: two pills, seven presets, month and
+  year, the range shaded across the grid, Cairo's calendar. The CRM's own,
+  moved here on 25 Sep 2026 so there is one original and no copies.
+- `dates/dates.ts` — Cairo time for everything a module sends: `todayInCairo`,
+  `shiftIsoDate`, `monthEndOf`, `toCairoIso` and the rest. Never
+  `toISOString().slice(0, 10)` for "today".
+- `icons/icons.ts` — the sprite (`<app-icon-sprite />`, once, in the root
+  component) and `<app-icon name="…" />`. 51 symbols.
+- `words.ts` — `SHELL_WORDS`, how a shared control asks the module for words.
+- `tools/design-system-check.mjs` — the gate.
+
 What is **not** in here, deliberately: the nav items, the counts, the
 capabilities and the routes. Those differ per module and belong to it. A
 shared thing that tries to own them becomes a second place to edit every
@@ -58,6 +69,37 @@ protected readonly rail = railState();
 
 The two labels are the app's own, in its own language files: this package
 holds no copy. `shell.showMenu` / `shell.hideMenu`.
+
+### The date control, the dates and the icons
+
+```ts
+// app.config.ts — let the shared controls use the module's own words
+import { provideShellWords } from '../shared/words';
+providers: [provideShellWords(I18nService)]     // or provideShellWords(ROYAL_WORDS)
+
+// wherever it is used
+import { DateRangeControl, DateRange } from '../shared/date-range/date-range';
+import { Icon, IconSprite } from '../shared/icons/icons';
+import { todayInCairo } from '../shared/dates/dates';
+```
+
+The control carries its own English and Arabic (`CAL`) and asks the module
+first, so a module needs no `cal.*` keys unless it wants different words.
+Without `provideShellWords` it speaks English, left to right.
+
+**Moving a module over** is three imports and one provider. The quickest way
+keeps every existing import path working: replace the module's old file with
+a one-line re-export —
+
+```ts
+// core/date-range.ts
+export * from '../../shared/date-range/date-range';
+```
+
+— then delete its old `.html`, `.scss` and spec (the package's own specs run
+in the module's suite, since they sit under `src/`). Proven on 25 Sep 2026:
+the CRM moved this way passes all 856 tests and builds clean; the CEO portal,
+with `royal-ui`'s copies deleted, passes all 234.
 
 ## The rules it encodes
 

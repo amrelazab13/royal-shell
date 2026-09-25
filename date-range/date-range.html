@@ -1,0 +1,156 @@
+<div class="datewrap">
+  <!-- The owner's calendar: the mark, then two pills. Empty pills carry the
+       words; a picked date takes the words' place, day first. -->
+  <div class="dfield" [class.on]="isSet()">
+    <span class="calmark" aria-hidden="true"><app-icon name="calendar" /></span>
+    <button
+      class="pill from"
+      type="button"
+      [class.set]="!!range().from"
+      [class.live]="open() && picking() === 'from'"
+      [attr.aria-label]="i18n.t('cal.pickFrom')"
+      (click)="openAt('from')"
+    >
+      <span class="ptxt">
+        @if (isAllTime()) {
+          {{ i18n.t('cal.all') }}
+        } @else if (range().from; as picked) {
+          <bdi dir="ltr">{{ shown(picked) }}</bdi>
+        } @else {
+          {{ i18n.t('cal.startDate') }}
+        }
+      </span>
+      <span class="chev"><app-icon name="chev" /></span>
+    </button>
+
+    <button
+      class="pill to"
+      type="button"
+      [class.set]="!!range().to"
+      [class.live]="open() && picking() === 'to'"
+      [attr.aria-label]="i18n.t('cal.pickTo')"
+      (click)="openAt('to')"
+    >
+      <span class="ptxt">
+        @if (isAllTime()) {
+          {{ i18n.t('cal.today') }}
+        } @else if (range().to; as picked) {
+          <bdi dir="ltr">{{ shown(picked) }}</bdi>
+        } @else {
+          {{ i18n.t('cal.endDate') }}
+        }
+      </span>
+      <span class="chev"><app-icon name="chev" /></span>
+    </button>
+  </div>
+
+  @if (open()) {
+    <!-- Catches the press that closes the panel. Sits under it, over everything
+         else, so picking a date does not also hit whatever is behind.
+
+         `pointerdown`, not `click`: this covers the whole screen, and on a
+         touch screen a scroll is a press-drag-release that never becomes a
+         click. On `click` the scrim ate every attempt to scroll and refused
+         to close, and the screen stayed dead until the page was reloaded.
+         Closing on the first touch means a stray scroll costs one gesture
+         instead of the whole screen. -->
+    <div class="calscrim" (pointerdown)="close()"></div>
+
+    <!-- Below 820 px date-range.scss turns this into a centred, dimmed,
+         viewport-fixed sheet: a modal in everything but ARIA. It was the one
+         overlay in the app with no role, no label, no focus moved in and no
+         Escape at all (audit 4, F4-26). It is deliberately still not
+         <app-dialog> — the panel is anchored to its pill on a wide screen —
+         so it carries the same promises itself. -->
+    <div
+      #cal
+      class="cal open"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="picking() === 'from' ? i18n.t('cal.pickFrom') : i18n.t('cal.pickTo')"
+      tabindex="-1"
+      (keydown.escape)="close()"
+    >
+      <div class="calhead">
+        {{ picking() === 'from' ? i18n.t('cal.pickFrom') : i18n.t('cal.pickTo') }}
+        <button
+          class="x"
+          type="button"
+          [attr.aria-label]="i18n.t('cal.close')"
+          (click)="close()"
+        >
+          <app-icon name="x" />
+        </button>
+      </div>
+
+      <div class="presets">
+        @for (preset of presets; track preset) {
+          <button type="button" (click)="applyPreset(preset)">
+            {{ i18n.t('cal.' + preset) }}
+          </button>
+        }
+      </div>
+
+      <div class="navrow">
+        <button
+          class="arrow"
+          type="button"
+          [attr.aria-label]="i18n.t('cal.prevMonth')"
+          (click)="step(-1)"
+        >
+          ‹
+        </button>
+        <label class="visually-hidden" for="cal-month">{{ i18n.t('cal.month') }}</label>
+        <select id="cal-month" (change)="month.set(+$any($event.target).value)">
+          @for (name of monthNames(); track $index) {
+            <option [value]="$index" [selected]="$index === month()">{{ name }}</option>
+          }
+        </select>
+        <label class="visually-hidden" for="cal-year">{{ i18n.t('cal.year') }}</label>
+        <select id="cal-year" (change)="year.set(+$any($event.target).value)">
+          @for (y of years(); track y) {
+            <option [value]="y" [selected]="y === year()">{{ y }}</option>
+          }
+        </select>
+        <span class="spacer"></span>
+        <button
+          class="arrow"
+          type="button"
+          [attr.aria-label]="i18n.t('cal.nextMonth')"
+          (click)="step(1)"
+        >
+          ›
+        </button>
+      </div>
+
+      <div class="grid7">
+        @for (name of dayNames(); track $index) {
+          <span class="dow">{{ name }}</span>
+        }
+        @for (cell of cells(); track cell.iso) {
+          <button
+            class="day"
+            type="button"
+            [class.out]="cell.outside"
+            [class.inrange]="inRange(cell)"
+            [class.edge]="isEdge(cell)"
+            [class.today]="cell.iso === today()"
+            [class.dead]="isFuture(cell)"
+            [disabled]="isFuture(cell)"
+            (click)="pick(cell)"
+          >
+            {{ cell.day }}
+          </button>
+        }
+      </div>
+
+      <div class="calfoot">
+        <span class="rng">
+          <bdi dir="ltr">{{ range().from || '…' }} → {{ range().to || '…' }}</bdi>
+        </span>
+        <button class="btn sec" type="button" (click)="clear()">{{ i18n.t('cal.clear') }}</button>
+        <button class="btn pri" type="button" (click)="close()">{{ i18n.t('cal.done') }}</button>
+      </div>
+    </div>
+  }
+</div>
