@@ -146,7 +146,9 @@ if (!problems.length) {
 }
 
 console.error(
-  red(`\nThe company's day is Cairo's day, and ${problems.length} line${problems.length === 1 ? '' : 's'} read a different one:\n`),
+  red(
+    `\nThe company's day is Cairo's day, and ${problems.length} line${problems.length === 1 ? '' : 's'} read a different one:\n`,
+  ),
 );
 for (const p of problems.slice(0, 60)) {
   console.error(`  ${p.file}:${p.line}  ${p.kind}: ${red(p.said)}`);
