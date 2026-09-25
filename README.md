@@ -23,7 +23,7 @@ Only the parts that are genuinely the same everywhere:
   `shiftIsoDate`, `monthEndOf`, `toCairoIso` and the rest. Never
   `toISOString().slice(0, 10)` for "today".
 - `icons/icons.ts` — the sprite (`<app-icon-sprite />`, once, in the root
-  component) and `<app-icon name="…" />`. 51 symbols.
+  component) and `<app-icon name="…" />`. 54 symbols.
 - `words.ts` — `SHELL_WORDS`, how a shared control asks the module for words.
 - `tools/design-system-check.mjs` — the gate.
 

@@ -11,6 +11,8 @@ describe('icons', () => {
     expect(svg.getAttribute('style')).toBeNull();
     expect(svg.querySelector('#i-back')).not.toBeNull();
     expect(svg.querySelector('#i-calendar')).not.toBeNull();
+    for (const id of ['i-dots', 'i-eye', 'i-eye-off'])
+      expect(svg.querySelector('#' + id)).not.toBeNull();
   });
 
   it('an icon points into the sprite by name', async () => {

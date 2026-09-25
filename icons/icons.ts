@@ -221,6 +221,24 @@ import { Component, input } from '@angular/core';
       <symbol id="i-minimize" viewBox="0 0 24 24">
         <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />
       </symbol>
+      <!-- The overflow menu. Filled rather than stroked: three thin outlined
+           circles read as smudges at phone sizes. (From the phone app.) -->
+      <symbol id="i-dots" viewBox="0 0 24 24">
+        <circle cx="12" cy="5" r="1.9" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="1.9" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="19" r="1.9" fill="currentColor" stroke="none" />
+      </symbol>
+      <!-- A password field's show / hide toggle. -->
+      <symbol id="i-eye" viewBox="0 0 24 24">
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+        <circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="i-eye-off" viewBox="0 0 24 24">
+        <path
+          d="M9.9 5.2A10 10 0 0112 5c6.4 0 10 7 10 7a18 18 0 01-3.2 4.1M6.2 6.2A18 18 0 002 12s3.6 7 10 7a10 10 0 004.2-.9"
+        />
+        <path d="M9.9 9.9a3 3 0 004.2 4.2M2 2l20 20" />
+      </symbol>
     </svg>
   `,
 })
