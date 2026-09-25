@@ -70,9 +70,7 @@ try {
 // Comments out first. The file documents itself, and its header names
 // `--ground: #04161F` and half a dozen others in prose; parsed as
 // declarations those give a token a value that is the rest of a sentence.
-const declarations = tokensFile
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .replace(/(^|\s)\/\/.*$/gm, '$1');
+const declarations = tokensFile.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
 
 // name -> the value it is defined as, for the message.
 const named = new Map();
@@ -111,11 +109,38 @@ const EXCUSED = /design-system-ok:\s*\S/;
 // Only a global redefinition is a second answer to the same question.
 const GLOBAL_SELECTOR = /^\s*(:root|html)\s*(,|\{)/;
 
+// A COMPONENT stylesheet (anything under src/app) is scoped by Angular's
+// emulated encapsulation, which stamps every compound in a selector with the
+// component's attribute — `<html>` included. So `html[lang='ar'] .x` there
+// compiles to `html[lang="ar"][_ngcontent-…] .x[_ngcontent-…]` and can never
+// match: valid CSS, clean build, passing tests, unchanged screen (the CEO
+// portal, 26 Sep 2026; INCONSISTENCIES §11, F22). In a component sheet it is
+// `:host-context(html[lang='ar'])`; a plain `html[…]` belongs in a global one.
+const COMPONENT_SHEET = /^src\/app\//;
+const ANCESTOR_ON_HTML = /(^|[\s,(>~+])html\[(lang|dir|data-theme)\b/;
+
 for (const file of walk(join(ROOT, LOOK_IN))) {
   const shown = relative(ROOT, file);
   const lines = readFileSync(file, 'utf8').split('\n');
   let global = false;
+  const component = COMPONENT_SHEET.test(shown.replaceAll('\\', '/'));
   lines.forEach((line, i) => {
+    if (
+      component &&
+      ANCESTOR_ON_HTML.test(line) &&
+      !line.includes(':host-context(') &&
+      !/querySelector|document\.|\.setAttribute/.test(line) &&
+      !(EXCUSED.test(line) || (i > 0 && EXCUSED.test(lines[i - 1])))
+    ) {
+      problems.push({
+        file: shown,
+        line: i + 1,
+        kind: 'can never match',
+        said: line.trim().slice(0, 60),
+        instead:
+          "a component sheet cannot see <html>: use :host-context(html[lang='ar']) — or move the rule to a global stylesheet",
+      });
+    }
     if (GLOBAL_SELECTOR.test(line)) global = true;
     else if (/^\s*\}/.test(line)) global = false;
     else if (/\{\s*$/.test(line)) global = false;
@@ -126,8 +151,11 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
       for (const [, name] of line.matchAll(/(--[a-z0-9-]+)\s*:/gi)) {
         if (named.has(name)) {
           problems.push({
-            file: shown, line: i + 1, kind: 'redefines globally',
-            said: name, instead: `the shared tokens already say ${named.get(name)}`,
+            file: shown,
+            line: i + 1,
+            kind: 'redefines globally',
+            said: name,
+            instead: `the shared tokens already say ${named.get(name)}`,
           });
         }
       }
@@ -137,8 +165,11 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
       const token = byValue.get(normaliseHex(hex));
       if (token) {
         problems.push({
-          file: shown, line: i + 1, kind: 'hardcodes',
-          said: hex, instead: `use var(${token})`,
+          file: shown,
+          line: i + 1,
+          kind: 'hardcodes',
+          said: hex,
+          instead: `use var(${token})`,
         });
       }
     }
@@ -147,18 +178,20 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
 
 if (!problems.length) {
   console.log(
-    `Design system: clean. ${named.size} shared tokens, none redefined and none hardcoded.`,
+    `Design system: clean. ${named.size} shared tokens, none redefined and none hardcoded; no component rule aimed at <html>.`,
   );
   process.exit(0);
 }
 
-console.error(red(`\nThe design system is one place, and this module has ${problems.length} second opinions:\n`));
+console.error(
+  red(
+    `\nThe design system is one place, and this module has ${problems.length} second opinions:\n`,
+  ),
+);
 for (const p of problems.slice(0, 60)) {
   console.error(`  ${p.file}:${p.line}  ${p.kind} ${red(p.said)}`);
   console.error(dim(`      ${p.instead}`));
 }
 if (problems.length > 60) console.error(dim(`  …and ${problems.length - 60} more.`));
-console.error(
-  `\nUse the shared token, or say why not:  /* design-system-ok: <reason> */\n`,
-);
+console.error(`\nUse the shared token, or say why not:  /* design-system-ok: <reason> */\n`);
 process.exit(1);
