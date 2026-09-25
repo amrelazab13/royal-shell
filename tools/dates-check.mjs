@@ -34,6 +34,9 @@
  *
  * An exception, where one is genuinely needed:
  *     return new Date(Date.UTC(y, m, d)).toISOString().slice(0, 10); // dates-ok: built in UTC, so the UTC day IS the day
+ * The marker goes ON the line, or on the line DIRECTLY above it — a comment
+ * block further up does not count, because a reason that drifts from its line
+ * stops describing it.
  * The reason is required — an escape hatch with no reason is a silent
  * opt-out, and this is the rule most likely to be waved away in a hurry.
  * The shared package's own `dates.ts` is the honest case: it does its
@@ -102,7 +105,7 @@ const RULES = [
     find: /\.(?:slice|substring|substr)\(\s*0\s*,\s*10\s*\)/g,
     catchAll: true,
     instead: () =>
-      `if this is a TIMESTAMP, isoDateInCairo(new Date(x)); if it is already a plain day, say so: // dates-ok: <why it is a day>`,
+      `a TIMESTAMP becomes isoDateInCairo(new Date(x)); otherwise say why the line is right — a plain day, or a fault kept on purpose in a spec: // dates-ok: <reason>`,
   },
   {
     kind: "moves a day through the reader's midnight",
