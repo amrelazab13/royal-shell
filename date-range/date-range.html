@@ -73,12 +73,7 @@
     >
       <div class="calhead">
         {{ picking() === 'from' ? i18n.t('cal.pickFrom') : i18n.t('cal.pickTo') }}
-        <button
-          class="x"
-          type="button"
-          [attr.aria-label]="i18n.t('cal.close')"
-          (click)="close()"
-        >
+        <button class="x" type="button" [attr.aria-label]="i18n.t('cal.close')" (click)="close()">
           <app-icon name="x" />
         </button>
       </div>

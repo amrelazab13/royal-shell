@@ -29,8 +29,6 @@ export const SHELL_WORDS = new InjectionToken<ShellWords>('royal-shell.words');
  * `useExisting`, so the shared controls follow the module's own language
  * switch rather than a second copy of it.
  */
-export function provideShellWords(
-  source: Type<ShellWords> | InjectionToken<ShellWords>,
-): Provider {
+export function provideShellWords(source: Type<ShellWords> | InjectionToken<ShellWords>): Provider {
   return { provide: SHELL_WORDS, useExisting: source };
 }
