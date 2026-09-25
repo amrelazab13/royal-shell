@@ -176,6 +176,52 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
   });
 }
 
+// A `var(--name)` that nothing defines is invalid at computed-value time: the
+// property quietly falls back to inherited or initial, so a label meant to be
+// mono is set in the body face and looks almost right (Royal Me's
+// `--font-mono`, 26 Sep 2026; INCONSISTENCIES §11, F23). Every custom property
+// used without a fallback must be defined somewhere this module can see — its
+// own sheets, its TypeScript (`setProperty('--x', …)`), or the shared package.
+{
+  const all = [];
+  const collect = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name);
+      if (name === 'node_modules' || name === 'dist' || name.startsWith('.')) continue;
+      const stat = statSync(path);
+      if (stat.isDirectory()) collect(path);
+      else if (EXTENSIONS.some((e) => name.endsWith(e))) all.push(path);
+    }
+  };
+  collect(join(ROOT, LOOK_IN));
+  const defined = new Set(named.keys());
+  for (const file of all) {
+    const text = readFileSync(file, 'utf8');
+    for (const [, name] of text.matchAll(/(--[a-z0-9_-]+)\s*:/gi)) defined.add(name);
+    for (const [, name] of text.matchAll(/['"`](--[a-z0-9_-]+)['"`]/gi)) defined.add(name);
+  }
+  for (const file of walk(join(ROOT, LOOK_IN))) {
+    const shown = relative(ROOT, file);
+    const lines = readFileSync(file, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      if (EXCUSED.test(line) || (i > 0 && EXCUSED.test(lines[i - 1]))) return;
+      for (const [, name, fallback] of line.matchAll(/var\(\s*(--[a-z0-9_-]+)\s*(,)?/gi)) {
+        // `var(--chart-{{ i }})`: a name built at run time ends at the '-'.
+        if (!fallback && !name.endsWith('-') && !defined.has(name)) {
+          problems.push({
+            file: shown,
+            line: i + 1,
+            kind: 'uses an undefined',
+            said: name,
+            instead:
+              'nothing defines it, so the property silently falls back — define it, use a shared token, or give var() a fallback',
+          });
+        }
+      }
+    });
+  }
+}
+
 if (!problems.length) {
   console.log(
     `Design system: clean. ${named.size} shared tokens, none redefined and none hardcoded; no component rule aimed at <html>.`,
