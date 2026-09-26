@@ -43,7 +43,6 @@
 }
 .top > [data-slot='search'] {
   order: 4;
-  margin-inline-start: auto;
 }
 .top > [data-slot='online'] {
   order: 5;
@@ -64,21 +63,19 @@
   order: 10;
 }
 
-// With no search, the controls from ONLINE onwards still sit at the end.
-.top:not(:has(> [data-slot='search'])) > [data-slot='online'],
-.top:not(:has(> [data-slot='search'], > [data-slot='online'])) > [data-slot='bell'],
-.top:not(:has(> [data-slot='search'], > [data-slot='online'], > [data-slot='bell']))
-  > [data-slot='role'],
-.top:not(
-    :has(> [data-slot='search'], > [data-slot='online'], > [data-slot='bell'], > [data-slot='role'])
-  )
-  > [data-slot='language'] {
-  margin-inline-start: auto;
+// Everything after the module name sits at the end edge. The push lives on the
+// one slot every masthead has (the module name; the burger below 560px, where
+// the logo and name are hidden), so it cannot depend on which optional slots a
+// module carries, or on one being hidden: `:has()` does not care about
+// `display: none`, which left the controls bunched against the logo below 980px
+// in Royal Me.
+.top > [data-slot='module'] {
+  margin-inline-end: auto;
 }
 
 // Nothing else belongs in the masthead: no date control, no clock, no second
 // sign-out. A child without a known slot is not drawn.
-.top > :not([data-slot]) {
+.top.top > :not([data-slot]) {
   display: none;
 }
 
@@ -93,15 +90,21 @@
   letter-spacing: 0;
 }
 
+// `.top.top`: a component sheet styling its own slotted child (Angular adds an
+// attribute, so `.chip[_ngcontent-x]` weighs the same as `.top > [data-slot]`
+// and loads later) must not win a tie against the shared hide (Royal Me).
 @media (max-width: 560px) {
-  .top > [data-slot='logo'],
-  .top > [data-slot='module'] {
+  .top.top > [data-slot='logo'],
+  .top.top > [data-slot='module'] {
     display: none;
+  }
+  .top > [data-slot='burger'] {
+    margin-inline-end: auto;
   }
 }
 
 @media (max-width: 980px) {
-  .top > [data-slot='role'] {
+  .top.top > [data-slot='role'] {
     display: none;
   }
 }
