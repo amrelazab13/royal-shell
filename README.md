@@ -60,7 +60,7 @@ Only the parts that are genuinely the same everywhere:
   sheet sets on a bare `.class`, and exits 1. Reuse of a shared class is fine;
   restating its values is the fault. `node src/shared/tools/global-class-check.mjs`
   (reads `src/styles.scss` or `src/styles.css`; `--global` to point elsewhere).
-  On 26 Sep 2026 it found CRM 72, HR 38, Me 6, SalesOps 2, the portal 0, so each
+  On 26 Sep 2026 it found CRM 73, HR 42, Me 6, SalesOps 2 (fixed), the portal 0, so each
   module clears its list before it adds the check to CI. (Written by the CEO
   portal, c2c705d.)
 

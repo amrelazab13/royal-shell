@@ -65,17 +65,36 @@ function walk(dir) {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
     if (name === 'node_modules' || name === 'shared' || name === 'royal-ui') return [];
-    return statSync(path).isDirectory() ? walk(path) : /\.(s?css)$/.test(path) ? [path] : [];
+    if (statSync(path).isDirectory()) return walk(path);
+    if (/\.(s?css)$/.test(path)) return [path];
+    // Components that keep their CSS inline, in `styles:` (SalesOps does,
+    // almost everywhere). Without these the check reads nothing and passes.
+    if (path.endsWith('.ts') && !path.endsWith('.spec.ts')) return [path];
+    return [];
   });
 }
 
-const files = walk(src).filter((f) => f !== globalSheet);
+/** The CSS a file carries: the whole of a stylesheet, or a component's inline `styles:`. */
+function cssOf(file) {
+  const text = readFileSync(file, 'utf8');
+  if (!file.endsWith('.ts')) return text;
+  const block = text.match(/styles\s*:\s*(\[[\s\S]*?\]|`[\s\S]*?`)\s*[,}]/);
+  if (!block) return null;
+  return [...block[1].matchAll(/`([\s\S]*?)`/g)].map((m) => m[1]).join('\n');
+}
+
+const files = walk(src)
+  .filter((f) => f !== globalSheet)
+  .map((f) => [f, cssOf(f)])
+  .filter(([, css]) => css);
 const found = [];
-for (const file of files) {
-  for (const { sel, props } of rules(readFileSync(file, 'utf8'))) {
+for (const [file, css] of files) {
+  for (const { sel, props } of rules(css)) {
     for (const part of sel.split(',')) {
-      // The class the rule lands on is the LAST one in the selector.
-      const last = [...part.trim().matchAll(/\.([A-Za-z][\w-]*)/g)].pop();
+      // The rule lands on the LAST compound of the selector: in `.field input`
+      // that is the input, not `.field`, so only a class in that compound counts.
+      const compound = part.trim().split(/\s*[\s>+~]\s*/).pop() ?? '';
+      const last = [...compound.matchAll(/\.([A-Za-z][\w-]*)/g)].pop();
       if (!last) continue;
       const held = globals.get(last[1]);
       if (!held) continue;
@@ -101,5 +120,5 @@ if (found.length) {
   process.exit(1);
 }
 console.log(
-  `Global classes: clean. ${globals.size} bare global classes, ${files.length} component sheets read.`,
+  `Global classes: clean. ${globals.size} bare global classes, ${files.length} component styles read (sheets and inline).`,
 );
