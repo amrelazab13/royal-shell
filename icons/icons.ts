@@ -266,12 +266,12 @@ export class IconSprite {}
       display: contents;
     }
     :where(svg) {
-      inline-size: 16px;
-      block-size: 16px;
+      inline-size: var(--icon-size, 16px);
+      block-size: var(--icon-size, 16px);
       flex: none;
       fill: none;
       stroke: currentColor;
-      stroke-width: 1.9;
+      stroke-width: var(--icon-stroke, 1.9);
       stroke-linecap: round;
       stroke-linejoin: round;
     }

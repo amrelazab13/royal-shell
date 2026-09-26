@@ -117,6 +117,10 @@ const GLOBAL_SELECTOR = /^\s*(:root|html)\s*(,|\{)/;
 // portal, 26 Sep 2026; INCONSISTENCIES §11, F22). In a component sheet it is
 // `:host-context(html[lang='ar'])`; a plain `html[…]` belongs in a global one.
 const COMPONENT_SHEET = /^src\/app\//;
+// A component sheet cannot reach the <svg> inside <app-icon> either (F30,
+// Royal Me): `.x app-icon svg { … }` compiles and matches nothing. Style the
+// host — `.x app-icon { --icon-size: 44px; color: … }` — which the icon reads.
+const INTO_THE_ICON = /app-icon[^{},;]*\bsvg\b/;
 const ANCESTOR_ON_HTML = /(^|[\s,(>~+])html\[(lang|dir|data-theme)\b/;
 
 for (const file of walk(join(ROOT, LOOK_IN))) {
@@ -125,6 +129,26 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
   let global = false;
   const component = COMPONENT_SHEET.test(shown.replaceAll('\\', '/'));
   lines.forEach((line, i) => {
+    if (
+      component &&
+      INTO_THE_ICON.test(line) &&
+      !/\.html$/.test(shown) &&
+      !/\.spec\.ts$/.test(shown) &&
+      !/\/icons?\//.test(shown) &&
+      !/^\s*(\/\/|\/\*|\*)/.test(line) &&
+      !/querySelector/.test(line)
+    ) {
+      if (!(EXCUSED.test(line) || (i > 0 && EXCUSED.test(lines[i - 1])))) {
+        problems.push({
+          file: shown,
+          line: i + 1,
+          kind: 'can never match',
+          said: line.trim().slice(0, 60),
+          instead:
+            'a component sheet cannot reach the svg inside <app-icon>: style the host — app-icon { --icon-size: …; --icon-stroke: …; color: … }',
+        });
+      }
+    }
     if (
       component &&
       ANCESTOR_ON_HTML.test(line) &&
