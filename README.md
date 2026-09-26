@@ -55,6 +55,14 @@ Only the parts that are genuinely the same everywhere:
   production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   (F17) cannot be caught in jsdom; this is how they are looked at. (Written by
   the CEO portal, 26 Sep 2026.)
+- `tools/global-class-check.mjs` — the global sheet reaching INTO a component
+  (F45): lists every component rule that restates a property the global
+  sheet sets on a bare `.class`, and exits 1. Reuse of a shared class is fine;
+  restating its values is the fault. `node src/shared/tools/global-class-check.mjs`
+  (reads `src/styles.scss` or `src/styles.css`; `--global` to point elsewhere).
+  On 26 Sep 2026 it found CRM 72, HR 38, Me 6, SalesOps 2, the portal 0, so each
+  module clears its list before it adds the check to CI. (Written by the CEO
+  portal, c2c705d.)
 
 What is **not** in here, deliberately: the nav items, the counts, the
 capabilities and the routes. Those differ per module and belong to it. A
