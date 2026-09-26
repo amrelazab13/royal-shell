@@ -55,6 +55,17 @@ Only the parts that are genuinely the same everywhere:
   production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   (F17) cannot be caught in jsdom; this is how they are looked at. (Written by
   the CEO portal, 26 Sep 2026.)
+- `masthead/masthead.scss` — the masthead and the page head, shared (bible
+  §3.3, §3.5). The ORDER is decided here, by `data-slot` on each direct child
+  of `<header class="top">`: burger, logo, module, search, online, bell, role,
+  language, theme, me. A child without a known slot is not drawn. The module
+  name beside the logo and the `.phead` title, caption and actions are here
+  too. Load it globally after the rail. (26 Sep 2026, after the owner saw five
+  modules side by side.)
+- `tools/masthead-check.mjs` — refuses a masthead with an unknown or missing
+  slot, slots out of order, a date control, or a sign-out outside the avatar
+  menu. `node src/shared/tools/masthead-check.mjs` finds the shell itself
+  (`--shell` to point at it); exits 2 if it finds no masthead at all.
 - `tools/global-class-check.mjs` — the global sheet reaching INTO a component
   (F45): lists every component rule that restates a property the global
   sheet sets on a bare `.class`, and exits 1. Reuse of a shared class is fine;

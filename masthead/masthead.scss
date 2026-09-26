@@ -1,0 +1,132 @@
+// The masthead and the page head, shared by every module (bible §3.3, §3.5).
+//
+// The owner, 26 Sep 2026, looking at five modules side by side: "the
+// differences between the modules are visible, while this is exactly defies
+// the sole purpose of the design". Each module had built its own masthead and
+// page head, so each drifted: the avatar before the language in one, a date
+// control and a live clock in another, a "Sign out" button in a third, and a
+// large display title where the bible has a 20px heading.
+//
+// So the look lives here, and the ORDER is decided here, not by the order a
+// module happens to write its markup in. Every direct child of `.top` names its
+// place with `data-slot`; anything without a known slot is not drawn, and
+// `tools/masthead-check.mjs` refuses the build before that happens.
+//
+// Load it globally after the tokens, like the rail:
+//   "styles": ["src/shared/tokens/tokens.scss", "src/shared/rail/rail.scss",
+//              "src/shared/masthead/masthead.scss", "src/styles.scss"]
+
+// ══ the masthead ══
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 54px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  flex: none;
+  position: relative;
+  z-index: 20;
+}
+
+// The one order, start to end (bible §3.3). A module without search, ONLINE or
+// the bell leaves them out; what remains keeps its place.
+.top > [data-slot='burger'] { order: 1; }
+.top > [data-slot='logo'] { order: 2; }
+.top > [data-slot='module'] { order: 3; }
+.top > [data-slot='search'] { order: 4; margin-inline-start: auto; }
+.top > [data-slot='online'] { order: 5; }
+.top > [data-slot='bell'] { order: 6; }
+.top > [data-slot='role'] { order: 7; }
+.top > [data-slot='language'] { order: 8; }
+.top > [data-slot='theme'] { order: 9; }
+.top > [data-slot='me'] { order: 10; }
+
+// With no search, the controls from ONLINE onwards still sit at the end.
+.top:not(:has(> [data-slot='search'])) > [data-slot='online'],
+.top:not(:has(> [data-slot='search'], > [data-slot='online'])) > [data-slot='bell'],
+.top:not(:has(> [data-slot='search'], > [data-slot='online'], > [data-slot='bell'])) > [data-slot='role'],
+.top:not(:has(> [data-slot='search'], > [data-slot='online'], > [data-slot='bell'], > [data-slot='role'])) > [data-slot='language'] {
+  margin-inline-start: auto;
+}
+
+// Nothing else belongs in the masthead: no date control, no clock, no second
+// sign-out. A child without a known slot is not drawn.
+.top > :not([data-slot]) {
+  display: none;
+}
+
+// The module's own name beside the logo (bible §3.3 row 2a), the same in
+// every module: "CRM", "HR", "Sales Operations", "CEO Portal".
+.top > [data-slot='module'] {
+  margin-inline-start: 2px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--bronze);
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+@media (max-width: 560px) {
+  .top > [data-slot='logo'],
+  .top > [data-slot='module'] {
+    display: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .top > [data-slot='role'] {
+    display: none;
+  }
+}
+
+// ══ the page head ══
+// Title 20px 800 in the body face; beside it one bronze line: a count, or a
+// sentence saying what the screen is for. The landing screen's title is a
+// greeting. Never a display face, never a grey line underneath.
+.phead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  flex-wrap: wrap;
+  flex: none;
+}
+
+.phead h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.phead .cnt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--bronze);
+  letter-spacing: 0.01em;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.phead .cnt b {
+  color: var(--bronze);
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// Arabic: the Cairo face, no letter-spacing (bible §2.8, F19).
+html[lang='ar'] .phead .cnt {
+  font-family: Cairo, sans-serif;
+  letter-spacing: 0;
+}
+
+.phead .pacts {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-inline-start: auto;
+}
