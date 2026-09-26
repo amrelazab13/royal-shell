@@ -140,8 +140,12 @@ import { Component, input } from '@angular/core';
         <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
       </symbol>
       <symbol id="i-key" viewBox="0 0 24 24">
-        <circle cx="7.5" cy="15.5" r="4.5" />
-        <path d="M10.7 12.3L21 2m-4 4l3 3m-6-6l3 3" />
+        <!-- Lying flat: bow on the left, shaft to the right, two teeth down.
+             The old diagonal drawing (a ring with a stroke up and to the right)
+             read as the male sign ♂ (the owner, 26 Sep 2026). -->
+        <circle cx="7" cy="12" r="4" />
+        <circle cx="7" cy="12" r="1" />
+        <path d="M11 12h10M17 12v3M20 12v4" />
       </symbol>
       <symbol id="i-search" viewBox="0 0 24 24">
         <circle cx="11" cy="11" r="7" />
