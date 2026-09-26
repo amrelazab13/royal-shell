@@ -56,6 +56,10 @@
   /* Aliases kept for the two rules that were written against them. */
   --ink-1: var(--ink);
   --font-display: Unbounded, Nunito, sans-serif;
+  /* The mono face every module names (bible §2.8). It was referenced in twenty
+     places in the CEO portal and defined nowhere, so every mono label there
+     fell back to the browser's default monospace (26 Sep 2026). */
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   /* Royal navy carries the interface, and `--accent` is what almost every
      screen actually reaches for — 265 places against navy's own 82.
      

@@ -211,7 +211,7 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
 // property quietly falls back to inherited or initial, so a label meant to be
 // mono is set in the body face and looks almost right (Royal Me's
 // `--font-mono`, 26 Sep 2026; INCONSISTENCIES §11, F23). Every custom property
-// used without a fallback must be defined somewhere this module can see — its
+// used must be defined somewhere this module can see, fallback or not, — its
 // own sheets, its TypeScript (`setProperty('--x', …)`), or the shared package.
 {
   const all = [];
@@ -238,14 +238,19 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
       if (EXCUSED.test(line) || (i > 0 && EXCUSED.test(lines[i - 1]))) return;
       for (const [, name, fallback] of line.matchAll(/var\(\s*(--[a-z0-9_-]+)\s*(,)?/gi)) {
         // `var(--chart-{{ i }})`: a name built at run time ends at the '-'.
-        if (!fallback && !name.endsWith('-') && !defined.has(name)) {
+        // With a fallback the failure is just as silent: `var(--font-mono,
+        // monospace)` with nothing defining --font-mono drew the browser's
+        // default mono in twenty places (CEO portal). A deliberate knob that a
+        // parent may set is excused with `design-system-ok: <reason>`.
+        if (!name.endsWith('-') && !defined.has(name)) {
           problems.push({
             file: shown,
             line: i + 1,
-            kind: 'uses an undefined',
+            kind: fallback ? 'falls back from an undefined' : 'uses an undefined',
             said: name,
-            instead:
-              'nothing defines it, so the property silently falls back — define it, use a shared token, or give var() a fallback',
+            instead: fallback
+              ? 'nothing defines it, so the fallback is what renders every time — define it, use a shared token, or mark a deliberate knob with design-system-ok'
+              : 'nothing defines it, so the property silently falls back — define it or use a shared token',
           });
         }
       }
