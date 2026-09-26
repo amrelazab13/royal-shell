@@ -77,6 +77,13 @@ Only the parts that are genuinely the same everywhere:
   module clears its list before it adds the check to CI. (Written by the CEO
   portal, c2c705d.)
 
+**Formatting tools must not walk into the shared packages.** A module's
+`prettier --write "src/**"` rewrites `src/shared/` (this package) and
+`src/royal-ui/`, and the change would go up in the module's commit looking
+legitimate (found by the CEO portal and SalesOps, 26 Sep 2026). Every module's
+`.prettierignore` lists `src/shared/` and `src/royal-ui/`; this package keeps
+itself prettier-clean.
+
 What is **not** in here, deliberately: the nav items, the counts, the
 capabilities and the routes. Those differ per module and belong to it. A
 shared thing that tries to own them becomes a second place to edit every
