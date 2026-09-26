@@ -125,18 +125,25 @@ const ANCESTOR_ON_HTML = /(^|[\s,(>~+])html\[(lang|dir|data-theme)\b/;
 
 for (const file of walk(join(ROOT, LOOK_IN))) {
   const shown = relative(ROOT, file);
-  const lines = readFileSync(file, 'utf8').split('\n');
+  const text = readFileSync(file, 'utf8');
+  const lines = text.split('\n');
+  // The same file with every /* comment */ blanked, line breaks kept, so a
+  // rule is tested on code and never on prose — a comment explaining a fix
+  // tripped the check that fix installed (Royal Me, 26 Sep 2026). Markers
+  // (design-system-ok) are still read from the original lines.
+  const bare = text.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' ')).split('\n');
   let global = false;
   const component = COMPONENT_SHEET.test(shown.replaceAll('\\', '/'));
   lines.forEach((line, i) => {
+    const code = bare[i] ?? '';
     if (
       component &&
-      INTO_THE_ICON.test(line) &&
+      INTO_THE_ICON.test(code) &&
       !/\.html$/.test(shown) &&
       !/\.spec\.ts$/.test(shown) &&
       !/\/icons?\//.test(shown) &&
-      !/^\s*(\/\/|\/\*|\*)/.test(line) &&
-      !/querySelector/.test(line)
+      !/^\s*\/\//.test(code) &&
+      !/querySelector/.test(code)
     ) {
       if (!(EXCUSED.test(line) || (i > 0 && EXCUSED.test(lines[i - 1])))) {
         problems.push({
@@ -151,9 +158,9 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
     }
     if (
       component &&
-      ANCESTOR_ON_HTML.test(line) &&
-      !line.includes(':host-context(') &&
-      !/querySelector|document\.|\.setAttribute/.test(line) &&
+      ANCESTOR_ON_HTML.test(code) &&
+      !code.includes(':host-context(') &&
+      !/querySelector|document\.|\.setAttribute/.test(code) &&
       !(EXCUSED.test(line) || (i > 0 && EXCUSED.test(lines[i - 1])))
     ) {
       problems.push({
