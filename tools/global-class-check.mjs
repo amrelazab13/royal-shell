@@ -83,6 +83,13 @@ function cssOf(file) {
   return [...block[1].matchAll(/`([\s\S]*?)`/g)].map((m) => m[1]).join('\n');
 }
 
+/**
+ * Where a thing sits is the screen's own business; how it looks is what
+ * drifts. A global `margin: 0` is a reset, and a screen placing the element
+ * is not a fight with it (Royal Me, 26 Sep 2026). So placement is not compared.
+ */
+const PLACEMENT = /^(margin|padding|inset)(-.*)?$|^(top|right|bottom|left|order|align-self|justify-self|place-self|grid-area|grid-column|grid-row|flex|flex-grow|flex-shrink|flex-basis)$/;
+
 const files = walk(src)
   .filter((f) => f !== globalSheet)
   .map((f) => [f, cssOf(f)])
@@ -99,7 +106,7 @@ for (const [file, css] of files) {
       const held = globals.get(last[1]);
       if (!held) continue;
       for (const [prop, value] of props) {
-        if (held.has(prop) && held.get(prop) !== value) {
+        if (!PLACEMENT.test(prop) && held.has(prop) && held.get(prop) !== value) {
           found.push(
             `${relative(process.cwd(), file)}: \`${part.trim()}\` sets ${prop}: ${value} — ` +
               `the global \`.${last[1]}\` already says ${held.get(prop)}`,
