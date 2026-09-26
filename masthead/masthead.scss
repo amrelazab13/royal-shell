@@ -32,22 +32,47 @@
 
 // The one order, start to end (bible §3.3). A module without search, ONLINE or
 // the bell leaves them out; what remains keeps its place.
-.top > [data-slot='burger'] { order: 1; }
-.top > [data-slot='logo'] { order: 2; }
-.top > [data-slot='module'] { order: 3; }
-.top > [data-slot='search'] { order: 4; margin-inline-start: auto; }
-.top > [data-slot='online'] { order: 5; }
-.top > [data-slot='bell'] { order: 6; }
-.top > [data-slot='role'] { order: 7; }
-.top > [data-slot='language'] { order: 8; }
-.top > [data-slot='theme'] { order: 9; }
-.top > [data-slot='me'] { order: 10; }
+.top > [data-slot='burger'] {
+  order: 1;
+}
+.top > [data-slot='logo'] {
+  order: 2;
+}
+.top > [data-slot='module'] {
+  order: 3;
+}
+.top > [data-slot='search'] {
+  order: 4;
+  margin-inline-start: auto;
+}
+.top > [data-slot='online'] {
+  order: 5;
+}
+.top > [data-slot='bell'] {
+  order: 6;
+}
+.top > [data-slot='role'] {
+  order: 7;
+}
+.top > [data-slot='language'] {
+  order: 8;
+}
+.top > [data-slot='theme'] {
+  order: 9;
+}
+.top > [data-slot='me'] {
+  order: 10;
+}
 
 // With no search, the controls from ONLINE onwards still sit at the end.
 .top:not(:has(> [data-slot='search'])) > [data-slot='online'],
 .top:not(:has(> [data-slot='search'], > [data-slot='online'])) > [data-slot='bell'],
-.top:not(:has(> [data-slot='search'], > [data-slot='online'], > [data-slot='bell'])) > [data-slot='role'],
-.top:not(:has(> [data-slot='search'], > [data-slot='online'], > [data-slot='bell'], > [data-slot='role'])) > [data-slot='language'] {
+.top:not(:has(> [data-slot='search'], > [data-slot='online'], > [data-slot='bell']))
+  > [data-slot='role'],
+.top:not(
+    :has(> [data-slot='search'], > [data-slot='online'], > [data-slot='bell'], > [data-slot='role'])
+  )
+  > [data-slot='language'] {
   margin-inline-start: auto;
 }
 

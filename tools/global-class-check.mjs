@@ -32,7 +32,11 @@ const arg = (name, fallback) => {
 };
 const src = resolve(arg('--src', 'src'));
 const globalSheet = resolve(
-  arg('--global', [join(src, 'styles.scss'), join(src, 'styles.css')].find(existsSync) ?? join(src, 'styles.scss')),
+  arg(
+    '--global',
+    [join(src, 'styles.scss'), join(src, 'styles.css')].find(existsSync) ??
+      join(src, 'styles.scss'),
+  ),
 );
 if (!existsSync(globalSheet)) {
   // Say it rather than pass: a check that read nothing proves nothing (F40).
@@ -88,7 +92,8 @@ function cssOf(file) {
  * drifts. A global `margin: 0` is a reset, and a screen placing the element
  * is not a fight with it (Royal Me, 26 Sep 2026). So placement is not compared.
  */
-const PLACEMENT = /^(margin|padding|inset)(-.*)?$|^(top|right|bottom|left|order|align-self|justify-self|place-self|grid-area|grid-column|grid-row|flex|flex-grow|flex-shrink|flex-basis)$/;
+const PLACEMENT =
+  /^(margin|padding|inset)(-.*)?$|^(top|right|bottom|left|order|align-self|justify-self|place-self|grid-area|grid-column|grid-row|flex|flex-grow|flex-shrink|flex-basis)$/;
 
 const files = walk(src)
   .filter((f) => f !== globalSheet)
@@ -100,7 +105,11 @@ for (const [file, css] of files) {
     for (const part of sel.split(',')) {
       // The rule lands on the LAST compound of the selector: in `.field input`
       // that is the input, not `.field`, so only a class in that compound counts.
-      const compound = part.trim().split(/\s*[\s>+~]\s*/).pop() ?? '';
+      const compound =
+        part
+          .trim()
+          .split(/\s*[\s>+~]\s*/)
+          .pop() ?? '';
       const last = [...compound.matchAll(/\.([A-Za-z][\w-]*)/g)].pop();
       if (!last) continue;
       const held = globals.get(last[1]);

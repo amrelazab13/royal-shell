@@ -18,7 +18,18 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-const ORDER = ['burger', 'logo', 'module', 'search', 'online', 'bell', 'role', 'language', 'theme', 'me'];
+const ORDER = [
+  'burger',
+  'logo',
+  'module',
+  'search',
+  'online',
+  'bell',
+  'role',
+  'language',
+  'theme',
+  'me',
+];
 const REQUIRED = ['burger', 'logo', 'module', 'language', 'theme', 'me'];
 
 const arg = (name) => {
@@ -35,7 +46,9 @@ function findShell() {
       if (n === 'node_modules' || n === 'shared') return [];
       return statSync(p).isDirectory() ? walk(p) : /\.(html|ts)$/.test(n) ? [p] : [];
     });
-  return walk(resolve('src')).find((f) => /<header[^>]*class="[^"]*\btop\b/.test(readFileSync(f, 'utf8')));
+  return walk(resolve('src')).find((f) =>
+    /<header[^>]*class="[^"]*\btop\b/.test(readFileSync(f, 'utf8')),
+  );
 }
 
 const shell = findShell();
