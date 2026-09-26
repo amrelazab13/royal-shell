@@ -75,10 +75,25 @@ for (let i = 1; i < known.length; i++) {
 if (/date-range|daterange|type="date"/i.test(header)) {
   found.push('a date control in the masthead; it belongs in the filter bar (bible §4.8)');
 }
+// Only when the avatar slot exists: with no markers at all, "sign-out outside
+// the menu" is derived from the missing marker, not a finding of its own
+// (Royal Me).
 const meAt = header.indexOf('data-slot="me"');
-const outsideMe = meAt === -1 ? header : header.slice(0, meAt);
-if (/sign ?out|signOut|تسجيل الخروج/i.test(outsideMe)) {
+if (meAt !== -1 && /sign ?out|signOut|تسجيل الخروج/i.test(header.slice(0, meAt))) {
   found.push('a sign-out outside the avatar menu; the avatar is the one door (bible §3.3)');
+}
+
+// Markers mean nothing unless the shared sheet that orders them is loaded.
+// Adding six data-slot attributes would pass every check above while the
+// module still drew its own masthead (Royal Me: F40 in the gate itself).
+{
+  const places = ['angular.json', 'src/styles.scss', 'src/styles.css'].filter(existsSync);
+  const loaded = places.some((f) => /masthead\/masthead(\.scss)?/.test(readFileSync(f, 'utf8')));
+  if (!loaded) {
+    found.push(
+      'masthead/masthead.scss is not loaded (angular.json styles or the global sheet); the slots order nothing without it',
+    );
+  }
 }
 
 const where = relative(process.cwd(), shell);
