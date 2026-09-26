@@ -89,8 +89,26 @@ for (const [what, path] of [
 }
 
 const fixtures = await import(pathToFileURL(fixturesPath).href);
-/** Exact path -> a body, or a function (url, request) -> a body. */
+/**
+ * Exact path -> a body, or a function (url, request) -> a body.
+ *
+ * A body may instead be `{ status, body }` to answer with something that is
+ * not 200. **This is how a failure state gets looked at.** Until 26 Sep 2026
+ * this server could only answer 200, so every "HR did not answer", every "no
+ * key yet", every silent-source line in every module was unreachable in a
+ * browser — the messages a reader sees only when something is wrong were the
+ * only ones nobody could see. The CEO portal shipped one that said "Reload in
+ * a moment" for a fault no reload could fix, and no amount of looking would
+ * have shown it.
+ */
 const answers = fixtures.api ?? {};
+
+/** `{ status, body }` asks for a particular status; anything else is a 200 body. */
+const isAnswer = (value) =>
+  value !== null &&
+  typeof value === 'object' &&
+  typeof value.status === 'number' &&
+  Object.hasOwn(value, 'body');
 /** Anything under these that has no answer of its own gets `empty`. */
 const prefixes = fixtures.apiPrefixes ?? ['/api/'];
 /** What an unanswered call returns. A page waiting forever is a page that
@@ -108,7 +126,10 @@ createServer((req, res) => {
 
   if (Object.hasOwn(answers, path)) {
     const answer = answers[path];
-    return json(res, typeof answer === 'function' ? answer(req.url, req) : answer);
+    const body = typeof answer === 'function' ? answer(req.url, req) : answer;
+    return isAnswer(body)
+      ? send(res, body.status, TYPES['.json'], JSON.stringify(body.body))
+      : json(res, body);
   }
   if (prefixes.some((p) => path.startsWith(p))) return json(res, empty);
 
