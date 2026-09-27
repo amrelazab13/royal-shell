@@ -65,6 +65,45 @@ for (const { sel, props } of rules(readFileSync(globalSheet, 'utf8'))) {
   }
 }
 
+/**
+ * A class the global sheet styles ONLY through variants — `.tagm.late`,
+ * `.tagm.gate` — and never on its own.
+ *
+ * The variants being global makes the class shared vocabulary, so its BASE
+ * must be global too. When the base sits in one component instead, Angular
+ * scopes it there and every other screen writing that class gets the colour
+ * with none of the shape. The CEO portal's permissions screen rendered its
+ * door level as a bare 14.5px line while its own comment said it was using
+ * "the shared `.tagm` pill" — and this check passed, because it only ever
+ * looked at classes the global sheet styled BARE (F55, 27 Sep 2026).
+ *
+ * Two DIFFERENT variants, not one, so a component's own `.p-card` meeting an
+ * unrelated global `.p-card.wide` is not dragged in: a base is a thing several
+ * variants modify. And only the FIRST class of a compound is a base: in
+ * `.fsel.dim` and `.btn.go` the base is `fsel` and `btn`, while `dim` and `go`
+ * are modifiers that a component may use as its own word (the CRM's first run,
+ * 27 Sep 2026, flagged exactly those). A guard that cries wolf gets skipped.
+ */
+const variantOnly = new Set();
+{
+  const variants = new Map(); // base -> the distinct modifier sets seen on it
+  for (const { sel } of rules(readFileSync(globalSheet, 'utf8'))) {
+    for (const part of sel.split(',')) {
+      const compound =
+        part
+          .trim()
+          .split(/\s*[\s>+~]\s*/)
+          .pop() ?? '';
+      const [base, ...mods] = [...compound.matchAll(/\.([A-Za-z][\w-]*)/g)].map((m) => m[1]);
+      if (!base || !mods.length) continue;
+      const seen = variants.get(base) ?? new Set();
+      seen.add(mods.sort().join('.'));
+      variants.set(base, seen);
+    }
+  }
+  for (const [c, seen] of variants) if (seen.size >= 2 && !globals.has(c)) variantOnly.add(c);
+}
+
 function walk(dir) {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -124,6 +163,32 @@ for (const [file, css] of files) {
       }
     }
   }
+}
+
+/** A component holding the base of a class the global sheet only varies. */
+const owned = [];
+for (const [file, css] of files) {
+  for (const { sel } of rules(css)) {
+    for (const part of sel.split(',')) {
+      const bare = part.trim().match(/^\.([A-Za-z][\w-]*)$/);
+      if (bare && variantOnly.has(bare[1])) {
+        owned.push(
+          `${relative(process.cwd(), file)}: \`.${bare[1]}\` is styled here, but the global ` +
+            `sheet carries its variants — so every OTHER screen using \`${bare[1]}\` gets those ` +
+            `variants with no base. Move the base into the global sheet.`,
+        );
+      }
+    }
+  }
+}
+if (owned.length) {
+  console.error('A shared part owned by one screen:\n');
+  for (const line of owned) console.error('  ' + line);
+  console.error(
+    "\nAngular scopes a component's styles to that component. A class the global\n" +
+      'sheet varies is shared vocabulary: its base belongs beside its variants.',
+  );
+  process.exit(1);
 }
 
 if (found.length) {
