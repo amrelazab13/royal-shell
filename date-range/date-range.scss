@@ -1,11 +1,16 @@
 /* ---------------------------------------------------------------------------
    The date-range control.
 
-   `.dfield`, `.cal`, `.presets`, `.grid7` and `.day` are all in the ported
-   stylesheet already. What is left is positioning the panel under the field,
-   the scrim that closes it, and one rename: the prototype's panel footer is
-   `.cal .foot`, which now collides with the page footer this app puts inside
-   `.content`, so it is `.calfoot` here.
+   The panel, the presets, the month grid and the days are drawn HERE, not
+   left to each module's global stylesheet. The control assumed every module
+   had ported the CRM's `.cal`/`.presets`/`.grid7`/`.day` rules; SalesOps had
+   not, and on four of its screens the presets, labels and all 42 days spilled
+   inline across the page (Audit 6, X-1, 27 Sep 2026). A shared control that
+   needs the page to style its insides is not shared. These are the CRM's
+   rules, carried over value for value, encapsulated to this component.
+
+   The prototype's panel footer was `.cal .foot`, which collides with the page
+   footer inside `.content`, so it is `.calfoot` here.
    --------------------------------------------------------------------------- */
 
 :host {
@@ -17,8 +22,159 @@
 }
 
 .cal {
+  position: absolute;
+  z-index: 60;
   inset-block-start: calc(100% + 5px);
   inset-inline-start: 0;
+  display: none;
+  min-width: 300px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--sh-pop);
+}
+
+.cal.open {
+  display: block;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 330px;
+  margin-block-end: 11px;
+  padding-block-end: 11px;
+  border-block-end: 1px solid var(--line-soft);
+
+  button {
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    color: var(--ink-3);
+    transition: all var(--fast);
+
+    &:hover {
+      border-color: var(--ink-4);
+      color: var(--ink);
+      background: var(--surface-2);
+    }
+
+    &[aria-pressed='true'] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--on-accent);
+      font-weight: 700;
+    }
+  }
+}
+
+.navrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-block-end: 9px;
+
+  button.arrow {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--rs);
+    color: var(--ink-3);
+    font-size: 14px;
+    transition: all var(--fast);
+
+    &:hover {
+      background: var(--surface-3);
+      color: var(--ink);
+    }
+  }
+
+  select {
+    appearance: none;
+    height: 26px;
+    padding-inline: 8px 20px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rs);
+    font-size: 12.5px;
+    transition: all var(--fast);
+
+    &:hover {
+      border-color: var(--ink-4);
+    }
+  }
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+.grid7 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+
+  .dow {
+    padding: 4px 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-4);
+  }
+}
+
+/* Arabic day names: Cairo, no spacing, no case (bible §2.8, F19). */
+:host-context(html[lang='ar']) .grid7 .dow {
+  font-family: Cairo, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.day {
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--rs);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  transition: all var(--fast);
+
+  &:hover {
+    background: var(--surface-3);
+    color: var(--ink);
+  }
+
+  &.out {
+    color: var(--ink-4);
+    opacity: 0.45;
+  }
+
+  &.today {
+    box-shadow: inset 0 0 0 1px var(--ink-4);
+  }
+
+  &.inrange {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    border-radius: 0;
+  }
+
+  &.edge {
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+  }
+
+  &[disabled] {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
 }
 
 .calscrim {
