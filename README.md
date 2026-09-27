@@ -52,9 +52,17 @@ Only the parts that are genuinely the same everywhere:
   browser without anyone's password: serves `dist/` on 127.0.0.1 only, with
   API answers from the module's own `fixtures/local.mjs` (**invented people
   only — never data copied from production**). `ng build --configuration
-  production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
+production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   (F17) cannot be caught in jsdom; this is how they are looked at. (Written by
   the CEO portal, 26 Sep 2026.)
+- `needs/` — "what needs me" (bible §3.7): the red counter on a rail item,
+  tab, section or chip, and the red dot on a row, leading a person to what
+  they must act on. `needs.scss` (load after `rail.scss`; the counter stays
+  on the icon's corner when the rail is folded) and `needs.ts`
+  (`needsState(fetch)` polls the module's `GET <api>/needs-me/` every 30 s
+  and when the tab returns; `needs.count('leads')` sums a trail path). The
+  counts are the server's, computed from the data: they clear when the thing
+  is resolved, never when it is seen.
 - `masthead/masthead.scss` — the masthead and the page head, shared (bible
   §3.3, §3.5). The ORDER is decided here, by `data-slot` on each direct child
   of `<header class="top">`: burger, logo, module, search, online, bell, role,
@@ -115,13 +123,20 @@ protected readonly rail = railState();
 
 ```html
 <!-- shell.html -->
-<button class="burger" type="button" (click)="rail.toggle()"
-        [attr.aria-label]="i18n.t(rail.collapsed() ? 'shell.showMenu' : 'shell.hideMenu')">
+<button
+  class="burger"
+  type="button"
+  (click)="rail.toggle()"
+  [attr.aria-label]="i18n.t(rail.collapsed() ? 'shell.showMenu' : 'shell.hideMenu')"
+>
   <royal-rail-burger [collapsed]="rail.collapsed()" />
 </button>
 
-<aside class="side" (mouseenter)="rail.peeking.set(true)"
-                    (mouseleave)="rail.peeking.set(false)">
+<aside
+  class="side"
+  (mouseenter)="rail.peeking.set(true)"
+  (mouseleave)="rail.peeking.set(false)"
+></aside>
 ```
 
 The two labels are the app's own, in its own language files: this package
@@ -132,7 +147,7 @@ holds no copy. `shell.showMenu` / `shell.hideMenu`.
 ```ts
 // app.config.ts — let the shared controls use the module's own words
 import { provideShellWords } from '../shared/words';
-providers: [provideShellWords(I18nService)]     // or provideShellWords(ROYAL_WORDS)
+providers: [provideShellWords(I18nService)]; // or provideShellWords(ROYAL_WORDS)
 
 // wherever it is used
 import { DateRangeControl, DateRange } from '../shared/date-range/date-range';

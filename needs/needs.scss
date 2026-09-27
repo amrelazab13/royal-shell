@@ -1,0 +1,107 @@
+/* ---------------------------------------------------------------------------
+   "What needs me": the red counter and the red dot (bible §3.7).
+
+   The owner, 27 Sep 2026: a red counter on each rail item that holds
+   something for the person to resolve, and inside it another red dot where
+   to go next, "and so on" down to the row.
+
+   · `.needs`      the red counter with a number, on a rail item, a tab, a
+                   section heading or a filter chip. Empty (0) is not drawn:
+                   the module renders the element only when the count > 0.
+   · `.needs.dot`  the red dot with no number: on a row that needs the person,
+                   the last step of the trail.
+
+   Red here means "you must act". It is the only red on the rail, and it is
+   never used for anything the person merely might like to know (that is the
+   bell). The rail's neutral `.n` (the size of a book) is a different thing
+   and stays grey.
+
+   Load it once, in angular.json's styles, after rail.scss.
+   --------------------------------------------------------------------------- */
+
+.needs {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-inline-size: 18px;
+  block-size: 18px;
+  padding-inline: 5px;
+  border-radius: 99px;
+  background: var(--bad);
+  color: var(--on-bad);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  /* Numbers are written left to right in both languages. */
+  direction: ltr;
+}
+
+/* The dot: the row's marker, no number. */
+.needs.dot {
+  min-inline-size: 8px;
+  inline-size: 8px;
+  block-size: 8px;
+  padding: 0;
+  vertical-align: middle;
+}
+
+/* On a rail item it sits at the far end of the row, after the label and the
+   neutral count. */
+.nav .needs {
+  margin-inline-start: auto;
+}
+.nav .n + .needs {
+  margin-inline-start: 6px;
+}
+
+/* The retracted rail hides the labels and the neutral counts, but NOT this:
+   it is the reason to open the rail. It moves onto the icon's corner, a
+   little smaller, so the icons stay centred. */
+@media (min-width: 981px) {
+  body.side-collapsed:not(.side-peek) .nav {
+    position: relative;
+  }
+  body.side-collapsed:not(.side-peek) .nav .needs {
+    position: absolute;
+    inset-block-start: 3px;
+    inset-inline-start: calc(50% + 2px);
+    min-inline-size: 16px;
+    block-size: 16px;
+    padding-inline: 4px;
+    font-size: 10px;
+    margin: 0;
+    /* A ring in the rail's own colour, so the badge reads as ON the icon. */
+    box-shadow: 0 0 0 2px var(--surface);
+  }
+}
+
+/* On the selected rail item the counter keeps its red: the selection is
+   blue, and "you are here" must never hide "this still needs you". */
+.nav[aria-current='page'] .needs {
+  background: var(--bad);
+  color: var(--on-bad);
+}
+
+/* On a tab, a section heading or a chip it follows the label. */
+.tab .needs,
+.tabs .needs,
+.chip .needs,
+.sechead .needs,
+h2 .needs,
+h3 .needs {
+  margin-inline-start: 6px;
+  vertical-align: 1px;
+}
+
+/* On a row, the dot sits before the first cell's text. */
+td > .needs.dot:first-child {
+  margin-inline-end: 8px;
+}
+
+@media (forced-colors: active) {
+  .needs {
+    border: 1px solid CanvasText;
+  }
+}
