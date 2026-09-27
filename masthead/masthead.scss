@@ -7,6 +7,10 @@
 // control and a live clock in another, a "Sign out" button in a third, and a
 // large display title where the bible has a 20px heading.
 //
+// Every selector is `header.top`, never a bare `.top`: a card with a "top"
+// row of its own (HR's Valu differences) had its name, field and date hidden
+// by the "not a slot" rule (Audit 6, HR-1).
+//
 // So the look lives here, and the ORDER is decided here, not by the order a
 // module happens to write its markup in. Every direct child of `.top` names its
 // place with `data-slot`; anything without a known slot is not drawn, and
@@ -17,7 +21,7 @@
 //              "src/shared/masthead/masthead.scss", "src/styles.scss"]
 
 // ══ the masthead ══
-.top {
+header.top {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -32,34 +36,34 @@
 
 // The one order, start to end (bible §3.3). A module without search, ONLINE or
 // the bell leaves them out; what remains keeps its place.
-.top > [data-slot='burger'] {
+header.top > [data-slot='burger'] {
   order: 1;
 }
-.top > [data-slot='logo'] {
+header.top > [data-slot='logo'] {
   order: 2;
 }
-.top > [data-slot='module'] {
+header.top > [data-slot='module'] {
   order: 3;
 }
-.top > [data-slot='search'] {
+header.top > [data-slot='search'] {
   order: 4;
 }
-.top > [data-slot='online'] {
+header.top > [data-slot='online'] {
   order: 5;
 }
-.top > [data-slot='bell'] {
+header.top > [data-slot='bell'] {
   order: 6;
 }
-.top > [data-slot='role'] {
+header.top > [data-slot='role'] {
   order: 7;
 }
-.top > [data-slot='language'] {
+header.top > [data-slot='language'] {
   order: 8;
 }
-.top > [data-slot='theme'] {
+header.top > [data-slot='theme'] {
   order: 9;
 }
-.top > [data-slot='me'] {
+header.top > [data-slot='me'] {
   order: 10;
 }
 
@@ -69,19 +73,19 @@
 // module carries, or on one being hidden: `:has()` does not care about
 // `display: none`, which left the controls bunched against the logo below 980px
 // in Royal Me.
-.top > [data-slot='module'] {
+header.top > [data-slot='module'] {
   margin-inline-end: auto;
 }
 
 // Nothing else belongs in the masthead: no date control, no clock, no second
 // sign-out. A child without a known slot is not drawn.
-.top.top > :not([data-slot]) {
+header.top.top > :not([data-slot]) {
   display: none;
 }
 
 // The module's own name beside the logo (bible §3.3 row 2a), the same in
 // every module: "CRM", "HR", "Sales Operations", "CEO Portal".
-.top > [data-slot='module'] {
+header.top > [data-slot='module'] {
   margin-inline-start: 2px;
   font-size: 15px;
   font-weight: 800;
@@ -94,17 +98,17 @@
 // attribute, so `.chip[_ngcontent-x]` weighs the same as `.top > [data-slot]`
 // and loads later) must not win a tie against the shared hide (Royal Me).
 @media (max-width: 560px) {
-  .top.top > [data-slot='logo'],
-  .top.top > [data-slot='module'] {
+  header.top.top > [data-slot='logo'],
+  header.top.top > [data-slot='module'] {
     display: none;
   }
-  .top > [data-slot='burger'] {
+  header.top > [data-slot='burger'] {
     margin-inline-end: auto;
   }
 }
 
 @media (max-width: 980px) {
-  .top.top > [data-slot='role'] {
+  header.top.top > [data-slot='role'] {
     display: none;
   }
 }
