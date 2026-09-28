@@ -66,8 +66,8 @@ export class TimePickControl implements ControlValueAccessor {
     const step = Math.max(1, Math.min(30, this.minuteStep()));
     return Array.from({ length: Math.ceil(60 / step) }, (_, i) => pad2(i * step));
   });
-  protected readonly hour = computed(() => this.value()?.slice(0, 2) ?? null);
-  protected readonly minute = computed(() => this.value()?.slice(3, 5) ?? null);
+  protected readonly hour = computed(() => this.value()?.slice(0, 2) || null);
+  protected readonly minute = computed(() => this.value()?.slice(3, 5) || null);
 
   private readonly cal = viewChild<ElementRef<HTMLElement>>('cal');
   private openedFrom: HTMLElement | null = null;

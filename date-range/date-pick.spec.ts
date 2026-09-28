@@ -27,6 +27,9 @@ describe('DatePickControl', () => {
   const el = () => fixture.nativeElement as HTMLElement;
 
   beforeEach(async () => {
+    // The controls read the PAGE's direction when no module words are given; a
+    // spec elsewhere may have left it rtl (Royal Me, 28 Sep 2026). State it.
+    document.documentElement.dir = 'ltr';
     vi.useFakeTimers({ toFake: ['Date'] });
     // 22:30 UTC on 30 September: 01:30 on 1 October in Cairo (+03:00).
     vi.setSystemTime(new Date('2026-09-30T22:30:00Z'));
@@ -86,6 +89,12 @@ describe('DatePickControl', () => {
     expect([control.year(), control.month()]).toEqual([2028, 1]);
   });
 
+  it('an empty string is empty: the panel opens on today, not January 2016', () => {
+    fixture.componentRef.setInput('value', '');
+    control.openPanel();
+    expect([control.year(), control.month()]).toEqual([2026, 9]);
+  });
+
   it('offers years past today, for next year’s holidays', () => {
     expect(control.years()).toContain(2030);
   });
@@ -129,6 +138,9 @@ class Host {
 
 describe('DatePickControl in a reactive form', () => {
   it('reads the form value, writes a pick back, and follows disabled', async () => {
+    // The controls read the PAGE's direction when no module words are given; a
+    // spec elsewhere may have left it rtl (Royal Me, 28 Sep 2026). State it.
+    document.documentElement.dir = 'ltr';
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-30T22:30:00Z'));
     TestBed.resetTestingModule();

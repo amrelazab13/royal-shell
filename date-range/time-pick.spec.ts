@@ -30,6 +30,9 @@ describe('TimePickControl', () => {
   const el = () => fixture.nativeElement as HTMLElement;
 
   beforeEach(async () => {
+    // The controls read the PAGE's direction when no module words are given; a
+    // spec elsewhere may have left it rtl (Royal Me, 28 Sep 2026). State it.
+    document.documentElement.dir = 'ltr';
     vi.useFakeTimers({ toFake: ['Date'] });
     // 06:07 UTC is 09:07 in Cairo (+03:00).
     at('2026-09-28T06:07:00Z');
@@ -92,6 +95,9 @@ describe('DatePickControl withTime', () => {
   let control: DateTime;
 
   beforeEach(async () => {
+    // The controls read the PAGE's direction when no module words are given; a
+    // spec elsewhere may have left it rtl (Royal Me, 28 Sep 2026). State it.
+    document.documentElement.dir = 'ltr';
     vi.useFakeTimers({ toFake: ['Date'] });
     at('2026-09-28T06:07:00Z');
     TestBed.resetTestingModule();
@@ -172,6 +178,9 @@ describe('DatePickControl by month', () => {
   let control: Month;
 
   beforeEach(async () => {
+    // The controls read the PAGE's direction when no module words are given; a
+    // spec elsewhere may have left it rtl (Royal Me, 28 Sep 2026). State it.
+    document.documentElement.dir = 'ltr';
     vi.useFakeTimers({ toFake: ['Date'] });
     at('2026-09-30T22:30:00Z'); // 1 October in Cairo
     TestBed.resetTestingModule();

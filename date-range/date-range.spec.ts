@@ -22,6 +22,9 @@ describe('DateRangeControl', () => {
   const at = (iso: string) => vi.setSystemTime(new Date(iso));
 
   beforeEach(async () => {
+    // The controls read the PAGE's direction when no module words are given; a
+    // spec elsewhere may have left it rtl (Royal Me, 28 Sep 2026). State it.
+    document.documentElement.dir = 'ltr';
     vi.useFakeTimers({ toFake: ['Date'] });
     // 22:30 UTC on 30 September: 01:30 on 1 October in Cairo (+03:00).
     at('2026-09-30T22:30:00Z');
