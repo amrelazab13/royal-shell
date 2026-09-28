@@ -83,7 +83,7 @@
       </div>
 
       <div class="presets">
-        @for (preset of presets; track preset) {
+        @for (preset of presets(); track preset) {
           <button type="button" (click)="applyPreset(preset)">
             {{ i18n.t('cal.' + preset) }}
           </button>

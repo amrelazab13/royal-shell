@@ -52,6 +52,8 @@ export const CAL: Record<string, { en: string; ar: string }> = {
   'cal.lastMonth': { en: 'Last month', ar: 'الشهر الماضي' },
   'cal.thisYear': { en: 'This year', ar: 'هذه السنة' },
   'cal.all': { en: 'All time', ar: 'كل الفترات' },
+  'cal.next30': { en: 'Next 30 days', ar: 'الـ 30 يومًا القادمة' },
+  'cal.comingMonth': { en: 'Next month', ar: 'الشهر القادم' },
 };
 
 /** The module's word when it has one, the control's own otherwise. */
@@ -79,8 +81,10 @@ export function wordsFor(module: ShellWords | null): ShellWords {
 
 /** The presets, in the prototype's own order. */
 const PRESETS = ['today', 'last7', 'last30', 'thisMonth', 'lastMonth', 'thisYear', 'all'] as const;
+/** Added when the data looks forward (`[future]`): after the past ones. */
+const FORWARD = ['next30', 'comingMonth'] as const;
 
-type Preset = (typeof PRESETS)[number];
+type Preset = (typeof PRESETS)[number] | (typeof FORWARD)[number];
 
 /**
  * One date control for every Royal module — the CRM's, shared from
@@ -111,17 +115,26 @@ export class DateRangeControl {
   readonly changed = output<DateRange>();
   /** 'sheet' opens the panel as the phone's bottom sheet (see date-pick.ts). */
   readonly frame = input<'auto' | 'sheet'>('auto');
+  /**
+   * Days after today may be picked. OFF by default: a filter over things that
+   * happened has no tomorrow (the owner's rule, bible §4.8). ON where the data
+   * looks forward (HR, 28 Sep 2026: contracts ending, leave booked, seats
+   * wanted by a date), so the rule is stated at each call site, not assumed.
+   */
+  readonly future = input<boolean>(false);
 
   protected readonly open = signal(false);
   protected readonly picking = signal<'from' | 'to'>('from');
   protected readonly month = signal(Number(todayInCairo().slice(5, 7)) - 1);
   protected readonly year = signal(Number(todayInCairo().slice(0, 4)));
 
-  protected readonly presets = PRESETS;
+  protected readonly presets = computed<readonly Preset[]>(() =>
+    this.future() ? [...PRESETS, ...FORWARD] : PRESETS,
+  );
   /** From the year the legacy data starts to a year past today's — not a
    *  list that runs out in 2027. */
   protected readonly years = computed(() => {
-    const last = Number(this.today().slice(0, 4)) + 1;
+    const last = Number(this.today().slice(0, 4)) + (this.future() ? 5 : 1);
     return Array.from({ length: last - 2016 + 1 }, (_, i) => 2016 + i);
   });
 
@@ -294,6 +307,12 @@ export class DateRangeControl {
       }
       case 'thisYear':
         return { from: today.slice(0, 4) + '-01-01', to: today };
+      case 'next30':
+        return { from: today, to: shiftIsoDate(today, 29) };
+      case 'comingMonth': {
+        const nextStart = shiftIsoDate(monthEndOf(today), 1);
+        return { from: nextStart, to: monthEndOf(nextStart) };
+      }
       case 'all':
         // The one non-date value: clearing the range instead just falls back
         // to the server's this-month default, which is why "All time" used
@@ -309,10 +328,14 @@ export class DateRangeControl {
   /** No filter reaches past the day you are standing on — the owner's rule:
    *  tomorrow has no data, so offering it only manufactures empty screens. */
   protected isFuture(cell: Cell): boolean {
-    return cell.iso > this.today();
+    return !this.future() && cell.iso > this.today();
   }
 
   private emit(range: DateRange): void {
+    if (this.future()) {
+      this.changed.emit(range);
+      return;
+    }
     const today = this.today();
     if (range.from && range.from !== 'all' && range.from > today) {
       range = { ...range, from: today };

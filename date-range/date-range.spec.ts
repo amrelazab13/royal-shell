@@ -164,3 +164,48 @@ describe('DateRangeControl, in the module’s own words', () => {
     expect(el.querySelector('.pill.to')?.textContent).toContain('End Date');
   });
 });
+
+describe('DateRangeControl with [future]', () => {
+  interface Fwd {
+    applyPreset: (preset: string) => void;
+    isFuture: (cell: { iso: string }) => boolean;
+    presets: () => readonly string[];
+  }
+  let fixture: ComponentFixture<DateRangeControl>;
+  let emitted: DateRange[];
+
+  beforeEach(async () => {
+    document.documentElement.dir = 'ltr';
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-28T09:00:00Z'));
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [DateRangeControl],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    fixture = TestBed.createComponent(DateRangeControl);
+    fixture.componentRef.setInput('range', { from: null, to: null });
+    fixture.detectChanges();
+    emitted = [];
+    fixture.componentInstance.changed.subscribe((r) => emitted.push(r));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it('by default a filter has no tomorrow', () => {
+    const c = fixture.componentInstance as unknown as Fwd;
+    expect(c.isFuture({ iso: '2026-12-31' })).toBe(true);
+    expect(c.presets()).not.toContain('next30');
+  });
+
+  it('[future] lets a forward-looking filter reach December (contracts ending, leave booked)', () => {
+    fixture.componentRef.setInput('future', true);
+    const c = fixture.componentInstance as unknown as Fwd;
+    expect(c.isFuture({ iso: '2026-12-31' })).toBe(false);
+    expect(c.presets()).toContain('next30');
+    c.applyPreset('comingMonth');
+    expect(emitted.at(-1)).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+    c.applyPreset('next30');
+    expect(emitted.at(-1)).toEqual({ from: '2026-09-28', to: '2026-10-27' });
+  });
+});
