@@ -46,6 +46,28 @@ if (!existsSync(globalSheet)) {
 
 const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
+/**
+ * The global sheet without its `@media print` blocks. A print rule is not "the
+ * global value" of a class on SCREEN: a component setting `overflow` for the
+ * screen is not fighting a print-only `overflow: visible !important` (a false
+ * positive the CEO portal hit, 28 Sep 2026, F75). `rules()` reads innermost
+ * braces, so without this a rule inside `@media print {}` looked global.
+ */
+function withoutPrint(css) {
+  let out = '';
+  let i = 0;
+  const re = /@media\s+print\b[^{]*\{/g;
+  for (let m; (m = re.exec(css)); ) {
+    out += css.slice(i, m.index);
+    let depth = 1;
+    let j = re.lastIndex;
+    while (j < css.length && depth) depth += css[j] === '{' ? 1 : css[j] === '}' ? -1 : 0, j++;
+    i = re.lastIndex = j;
+  }
+  return out + css.slice(i);
+}
+const globalCss = withoutPrint(strip(readFileSync(globalSheet, 'utf8')));
+
 function rules(css) {
   return [...strip(css).matchAll(/([^@{}\n][^{}]*)\{([^{}]*)\}/g)].map(([, sel, body]) => ({
     sel: sel.trim(),
@@ -55,7 +77,7 @@ function rules(css) {
 
 /** Classes the global sheet styles with nothing else in the selector. */
 const globals = new Map();
-for (const { sel, props } of rules(readFileSync(globalSheet, 'utf8'))) {
+for (const { sel, props } of rules(globalCss)) {
   for (const part of sel.split(',')) {
     const bare = part.trim().match(/^\.([A-Za-z][\w-]*)$/);
     if (!bare) continue;
@@ -87,7 +109,7 @@ for (const { sel, props } of rules(readFileSync(globalSheet, 'utf8'))) {
 const variantOnly = new Set();
 {
   const variants = new Map(); // base -> the distinct modifier sets seen on it
-  for (const { sel } of rules(readFileSync(globalSheet, 'utf8'))) {
+  for (const { sel } of rules(globalCss)) {
     for (const part of sel.split(',')) {
       const compound =
         part
