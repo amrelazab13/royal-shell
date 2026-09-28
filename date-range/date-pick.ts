@@ -69,6 +69,15 @@ export function nowInCairo(): string {
  * leave that starts next week), so nothing is refused by default; `min` and
  * `max` fence it where a form needs a fence.
  *
+ * Wire the module's words (`provideShellWords(I18nService)`): without them the
+ * control reads the page's `dir`, which is only right by accident in an app
+ * that picks its language itself (Mobile CRM, 28 Sep 2026). Nothing fails when
+ * it is missing; it quietly reads the wrong thing.
+ *
+ * Converting a native field: a component emits no native `(change)` and has no
+ * `$event.target.value`. Bind `(valueChange)` or a form control instead, or
+ * whatever listened to the old field silently stops hearing it.
+ *
  * Use it either way:
  *   <app-date-pick [(value)]="startsOn" />
  *   <app-date-pick formControlName="startsOn" />

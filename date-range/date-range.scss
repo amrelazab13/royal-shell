@@ -431,6 +431,12 @@
   min-inline-size: 260px;
 }
 
+/* TRAP (Mobile CRM, 28 Sep 2026): while a HOST sheet's rise animation runs, it
+   carries a live transform, and a transformed box is the containing block for
+   every position:fixed descendant. A picker opened inside such a sheet during
+   those ~220ms lands below the screen. Hosts: animate with `backwards` fill,
+   never `both`, and do not open a picker from inside a sheet before it has
+   settled. The same trap as the phone's .m-main > * note. */
 /* ── frame="sheet": the phone's bottom sheet, value for value with its .m-sheet
    (Mobile CRM, 28 Sep 2026): top corners only, 88dvh (not vh, which runs under
    iOS's browser chrome), the home-indicator inset, a slide not a fade, and
