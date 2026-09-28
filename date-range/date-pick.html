@@ -8,7 +8,7 @@
       type="button"
       [class.set]="!!value()"
       [class.live]="open()"
-      [disabled]="disabled()"
+      [disabled]="isDisabled()"
       [attr.aria-label]="label() || emptyWords()"
       [attr.aria-haspopup]="'dialog'"
       [attr.aria-expanded]="open()"
@@ -142,7 +142,7 @@
               class="day"
               type="button"
               [class.out]="cell.outside"
-              [class.edge]="cell.iso === datePart()"
+              [class.edge]="cell.iso === markedDate()"
               [class.today]="cell.iso === today()"
               [class.dead]="isDead(cell)"
               [disabled]="isDead(cell)"
@@ -162,8 +162,8 @@
                 type="button"
                 role="option"
                 class="tbtn"
-                [class.edge]="timePart()?.slice(0, 2) === h"
-                [attr.aria-selected]="timePart()?.slice(0, 2) === h"
+                [class.edge]="draftHour() === h"
+                [attr.aria-selected]="draftHour() === h"
                 (click)="setTime('h', h)"
               >
                 {{ h }}
@@ -176,8 +176,8 @@
                 type="button"
                 role="option"
                 class="tbtn"
-                [class.edge]="timePart()?.slice(3, 5) === m"
-                [attr.aria-selected]="timePart()?.slice(3, 5) === m"
+                [class.edge]="draftMinute() === m"
+                [attr.aria-selected]="draftMinute() === m"
                 (click)="setTime('m', m)"
               >
                 {{ m }}
@@ -189,12 +189,12 @@
 
       <div class="calfoot">
         <span class="rng">
-          <bdi dir="ltr">{{ value() ? shown(value()!) : i18n.t('cal.noDate') }}</bdi>
+          <bdi dir="ltr">{{ draftShown() ?? i18n.t('cal.noDate') }}</bdi>
         </span>
         @if (clearable()) {
           <button class="btn sec" type="button" (click)="clear()">{{ i18n.t('cal.clear') }}</button>
         }
-        <button class="btn pri" type="button" (click)="close()">{{ i18n.t('cal.done') }}</button>
+        <button class="btn pri" type="button" (click)="done()">{{ i18n.t('cal.done') }}</button>
       </div>
     </div>
   }

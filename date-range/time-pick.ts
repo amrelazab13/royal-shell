@@ -58,16 +58,29 @@ export class TimePickControl implements ControlValueAccessor {
   readonly clearable = input<boolean>(true);
   readonly label = input<string>('');
   readonly frame = input<PanelFrame>('auto');
+  /** For `[(value)]` use; a form control disables it through the form instead. */
+  readonly disabled = input<boolean>(false);
 
-  protected readonly disabled = signal(false);
+  private readonly formDisabled = signal(false);
+  protected readonly isDisabled = computed(() => this.disabled() || this.formDisabled());
   protected readonly open = signal(false);
   protected readonly hours = Array.from({ length: 24 }, (_, i) => pad2(i));
   protected readonly minutes = computed(() => {
     const step = Math.max(1, Math.min(30, this.minuteStep()));
     return Array.from({ length: Math.ceil(60 / step) }, (_, i) => pad2(i * step));
   });
-  protected readonly hour = computed(() => this.value()?.slice(0, 2) || null);
-  protected readonly minute = computed(() => this.value()?.slice(3, 5) || null);
+  /**
+   * What the panel shows while it is open. Nothing leaves the control until the
+   * time is complete: an hour alone never emits, because a module that saves on
+   * change would store 09:00 on the way to 09:40 (HR, 28 Sep 2026: the
+   * attendance roll POSTs on change, so every correction wrote a wrong row
+   * first). One emit per opening, at most.
+   */
+  private readonly draftH = signal<string | null>(null);
+  private readonly draftM = signal<string | null>(null);
+  private minuteChosen = false;
+  protected readonly hour = computed(() => this.draftH());
+  protected readonly minute = computed(() => this.draftM());
 
   private readonly cal = viewChild<ElementRef<HTMLElement>>('cal');
   private openedFrom: HTMLElement | null = null;
@@ -93,7 +106,10 @@ export class TimePickControl implements ControlValueAccessor {
   }
 
   protected openPanel(): void {
-    if (this.disabled()) return;
+    if (this.isDisabled()) return;
+    this.draftH.set(this.value()?.slice(0, 2) || null);
+    this.draftM.set(this.value()?.slice(3, 5) || null);
+    this.minuteChosen = false;
     this.open.set(true);
     this.openedFrom = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setTimeout(() => this.cal()?.nativeElement.focus());
@@ -107,11 +123,33 @@ export class TimePickControl implements ControlValueAccessor {
     if (opener?.isConnected) opener.focus();
   }
 
+  /** An hour or a minute into the draft; the minute, once there is an hour,
+   *  completes the time and commits it. */
   protected setPart(part: 'h' | 'm', to: string): void {
     if (part === 'h' ? this.hourDead(to) : this.minuteDead(to)) return;
-    const h = part === 'h' ? to : (this.hour() ?? '09');
-    const m = part === 'm' ? to : (this.minute() ?? '00');
-    this.set(`${h}:${m}`);
+    if (part === 'h') {
+      this.draftH.set(to);
+      if (this.minuteChosen && this.draftM()) this.commit();
+      return;
+    }
+    this.draftM.set(to);
+    this.minuteChosen = true;
+    if (this.draftH()) this.commit();
+  }
+
+  /** Done: keep the draft if it is a whole time. */
+  protected done(): void {
+    if (this.draftH() && this.draftM()) {
+      this.commit();
+      return;
+    }
+    this.close();
+  }
+
+  private commit(): void {
+    const next = `${this.draftH()}:${this.draftM()}`;
+    if (next !== this.value()) this.set(next);
+    this.close();
   }
 
   protected pickNow(): void {
@@ -144,6 +182,6 @@ export class TimePickControl implements ControlValueAccessor {
     this.onTouched = fn;
   }
   setDisabledState(disabled: boolean): void {
-    this.disabled.set(disabled);
+    this.formDisabled.set(disabled);
   }
 }

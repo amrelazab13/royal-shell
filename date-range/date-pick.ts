@@ -140,7 +140,33 @@ export class DatePickControl implements ControlValueAccessor {
   });
   protected readonly timePart = computed(() => this.value()?.slice(11, 16) || null);
 
-  protected readonly disabled = signal(false);
+  /** For `[(value)]` use; a form control disables it through the form instead
+   *  (the CRM, 28 Sep 2026: a view-only role sees the value and cannot open it). */
+  readonly disabled = input<boolean>(false);
+  private readonly formDisabled = signal(false);
+  protected readonly isDisabled = computed(() => this.disabled() || this.formDisabled());
+
+  /**
+   * With a time, nothing leaves the control until date, hour and minute are all
+   * there: a module saving on change must never store a half-chosen instant
+   * (HR, 28 Sep 2026). The panel works on this draft; one emit per opening.
+   */
+  private readonly draftDate = signal<string | null>(null);
+  private readonly draftH = signal<string | null>(null);
+  private readonly draftM = signal<string | null>(null);
+  private minuteChosen = false;
+  /** The day the grid marks: the draft while choosing an instant. */
+  protected readonly markedDate = computed(() =>
+    this.withTime() ? this.draftDate() : this.datePart(),
+  );
+  protected readonly draftHour = computed(() => this.draftH());
+  protected readonly draftMinute = computed(() => this.draftM());
+  protected readonly draftShown = computed(() => {
+    if (!this.withTime()) return this.value() ? this.shown(this.value()!) : null;
+    const d = this.draftDate();
+    if (!d) return null;
+    return this.shown(`${d}T${this.draftH() ?? '--'}:${this.draftM() ?? '--'}`);
+  });
   protected readonly open = signal(false);
   protected readonly month = signal(Number(todayInCairo().slice(5, 7)) - 1);
   protected readonly year = signal(Number(todayInCairo().slice(0, 4)));
@@ -252,7 +278,11 @@ export class DatePickControl implements ControlValueAccessor {
   }
 
   protected openPanel(): void {
-    if (this.disabled()) return;
+    if (this.isDisabled()) return;
+    this.draftDate.set(this.withTime() ? this.datePart() : null);
+    this.draftH.set(this.timePart()?.slice(0, 2) || null);
+    this.draftM.set(this.timePart()?.slice(3, 5) || null);
+    this.minuteChosen = false;
     this.today.set(todayInCairo());
     const anchor = this.datePart() ?? this.fenced(this.today());
     const date = new Date(anchor + 'T00:00:00Z');
@@ -293,19 +323,47 @@ export class DatePickControl implements ControlValueAccessor {
   protected pick(cell: Cell): void {
     if (this.isDead(cell)) return;
     if (this.withTime()) {
-      // Keep the panel open: the time is still to choose.
-      this.set(`${cell.iso}T${this.timePart() ?? '09:00'}`);
+      // The day goes into the draft; the panel stays open for the time.
+      this.draftDate.set(cell.iso);
+      if (this.minuteChosen) this.commitInstant();
       return;
     }
     this.set(cell.iso);
     this.close();
   }
 
-  /** An hour or a minute, in datetime mode; the date defaults to today. */
+  /** An hour or a minute into the draft; the minute completes the instant once
+   *  there is a day and an hour. */
   protected setTime(part: 'h' | 'm', to: string): void {
-    const date = this.datePart() ?? this.fenced(todayInCairo());
-    const [h, m] = (this.timePart() ?? '09:00').split(':');
-    this.set(`${date}T${part === 'h' ? to : h}:${part === 'm' ? to : m}`);
+    if (part === 'h') {
+      this.draftH.set(to);
+      if (this.minuteChosen) this.commitInstant();
+      return;
+    }
+    this.draftM.set(to);
+    this.minuteChosen = true;
+    this.commitInstant();
+  }
+
+  /** Done: keep the draft if it is a whole instant; otherwise just close. */
+  protected done(): void {
+    if (this.withTime()) {
+      if (!this.commitInstant()) this.close();
+      return;
+    }
+    this.close();
+  }
+
+  /** Emits and closes when the draft is a whole instant; says whether it did. */
+  private commitInstant(): boolean {
+    const d = this.draftDate();
+    const h = this.draftH();
+    const m = this.draftM();
+    if (!d || !h || !m) return false;
+    const next = `${d}T${h}:${m}`;
+    if (next !== this.value()) this.set(next);
+    this.close();
+    return true;
   }
 
   /** Today, unless today is outside the fence; then nothing happens. */
@@ -353,6 +411,6 @@ export class DatePickControl implements ControlValueAccessor {
     this.onTouched = fn;
   }
   setDisabledState(disabled: boolean): void {
-    this.disabled.set(disabled);
+    this.formDisabled.set(disabled);
   }
 }

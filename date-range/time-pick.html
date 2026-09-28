@@ -6,7 +6,7 @@
       type="button"
       [class.set]="!!value()"
       [class.live]="open()"
-      [disabled]="disabled()"
+      [disabled]="isDisabled()"
       [attr.aria-label]="label() || emptyWords()"
       [attr.aria-haspopup]="'dialog'"
       [attr.aria-expanded]="open()"
@@ -87,12 +87,14 @@
 
       <div class="calfoot">
         <span class="rng">
-          <bdi dir="ltr">{{ value() || i18n.t('cal.noTime') }}</bdi>
+          <bdi dir="ltr">{{
+            hour() || minute() ? (hour() ?? '--') + ':' + (minute() ?? '--') : i18n.t('cal.noTime')
+          }}</bdi>
         </span>
         @if (clearable()) {
           <button class="btn sec" type="button" (click)="clear()">{{ i18n.t('cal.clear') }}</button>
         }
-        <button class="btn pri" type="button" (click)="close()">{{ i18n.t('cal.done') }}</button>
+        <button class="btn pri" type="button" (click)="done()">{{ i18n.t('cal.done') }}</button>
       </div>
     </div>
   }

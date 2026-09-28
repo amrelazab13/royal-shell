@@ -33,15 +33,26 @@ if (!existsSync(src)) {
 }
 
 /**
- * A module's deliberate exceptions live in ITS OWN file, `native-date-allow.json`
- * beside `src` (a module never edits this shared tool): `{ "path/in/src": "why" }`.
- * Every entry needs a reason a reader can judge, and an entry whose file no
- * longer carries a native picker fails the run, so an exemption cannot outlive
- * its cause.
+ * A module's deliberate exceptions live in ITS OWN file (a module never edits
+ * this shared tool): `native-date-allow.json` in the folder that HOLDS `src`
+ * (for a frontend at `frontend/src`, that is `frontend/native-date-allow.json`),
+ * shaped `{ "path/in/src#type": "why, and what ends it" }`, e.g.
+ * `"app/features/attendance/attendance.html#time": "…"`.
+ *
+ * An entry names ONE type in ONE file (HR, 28 Sep 2026: a whole-file entry
+ * would silently exempt a native DATE added to that file later). Every entry
+ * needs a reason a reader can judge, and an entry with nothing left to allow
+ * fails the run, so an exemption cannot outlive its cause.
  */
 const allowFile = resolve(src, '..', 'native-date-allow.json');
 const ALLOWED = existsSync(allowFile) ? JSON.parse(readFileSync(allowFile, 'utf8')) : {};
 for (const [path, why] of Object.entries(ALLOWED)) {
+  if (!/#(date|time|datetime-local|month|week)$/.test(path)) {
+    console.error(
+      `native-date-check: the allowance "${path}" must name one type: "${path}#time" (or #date, #datetime-local, #month, #week).`,
+    );
+    process.exit(2);
+  }
   if (typeof why !== 'string' || why.trim().length < 20) {
     console.error(
       `native-date-check: the allowance for ${path} needs a real reason (20+ characters).`,
@@ -89,8 +100,9 @@ for (const file of files) {
   const rel = relative(src, file);
   const text = stripComments(readFileSync(file, 'utf8'), file.endsWith('.ts'));
   for (const match of text.matchAll(NATIVE)) {
-    if (ALLOWED[rel]) {
-      allowedUsed.add(rel);
+    const key = `${rel}#${match[1].toLowerCase()}`;
+    if (ALLOWED[key]) {
+      allowedUsed.add(key);
       continue;
     }
     const line = text.slice(0, match.index).split('\n').length;

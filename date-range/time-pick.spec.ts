@@ -5,6 +5,8 @@ import { DatePickControl } from './date-pick';
 import { TimePickControl } from './time-pick';
 
 interface Time {
+  openPanel: () => void;
+  done: () => void;
   setPart: (part: 'h' | 'm', to: string) => void;
   pickNow: () => void;
   clear: () => void;
@@ -15,6 +17,8 @@ interface Time {
 }
 
 interface DateTime {
+  openPanel: () => void;
+  done: () => void;
   pick: (cell: { iso: string; day: number; outside: boolean }) => void;
   setTime: (part: 'h' | 'm', to: string) => void;
   pickToday: () => void;
@@ -53,11 +57,35 @@ describe('TimePickControl', () => {
     expect(el().querySelector('button.pill.time')).not.toBeNull();
   });
 
-  it('builds HH:MM from an hour and a minute, 24-hour', () => {
+  it('builds HH:MM from an hour and a minute, 24-hour, and emits ONCE', () => {
+    const seen: (string | null)[] = [];
+    fixture.componentInstance.value.subscribe((v) => seen.push(v));
+    control.openPanel();
     control.setPart('h', '17');
-    expect(control.value()).toBe('17:00');
+    expect(control.value()).toBeNull(); // an hour alone never leaves the control
     control.setPart('m', '45');
     expect(control.value()).toBe('17:45');
+    expect(seen).toEqual(['17:45']); // never 17:00 on the way (HR's attendance roll)
+  });
+
+  it('changing only the hour of a set time waits for Done', () => {
+    fixture.componentRef.setInput('value', '09:40');
+    control.openPanel();
+    control.setPart('h', '10');
+    expect(control.value()).toBe('09:40');
+    control.done();
+    expect(control.value()).toBe('10:40');
+  });
+
+  it('[disabled] refuses to open, without a form', async () => {
+    fixture.componentRef.setInput('value', '08:00');
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const b = el().querySelector('button.pill') as HTMLButtonElement;
+    expect(b.disabled).toBe(true);
+    control.openPanel();
+    expect((fixture.componentInstance as unknown as { open: () => boolean }).open()).toBe(false);
   });
 
   it("Now is Cairo's clock, not the browser's", () => {
@@ -76,6 +104,7 @@ describe('TimePickControl', () => {
     expect(control.hourDead('07')).toBe(true);
     expect(control.hourDead('08')).toBe(false);
     expect(control.hourDead('18')).toBe(true);
+    control.openPanel();
     control.setPart('h', '18');
     expect(control.value()).toBeNull();
     control.setPart('h', '08');
@@ -84,7 +113,7 @@ describe('TimePickControl', () => {
   });
 
   it('Clear empties it', () => {
-    control.setPart('h', '10');
+    fixture.componentRef.setInput('value', '10:00');
     control.clear();
     expect(control.value()).toBeNull();
   });
@@ -113,13 +142,24 @@ describe('DatePickControl withTime', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  it('one instant: the date keeps its time, and the time keeps its date', () => {
+  it('one instant, emitted ONCE: day, hour and minute before anything leaves', () => {
+    const seen: (string | null)[] = [];
+    fixture.componentInstance.value.subscribe((v) => seen.push(v));
+    control.openPanel();
     control.pick({ iso: '2026-10-06', day: 6, outside: false });
-    expect(control.value()).toBe('2026-10-06T09:00');
     control.setTime('h', '14');
+    expect(control.value()).toBeNull();
     control.setTime('m', '30');
     expect(control.value()).toBe('2026-10-06T14:30');
+    expect(seen).toEqual(['2026-10-06T14:30']);
+  });
+
+  it('moving only the day keeps the time, on Done', () => {
+    fixture.componentRef.setInput('value', '2026-10-06T14:30');
+    control.openPanel();
     control.pick({ iso: '2026-10-08', day: 8, outside: false });
+    expect(control.value()).toBe('2026-10-06T14:30');
+    control.done();
     expect(control.value()).toBe('2026-10-08T14:30');
   });
 
@@ -161,7 +201,11 @@ describe('time controls in a reactive form', () => {
     const [timeEl, atEl] = host.debugElement.children;
     expect((timeEl.componentInstance as Time).value()).toBe('08:30');
     expect((atEl.componentInstance as DateTime).value()).toBe('2026-10-06T14:30');
-    (timeEl.componentInstance as Time).setPart('h', '09');
+    const t = timeEl.componentInstance as Time;
+    t.openPanel();
+    t.setPart('h', '09');
+    expect(host.componentInstance.time.value).toBe('08:30:00'); // nothing yet
+    t.done();
     expect(host.componentInstance.time.value).toBe('09:30');
   });
 });
