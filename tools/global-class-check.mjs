@@ -165,6 +165,36 @@ for (const [file, css] of files) {
   }
 }
 
+/**
+ * A page-level condition written in a COMPONENT sheet (F65, Royal Me, 28 Sep
+ * 2026). `[dir='rtl'] .go` in a component compiles to
+ * `[dir='rtl'][_ngcontent-x] .go[_ngcontent-x]`: it asks for `dir` on an
+ * element INSIDE the component, and `dir` is on `<html>`, so it never
+ * matches. It reads as normal, a build passes, and an arrow points the wrong
+ * way on every Arabic screen. The component form is
+ * `:host-context(html[dir='rtl']) .go`, which compiles to
+ * `html[dir=rtl] [_nghost-x] .go[_ngcontent-x]` and does match.
+ */
+const pageCondition = [];
+for (const [file, css] of files) {
+  for (const { sel } of rules(css)) {
+    for (const part of sel.split(',')) {
+      const p = part.trim();
+      if (/^(html|body|:root)?\[(dir|lang)\b/.test(p)) {
+        pageCondition.push(
+          `${relative(process.cwd(), file)}: \`${p}\` can never match in a component ` +
+            `sheet. Write \`:host-context(html[dir='rtl']) …\` (or [lang='ar']) instead.`,
+        );
+      }
+    }
+  }
+}
+if (pageCondition.length) {
+  console.error('A page condition in a component sheet (it never matches):\n');
+  for (const line of pageCondition) console.error('  ' + line);
+  process.exit(1);
+}
+
 /** A component holding the base of a class the global sheet only varies. */
 const owned = [];
 for (const [file, css] of files) {

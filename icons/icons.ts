@@ -237,6 +237,27 @@ import { Component, input } from '@angular/core';
         <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
         <circle cx="12" cy="12" r="3" />
       </symbol>
+      <!-- One symbol per module, for the cards on Royal Me's home and anywhere a
+           module is named by its mark (Royal Me asked, 28 Sep 2026: every module
+           drawing those cards would otherwise invent its own mapping). -->
+      <symbol id="i-mod-crm" viewBox="0 0 24 24">
+        <path d="M3 5h18l-7 8.5V19l-4 2v-7.5z" />
+      </symbol>
+      <symbol id="i-mod-portal" viewBox="0 0 24 24">
+        <path d="M4 17a8 8 0 1116 0M12 17l4.5-5M3 20h18" />
+      </symbol>
+      <symbol id="i-mod-hr" viewBox="0 0 24 24">
+        <path d="M3 5h18v14H3zM7 15.5c.4-1.6 1.4-2.5 2.5-2.5s2.1.9 2.5 2.5M14.5 9.5h4M14.5 13h3" />
+        <circle cx="9.5" cy="10" r="1.8" />
+      </symbol>
+      <symbol id="i-mod-salesops" viewBox="0 0 24 24">
+        <path d="M4 21V4h9v17M13 9h7v12M7 8h3M7 12h3M7 16h3M16 13h1.5M16 17h1.5M2 21h20" />
+      </symbol>
+      <symbol id="i-mod-me" viewBox="0 0 24 24">
+        <path
+          d="M12 11a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 3.6-6 8-6 1.3 0 2.5.2 3.6.6M15 19l2 2 4-4"
+        />
+      </symbol>
       <symbol id="i-refresh" viewBox="0 0 24 24">
         <path d="M20 11A8 8 0 006.3 5.3L4 8M4 3v5h5M4 13a8 8 0 0013.7 5.7L20 16M20 21v-5h-5" />
       </symbol>
@@ -265,7 +286,12 @@ export class IconSprite {}
  */
 @Component({
   selector: 'app-icon',
-  template: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  template: `<svg
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+    [class.mirror]="mirror()"
+  >
     <use [attr.href]="'#i-' + name()" />
   </svg>`,
   styles: `
@@ -282,8 +308,16 @@ export class IconSprite {}
       stroke-linecap: round;
       stroke-linejoin: round;
     }
+    /* An arrow that points "onward" turns round under Arabic. Written with
+       :host-context, which compiles to html[dir=rtl] [_nghost] svg and so
+       matches; a bare [dir='rtl'] here never would (F65). */
+    :host-context(html[dir='rtl']) svg.mirror {
+      transform: scaleX(-1);
+    }
   `,
 })
 export class Icon {
   readonly name = input.required<string>();
+  /** Mirror under right-to-left, for icons that point a way (back, onward, exit). */
+  readonly mirror = input(false);
 }
