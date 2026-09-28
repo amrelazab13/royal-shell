@@ -207,7 +207,7 @@ async function countReal(path, { arabic = false } = {}) {
     for (const m of text.matchAll(EMAIL)) {
       if (TEST_DOMAINS.test(m[1]) || MACHINE_DOMAINS.test(m[1])) continue;
       // A company address is counted ONCE, as a company address. Counted as
-      // both, a single `ops@royaldev.com` reached the "two is a list"
+      // both, a single company address (one mailbox at the company's domain) reached the "two is a list"
       // threshold on its own and turned every README into a finding.
       if (COMPANY.test('@' + m[1])) continue;
       found.emails += 1;
