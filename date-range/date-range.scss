@@ -216,7 +216,7 @@
 
   /* Dimmed, so the sheet reads as the thing being answered. */
   .calscrim {
-    background: color-mix(in srgb, #000 48%, transparent);
+    background: var(--scrim);
   }
 }
 
@@ -380,4 +380,105 @@
 .pill:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ── the hour and minute columns (app-time-pick, and app-date-pick withTime) ── */
+.timecols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-block: 4px 10px;
+}
+
+.tcol {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  max-block-size: 168px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--rs);
+}
+
+.tbtn {
+  block-size: 30px;
+  border-radius: var(--rs);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  transition: all var(--fast);
+
+  &:hover {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+
+  &.edge {
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+  }
+
+  &.dead {
+    opacity: 0.28;
+    cursor: not-allowed;
+  }
+}
+
+.timecal {
+  min-inline-size: 260px;
+}
+
+/* ── frame="sheet": the phone's bottom sheet, value for value with its .m-sheet
+   (Mobile CRM, 28 Sep 2026): top corners only, 88dvh (not vh, which runs under
+   iOS's browser chrome), the home-indicator inset, a slide not a fade, and
+   overscroll contained so a flick on the sheet does not scroll the list behind
+   it. Scrim under (60), sheet over (61), the phone's own numbers. */
+.calscrim.sheet {
+  z-index: 60;
+  background: var(--scrim);
+  animation: cal-fade 0.16s ease-out;
+}
+
+.cal.open.sheet {
+  position: fixed;
+  inset-inline: 0;
+  inset-block: auto 0;
+  top: auto;
+  left: 0;
+  transform: none;
+  z-index: 61;
+  min-inline-size: 0;
+  inline-size: auto;
+  max-block-size: 88dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 16px calc(14px + var(--safe-b, env(safe-area-inset-bottom, 0px)));
+  border-radius: 16px 16px 0 0;
+  border: 0;
+  border-block-start: 1px solid var(--line);
+  box-shadow: var(--sh-pop);
+  animation: cal-rise 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.grip {
+  inline-size: 36px;
+  block-size: 4px;
+  margin: 8px auto 10px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+@keyframes cal-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes cal-fade {
+  from {
+    opacity: 0;
+  }
 }

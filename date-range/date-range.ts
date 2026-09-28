@@ -109,6 +109,8 @@ export class DateRangeControl {
 
   readonly range = input.required<DateRange>();
   readonly changed = output<DateRange>();
+  /** 'sheet' opens the panel as the phone's bottom sheet (see date-pick.ts). */
+  readonly frame = input<'auto' | 'sheet'>('auto');
 
   protected readonly open = signal(false);
   protected readonly picking = signal<'from' | 'to'>('from');

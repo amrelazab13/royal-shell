@@ -1,0 +1,99 @@
+<div class="datewrap">
+  <div class="dfield" [class.on]="!!value()">
+    <span class="calmark" aria-hidden="true"><app-icon name="clock" /></span>
+    <button
+      class="pill single time"
+      type="button"
+      [class.set]="!!value()"
+      [class.live]="open()"
+      [disabled]="disabled()"
+      [attr.aria-label]="label() || emptyWords()"
+      [attr.aria-haspopup]="'dialog'"
+      [attr.aria-expanded]="open()"
+      (click)="openPanel()"
+    >
+      <span class="ptxt">
+        @if (value(); as picked) {
+          <bdi dir="ltr">{{ picked }}</bdi>
+        } @else {
+          {{ emptyWords() }}
+        }
+      </span>
+      <span class="chev"><app-icon name="chev" /></span>
+    </button>
+  </div>
+
+  @if (open()) {
+    <div class="calscrim" [class.sheet]="frame() === 'sheet'" (pointerdown)="close()"></div>
+    <div
+      #cal
+      class="cal open timecal"
+      [class.sheet]="frame() === 'sheet'"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="label() || emptyWords()"
+      tabindex="-1"
+      (keydown.escape)="close()"
+    >
+      @if (frame() === 'sheet') {
+        <div class="grip" aria-hidden="true"></div>
+      }
+      <div class="calhead">
+        {{ label() || emptyWords() }}
+        <button class="x" type="button" [attr.aria-label]="i18n.t('cal.close')" (click)="close()">
+          <app-icon name="x" />
+        </button>
+      </div>
+
+      <div class="presets">
+        <button type="button" (click)="pickNow()">{{ i18n.t('cal.now') }}</button>
+      </div>
+
+      <!-- A clock reads left to right in both languages: hours, then minutes. -->
+      <div class="timecols" dir="ltr">
+        <div class="tcol" role="listbox" [attr.aria-label]="i18n.t('cal.hour')">
+          @for (h of hours; track h) {
+            <button
+              type="button"
+              role="option"
+              class="tbtn"
+              [class.edge]="hour() === h"
+              [class.dead]="hourDead(h)"
+              [disabled]="hourDead(h)"
+              [attr.aria-selected]="hour() === h"
+              (click)="setPart('h', h)"
+            >
+              {{ h }}
+            </button>
+          }
+        </div>
+        <div class="tcol" role="listbox" [attr.aria-label]="i18n.t('cal.minute')">
+          @for (m of minutes(); track m) {
+            <button
+              type="button"
+              role="option"
+              class="tbtn"
+              [class.edge]="minute() === m"
+              [class.dead]="minuteDead(m)"
+              [disabled]="minuteDead(m)"
+              [attr.aria-selected]="minute() === m"
+              (click)="setPart('m', m)"
+            >
+              {{ m }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="calfoot">
+        <span class="rng">
+          <bdi dir="ltr">{{ value() || i18n.t('cal.noTime') }}</bdi>
+        </span>
+        @if (clearable()) {
+          <button class="btn sec" type="button" (click)="clear()">{{ i18n.t('cal.clear') }}</button>
+        }
+        <button class="btn pri" type="button" (click)="close()">{{ i18n.t('cal.done') }}</button>
+      </div>
+    </div>
+  }
+</div>

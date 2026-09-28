@@ -24,6 +24,10 @@ Only the parts that are genuinely the same everywhere:
   fences, future dates allowed. No native `<input type="date">` anywhere a
   person sees it (bible §8 C-5, 28 Sep 2026); `tools/native-date-check.mjs` is
   the gate.
+  `[withTime]="true"` makes it one instant (`YYYY-MM-DDTHH:MM`, Cairo, what a
+  datetime-local held); `date-range/time-pick.ts` (`<app-time-pick>`) is a time
+  of day (`HH:MM`, what a time field held). All three take `frame="sheet"` for
+  the phone's bottom sheet. Tokens `--scrim` and `--safe-t/r/b/l` are shared.
 - `dates/dates.ts` — Cairo time for everything a module sends: `todayInCairo`,
   `shiftIsoDate`, `monthEndOf`, `toCairoIso` and the rest. Never
   `toISOString().slice(0, 10)` for "today".

@@ -9,7 +9,7 @@
       [class.set]="!!value()"
       [class.live]="open()"
       [disabled]="disabled()"
-      [attr.aria-label]="label() || i18n.t('cal.pickDate')"
+      [attr.aria-label]="label() || emptyWords()"
       [attr.aria-haspopup]="'dialog'"
       [attr.aria-expanded]="open()"
       (click)="openPanel()"
@@ -18,7 +18,7 @@
         @if (value(); as picked) {
           <bdi dir="ltr">{{ shown(picked) }}</bdi>
         } @else {
-          {{ placeholder() || i18n.t('cal.pickDate') }}
+          {{ emptyWords() }}
         }
       </span>
       <span class="chev"><app-icon name="chev" /></span>
@@ -26,25 +26,31 @@
   </div>
 
   @if (open()) {
-    <div class="calscrim" (pointerdown)="close()"></div>
+    <div class="calscrim" [class.sheet]="frame() === 'sheet'" (pointerdown)="close()"></div>
     <div
       #cal
       class="cal open"
+      [class.sheet]="frame() === 'sheet'"
       role="dialog"
       aria-modal="true"
-      [attr.aria-label]="label() || i18n.t('cal.pickDate')"
+      [attr.aria-label]="label() || emptyWords()"
       tabindex="-1"
       (keydown.escape)="close()"
     >
+      @if (frame() === 'sheet') {
+        <div class="grip" aria-hidden="true"></div>
+      }
       <div class="calhead">
-        {{ label() || i18n.t('cal.pickDate') }}
+        {{ label() || emptyWords() }}
         <button class="x" type="button" [attr.aria-label]="i18n.t('cal.close')" (click)="close()">
           <app-icon name="x" />
         </button>
       </div>
 
       <div class="presets">
-        <button type="button" (click)="pickToday()">{{ i18n.t('cal.today') }}</button>
+        <button type="button" (click)="pickToday()">
+          {{ i18n.t(withTime() ? 'cal.now' : 'cal.today') }}
+        </button>
       </div>
 
       <div class="navrow">
@@ -92,7 +98,7 @@
             class="day"
             type="button"
             [class.out]="cell.outside"
-            [class.edge]="cell.iso === value()"
+            [class.edge]="cell.iso === datePart()"
             [class.today]="cell.iso === today()"
             [class.dead]="isDead(cell)"
             [disabled]="isDead(cell)"
@@ -102,6 +108,39 @@
           </button>
         }
       </div>
+
+      @if (withTime()) {
+        <div class="timecols">
+          <div class="tcol" role="listbox" [attr.aria-label]="i18n.t('cal.hour')">
+            @for (h of hours; track h) {
+              <button
+                type="button"
+                role="option"
+                class="tbtn"
+                [class.edge]="timePart()?.slice(0, 2) === h"
+                [attr.aria-selected]="timePart()?.slice(0, 2) === h"
+                (click)="setTime('h', h)"
+              >
+                {{ h }}
+              </button>
+            }
+          </div>
+          <div class="tcol" role="listbox" [attr.aria-label]="i18n.t('cal.minute')">
+            @for (m of minutes(); track m) {
+              <button
+                type="button"
+                role="option"
+                class="tbtn"
+                [class.edge]="timePart()?.slice(3, 5) === m"
+                [attr.aria-selected]="timePart()?.slice(3, 5) === m"
+                (click)="setTime('m', m)"
+              >
+                {{ m }}
+              </button>
+            }
+          </div>
+        </div>
+      }
 
       <div class="calfoot">
         <span class="rng">

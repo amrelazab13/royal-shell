@@ -54,7 +54,7 @@
          to close, and the screen stayed dead until the page was reloaded.
          Closing on the first touch means a stray scroll costs one gesture
          instead of the whole screen. -->
-    <div class="calscrim" (pointerdown)="close()"></div>
+    <div class="calscrim" [class.sheet]="frame() === 'sheet'" (pointerdown)="close()"></div>
 
     <!-- Below 820 px date-range.scss turns this into a centred, dimmed,
          viewport-fixed sheet: a modal in everything but ARIA. It was the one
@@ -65,12 +65,16 @@
     <div
       #cal
       class="cal open"
+      [class.sheet]="frame() === 'sheet'"
       role="dialog"
       aria-modal="true"
       [attr.aria-label]="picking() === 'from' ? i18n.t('cal.pickFrom') : i18n.t('cal.pickTo')"
       tabindex="-1"
       (keydown.escape)="close()"
     >
+      @if (frame() === 'sheet') {
+        <div class="grip" aria-hidden="true"></div>
+      }
       <div class="calhead">
         {{ picking() === 'from' ? i18n.t('cal.pickFrom') : i18n.t('cal.pickTo') }}
         <button class="x" type="button" [attr.aria-label]="i18n.t('cal.close')" (click)="close()">

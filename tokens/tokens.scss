@@ -108,6 +108,16 @@
   --r: 7px;
   --rs: 5px;
   --fast: 0.13s cubic-bezier(0.4, 0, 0.2, 1);
+  /* The dimmer behind a sheet or a dialog, one value for web and phone (the
+     phone's .m-scrim carried it as a literal, Mobile CRM 28 Sep 2026). */
+  --scrim: rgba(0, 0, 0, 0.55);
+  /* The screen's own edges: the notch, the home indicator. Any surface that
+     touches an edge pads by these; without --safe-b a bottom sheet's last row
+     sits under the iPhone's home indicator. */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
   --sw: 236px;
 }
 @media (prefers-color-scheme: light) {

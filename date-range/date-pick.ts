@@ -24,8 +24,33 @@ interface Cell {
 /** The single-date control's own words, beside the range control's. */
 export const PICK: Record<string, { en: string; ar: string }> = {
   'cal.pickDate': { en: 'Pick a date', ar: 'اختر تاريخًا' },
+  'cal.pickDateTime': { en: 'Pick a date and time', ar: 'اختر التاريخ والوقت' },
+  'cal.pickTime': { en: 'Pick a time', ar: 'اختر وقتًا' },
   'cal.noDate': { en: 'No date', ar: 'بلا تاريخ' },
+  'cal.noTime': { en: 'No time', ar: 'بلا وقت' },
+  'cal.hour': { en: 'Hour', ar: 'الساعة' },
+  'cal.minute': { en: 'Minute', ar: 'الدقيقة' },
+  'cal.now': { en: 'Now', ar: 'الآن' },
 };
+
+/** Where the panel opens: 'auto' is the web's (anchored, a centred sheet under
+ *  820px); 'sheet' is the phone's bottom sheet, matching its .m-sheet. */
+export type PanelFrame = 'auto' | 'sheet';
+
+/** Two digits, the way a clock reads. */
+export const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** Cairo's clock now, as HH:MM (never the browser's zone). */
+export function nowInCairo(): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Cairo',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00';
+  return `${get('hour')}:${get('minute')}`;
+}
 
 /**
  * One date, in the same control as a range (bible §8 C-5, decided 28 Sep 2026).
@@ -79,6 +104,21 @@ export class DatePickControl implements ControlValueAccessor {
   readonly clearable = input<boolean>(true);
   /** The accessible name of the pill, when the field's label is elsewhere. */
   readonly label = input<string>('');
+  /** One instant: the value becomes `YYYY-MM-DDTHH:MM` in Cairo's clock, what a
+   *  datetime-local field held, and the panel gains the hour and minute. */
+  readonly withTime = input<boolean>(false);
+  /** The minutes offered, every `minuteStep`. */
+  readonly minuteStep = input<number>(5);
+  readonly frame = input<PanelFrame>('auto');
+
+  protected readonly hours = Array.from({ length: 24 }, (_, i) => pad2(i));
+  protected readonly minutes = computed(() => {
+    const step = Math.max(1, Math.min(30, this.minuteStep()));
+    return Array.from({ length: Math.ceil(60 / step) }, (_, i) => pad2(i * step));
+  });
+  /** The date part of the value, whatever the mode. */
+  protected readonly datePart = computed(() => this.value()?.slice(0, 10) ?? null);
+  protected readonly timePart = computed(() => this.value()?.slice(11, 16) || null);
 
   protected readonly disabled = signal(false);
   protected readonly open = signal(false);
@@ -145,16 +185,21 @@ export class DatePickControl implements ControlValueAccessor {
   private onChange: (value: string | null) => void = () => {};
   private onTouched: () => void = () => {};
 
-  /** The pill's face: day first, the way the owner reads a date. */
-  protected shown(iso: string): string {
-    const [y, m, d] = iso.split('-');
-    return `${d}-${m}-${y}`;
+  /** The pill's face: day first, the way the owner reads a date; then the time. */
+  protected shown(value: string): string {
+    const [y, m, d] = value.slice(0, 10).split('-');
+    const time = value.slice(11, 16);
+    return time ? `${d}-${m}-${y} ${time}` : `${d}-${m}-${y}`;
+  }
+
+  protected emptyWords(): string {
+    return this.placeholder() || this.i18n.t(this.withTime() ? 'cal.pickDateTime' : 'cal.pickDate');
   }
 
   protected openPanel(): void {
     if (this.disabled()) return;
     this.today.set(todayInCairo());
-    const anchor = this.value() ?? this.fenced(this.today());
+    const anchor = this.datePart() ?? this.fenced(this.today());
     const date = new Date(anchor + 'T00:00:00Z');
     this.month.set(date.getUTCMonth());
     this.year.set(date.getUTCFullYear());
@@ -192,15 +237,27 @@ export class DatePickControl implements ControlValueAccessor {
 
   protected pick(cell: Cell): void {
     if (this.isDead(cell)) return;
+    if (this.withTime()) {
+      // Keep the panel open: the time is still to choose.
+      this.set(`${cell.iso}T${this.timePart() ?? '09:00'}`);
+      return;
+    }
     this.set(cell.iso);
     this.close();
+  }
+
+  /** An hour or a minute, in datetime mode; the date defaults to today. */
+  protected setTime(part: 'h' | 'm', to: string): void {
+    const date = this.datePart() ?? this.fenced(todayInCairo());
+    const [h, m] = (this.timePart() ?? '09:00').split(':');
+    this.set(`${date}T${part === 'h' ? to : h}:${part === 'm' ? to : m}`);
   }
 
   /** Today, unless today is outside the fence; then nothing happens. */
   protected pickToday(): void {
     const today = todayInCairo();
     if (this.isDead({ iso: today, day: 0, outside: false })) return;
-    this.set(today);
+    this.set(this.withTime() ? `${today}T${nowInCairo()}` : today);
     this.close();
   }
 
@@ -224,7 +281,8 @@ export class DatePickControl implements ControlValueAccessor {
 
   // ControlValueAccessor: so a reactive or template form can bind it like an input.
   writeValue(value: string | null): void {
-    this.value.set(value || null);
+    // A datetime-local string may carry seconds; the control holds minutes.
+    this.value.set(value ? (this.withTime() ? value.slice(0, 16) : value.slice(0, 10)) : null);
   }
   registerOnChange(fn: (value: string | null) => void): void {
     this.onChange = fn;
