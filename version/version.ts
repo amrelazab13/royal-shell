@@ -1,12 +1,14 @@
 import {
   Component,
   DestroyRef,
+  EnvironmentInjector,
   EnvironmentProviders,
   Injectable,
   InjectionToken,
   inject,
   makeEnvironmentProviders,
   provideEnvironmentInitializer,
+  runInInjectionContext,
   signal,
 } from '@angular/core';
 import { NavigationStart, Router } from '@angular/router';
@@ -116,7 +118,12 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
       if (typeof window === 'undefined') return;
       const version = inject(Version);
       const router = inject(Router, { optional: true });
-      const unsaved = config.unsaved ?? (() => false);
+      // Asked from a router event, which is outside any injection context: run
+      // it inside the app's, so a module's `unsaved` may `inject()` what it
+      // needs (HR found it would otherwise throw in production, 28 Sep 2026).
+      const injector = inject(EnvironmentInjector);
+      const unsaved = () =>
+        config.unsaved ? runInInjectionContext(injector, config.unsaved) : false;
       const visible = () => document.visibilityState !== 'hidden';
       const ask = () => visible() && void version.check();
       const timer = setInterval(ask, config.everyMs ?? 60_000);
@@ -137,6 +144,10 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
   ]);
 }
 
+function pageIsRtl(): boolean {
+  return typeof document !== 'undefined' && document.documentElement.dir === 'rtl';
+}
+
 /** The notice's own words, in both languages; the module's win. */
 export const VERSION_WORDS: Record<string, { en: string; ar: string }> = {
   'version.ready': {
@@ -147,7 +158,9 @@ export const VERSION_WORDS: Record<string, { en: string; ar: string }> = {
 };
 
 function wordsFor(module: ShellWords | null): ShellWords {
-  const isRtl = () => module?.isRtl() ?? false;
+  // No module words: the page's own direction decides, never English by
+  // default on an Arabic screen (HR, 28 Sep 2026).
+  const isRtl = () => module?.isRtl() ?? pageIsRtl();
   return {
     isRtl,
     t: (key: string) => {

@@ -55,6 +55,10 @@ Only the parts that are genuinely the same everywhere:
 production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   (F17) cannot be caught in jsdom; this is how they are looked at. (Written by
   the CEO portal, 26 Sep 2026.)
+  **One port per module, one log per module** (28 Sep 2026: two modules
+  shared 8099 and one killed the other's server): CRM 8090, HR 8091,
+  SalesOps 8092, CEO portal 8097, Royal Me 8098, logs named by module
+  (`fixsrv-<module>.log`). A new module takes the next free port here.
 - `needs/` — "what needs me" (bible §3.7): the red counter on a rail item,
   tab, section or chip, and the red dot on a row, leading a person to what
   they must act on. `needs.scss` (load after `rail.scss`; the counter stays

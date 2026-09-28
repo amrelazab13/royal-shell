@@ -56,7 +56,10 @@ export const CAL: Record<string, { en: string; ar: string }> = {
 
 /** The module's word when it has one, the control's own otherwise. */
 function wordsFor(module: ShellWords | null): ShellWords {
-  const isRtl = () => module?.isRtl() ?? false;
+  // No module words: the page's own direction decides, never English by
+  // default on an Arabic screen (HR, 28 Sep 2026).
+  const isRtl = () =>
+    module?.isRtl() ?? (typeof document !== 'undefined' && document.documentElement.dir === 'rtl');
   return {
     isRtl,
     t: (key: string) => {

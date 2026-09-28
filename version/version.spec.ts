@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { inject, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NavigationStart, Router } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -108,6 +108,33 @@ describe('provideVersionCheck', () => {
     expect(assigned).toEqual(['/leads/52374']);
   });
 
+  it('asks `unsaved` inside the app injector, so it may inject', () => {
+    events = new Subject();
+    assigned = [];
+    running('main-OLD123.js');
+    TestBed.resetTestingModule();
+    let injected: unknown = null;
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: Router, useValue: { events } },
+        provideVersionCheck({
+          everyMs: 3_600_000,
+          unsaved: () => {
+            injected = inject(Version);
+            return true;
+          },
+        }),
+      ],
+    });
+    const v = TestBed.inject(Version);
+    vi.spyOn(v, 'load').mockImplementation((url: string) => assigned.push(url));
+    v.ready.set(true);
+    events.next(new NavigationStart(1, '/leads'));
+    expect(injected).toBe(v);
+    expect(assigned).toEqual([]);
+  });
+
   it('never while something is being written', () => {
     unsaved = true;
     const v = boot();
@@ -118,6 +145,20 @@ describe('provideVersionCheck', () => {
 });
 
 describe('NewVersion', () => {
+  it('reads Arabic from the page when the module gives no words', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+    document.documentElement.dir = 'rtl';
+    try {
+      const fixture = TestBed.createComponent(NewVersion);
+      TestBed.inject(Version).ready.set(true);
+      await fixture.whenStable();
+      expect(fixture.nativeElement.textContent).toContain('نسخة جديدة جاهزة');
+    } finally {
+      document.documentElement.dir = '';
+    }
+  });
+
   beforeEach(() => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
