@@ -47,7 +47,7 @@ if (!existsSync(src)) {
 const allowFile = resolve(src, '..', 'native-date-allow.json');
 const ALLOWED = existsSync(allowFile) ? JSON.parse(readFileSync(allowFile, 'utf8')) : {};
 for (const [path, why] of Object.entries(ALLOWED)) {
-  if (!/#(date|time|datetime-local|month|week)$/.test(path)) {
+  if (!/#(date|time|datetime-local|month|week|dynamic)$/.test(path)) {
     console.error(
       `native-date-check: the allowance "${path}" must name one type: "${path}#time" (or #date, #datetime-local, #month, #week).`,
     );
@@ -63,6 +63,29 @@ for (const [path, why] of Object.entries(ALLOWED)) {
 
 /** The input types that open a browser's own date or time picker. */
 const NATIVE = /<input\b[^>]*\btype\s*=\s*["'](date|time|datetime-local|month|week)["']/gi;
+
+/**
+ * The same picker, reached WITHOUT the literal: a field list that says
+ * `type: 'date'` and a template that binds `[type]="f.type"` (HR's person file,
+ * 28 Sep 2026: the birth date rendered native, and a check reading
+ * `type="date"` could never see it). Both halves are findings; a dynamic
+ * binding that never carries a date (a password show/hide) is allowed by name
+ * as `path#dynamic`.
+ */
+const CONFIGURED = /\btype\s*:\s*[`"'](date|time|datetime-local|month|week)[`"']/gi;
+const DYNAMIC = /<input\b[^>]*\[(?:attr\.)?type\]\s*=\s*"([^"]*)"/gi;
+const DATE_WORD = /^(date|time|datetime-local|month|week)$/i;
+/** A bound type is safe only when it can hold nothing but fixed non-date
+ *  words: one quoted word, or `condition ? 'a' : 'b'`. Anything that reads a
+ *  value (`f.type`, `f.type ?? 'text'`) could hold 'date', and is a finding. */
+const boundSafely = (expr) => {
+  const e = expr.trim();
+  if (e.includes('??')) return false;
+  const single = e.match(/^'([^']*)'$/);
+  const ternary = e.match(/^[^?'"]+\?\s*'([^']*)'\s*:\s*'([^']*)'$/);
+  const words = single ? [single[1]] : ternary ? [ternary[1], ternary[2]] : null;
+  return !!words && words.every((w) => !DATE_WORD.test(w));
+};
 
 const FLOOR = 5;
 
@@ -99,14 +122,25 @@ const allowedUsed = new Set();
 for (const file of files) {
   const rel = relative(src, file);
   const text = stripComments(readFileSync(file, 'utf8'), file.endsWith('.ts'));
-  for (const match of text.matchAll(NATIVE)) {
-    const key = `${rel}#${match[1].toLowerCase()}`;
+  const hits = [
+    ...[...text.matchAll(NATIVE)].map((m) => [m, m[1].toLowerCase(), `<input type="${m[1]}">`]),
+    ...[...text.matchAll(CONFIGURED)].map((m) => [
+      m,
+      m[1].toLowerCase(),
+      `type: '${m[1]}' (a field list)`,
+    ]),
+    ...[...text.matchAll(DYNAMIC)]
+      .filter((m) => !boundSafely(m[1]))
+      .map((m) => [m, 'dynamic', `<input [type]="${m[1]}"> (bound at run time)`]),
+  ];
+  for (const [match, type, what] of hits) {
+    const key = `${rel}#${type}`;
     if (ALLOWED[key]) {
       allowedUsed.add(key);
       continue;
     }
     const line = text.slice(0, match.index).split('\n').length;
-    findings.push(`  ${rel}:${line}  <input type="${match[1]}">`);
+    findings.push(`  ${rel}:${line}  ${what}`);
   }
 }
 
