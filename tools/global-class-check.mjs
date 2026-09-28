@@ -252,6 +252,17 @@ if (found.length) {
   );
   process.exit(1);
 }
+// Zero is not clean (the CEO portal, 29 Sep 2026, emptying styles.scss to ask
+// what this gate does when its subject is destroyed): an empty or truncated
+// global sheet has no classes to fight, so every component "passes" while the
+// app has no styling at all. A count of nothing is a failure to look.
+if (globals.size === 0 || files.length === 0) {
+  console.error(
+    `Global classes: read ${globals.size} global classes and ${files.length} component styles. ` +
+      'A sheet with none is empty or truncated, not clean.',
+  );
+  process.exit(2);
+}
 console.log(
   `Global classes: clean. ${globals.size} bare global classes, ${files.length} component styles read (sheets and inline).`,
 );
