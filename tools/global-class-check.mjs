@@ -57,11 +57,11 @@ function withoutPrint(css) {
   let out = '';
   let i = 0;
   const re = /@media\s+print\b[^{]*\{/g;
-  for (let m; (m = re.exec(css)); ) {
+  for (let m; (m = re.exec(css));) {
     out += css.slice(i, m.index);
     let depth = 1;
     let j = re.lastIndex;
-    while (j < css.length && depth) depth += css[j] === '{' ? 1 : css[j] === '}' ? -1 : 0, j++;
+    while (j < css.length && depth) ((depth += css[j] === '{' ? 1 : css[j] === '}' ? -1 : 0), j++);
     i = re.lastIndex = j;
   }
   return out + css.slice(i);
