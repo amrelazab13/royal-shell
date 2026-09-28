@@ -32,8 +32,23 @@ if (!existsSync(src)) {
   process.exit(2);
 }
 
-/** path (relative to --src) -> why this one native picker is allowed. Empty on purpose. */
-const ALLOWED = {};
+/**
+ * A module's deliberate exceptions live in ITS OWN file, `native-date-allow.json`
+ * beside `src` (a module never edits this shared tool): `{ "path/in/src": "why" }`.
+ * Every entry needs a reason a reader can judge, and an entry whose file no
+ * longer carries a native picker fails the run, so an exemption cannot outlive
+ * its cause.
+ */
+const allowFile = resolve(src, '..', 'native-date-allow.json');
+const ALLOWED = existsSync(allowFile) ? JSON.parse(readFileSync(allowFile, 'utf8')) : {};
+for (const [path, why] of Object.entries(ALLOWED)) {
+  if (typeof why !== 'string' || why.trim().length < 20) {
+    console.error(
+      `native-date-check: the allowance for ${path} needs a real reason (20+ characters).`,
+    );
+    process.exit(2);
+  }
+}
 
 /** The input types that open a browser's own date or time picker. */
 const NATIVE = /<input\b[^>]*\btype\s*=\s*["'](date|time|datetime-local|month|week)["']/gi;
@@ -60,15 +75,35 @@ if (files.length < FLOOR) {
   process.exit(2);
 }
 
+/** Comments are not templates: a note that SAYS `<input type="date">` is not one. */
+const stripComments = (text, isTs) =>
+  isTs
+    ? text
+        .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+        .replace(/(^|[^:])\/\/.*$/gm, '$1')
+    : text.replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, ' '));
+
 const findings = [];
+const allowedUsed = new Set();
 for (const file of files) {
   const rel = relative(src, file);
-  const text = readFileSync(file, 'utf8');
+  const text = stripComments(readFileSync(file, 'utf8'), file.endsWith('.ts'));
   for (const match of text.matchAll(NATIVE)) {
-    if (ALLOWED[rel]) continue;
+    if (ALLOWED[rel]) {
+      allowedUsed.add(rel);
+      continue;
+    }
     const line = text.slice(0, match.index).split('\n').length;
     findings.push(`  ${rel}:${line}  <input type="${match[1]}">`);
   }
+}
+
+const stale = Object.keys(ALLOWED).filter((path) => !allowedUsed.has(path));
+if (stale.length) {
+  console.error(
+    `native-date-check: allowances with nothing left to allow (remove them): ${stale.join(', ')}`,
+  );
+  process.exit(1);
 }
 
 if (findings.length) {
@@ -77,4 +112,8 @@ if (findings.length) {
   console.error(`\n${findings.length} found in ${files.length} files read.`);
   process.exit(1);
 }
-console.log(`native-date-check: ${files.length} files read, 0 native date/time pickers.`);
+const allowedCount = Object.keys(ALLOWED).length;
+console.log(
+  `native-date-check: ${files.length} files read, 0 native date/time pickers` +
+    (allowedCount ? `; ${allowedCount} file(s) allowed by name in native-date-allow.json.` : '.'),
+);
