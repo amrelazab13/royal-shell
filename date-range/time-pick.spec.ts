@@ -159,3 +159,53 @@ describe('time controls in a reactive form', () => {
     expect(host.componentInstance.time.value).toBe('09:30');
   });
 });
+
+describe('DatePickControl by month', () => {
+  interface Month {
+    pickMonth: (ym: string) => void;
+    monthDead: (ym: string) => boolean;
+    pickToday: () => void;
+    value: () => string | null;
+    shown: (v: string) => string;
+  }
+  let fixture: ComponentFixture<DatePickControl>;
+  let control: Month;
+
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    at('2026-09-30T22:30:00Z'); // 1 October in Cairo
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [DatePickControl],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    fixture = TestBed.createComponent(DatePickControl);
+    fixture.componentRef.setInput('granularity', 'month');
+    fixture.detectChanges();
+    control = fixture.componentInstance as unknown as Month;
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it('holds YYYY-MM, what a month field held', () => {
+    control.pickMonth('2026-08');
+    expect(control.value()).toBe('2026-08');
+  });
+
+  it("This month is Cairo's month", () => {
+    control.pickToday();
+    expect(control.value()).toBe('2026-10');
+  });
+
+  it('fences by month, and a fenced month is refused', () => {
+    fixture.componentRef.setInput('max', '2026-09-30');
+    expect(control.monthDead('2026-10')).toBe(true);
+    expect(control.monthDead('2026-09')).toBe(false);
+    control.pickMonth('2026-10');
+    expect(control.value()).toBeNull();
+  });
+
+  it('reads as the month in words', () => {
+    expect(control.shown('2026-09')).toBe('September 2026');
+  });
+});

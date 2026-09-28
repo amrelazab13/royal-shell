@@ -482,3 +482,16 @@
     opacity: 0;
   }
 }
+
+/* ── a month grid (app-date-pick granularity="month") ── */
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-block-end: 10px;
+}
+
+.day.mcell {
+  block-size: 36px;
+  font-family: inherit;
+}

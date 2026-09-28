@@ -49,67 +49,112 @@
 
       <div class="presets">
         <button type="button" (click)="pickToday()">
-          {{ i18n.t(withTime() ? 'cal.now' : 'cal.today') }}
+          {{ i18n.t(byMonth() ? 'cal.thisMonth' : withTime() ? 'cal.now' : 'cal.today') }}
         </button>
       </div>
 
-      <div class="navrow">
-        <button
-          class="arrow"
-          type="button"
-          [attr.aria-label]="i18n.t('cal.prevMonth')"
-          (click)="step(-1)"
-        >
-          ‹
-        </button>
-        <select
-          [attr.aria-label]="i18n.t('cal.month')"
-          (change)="month.set(+$any($event.target).value)"
-        >
-          @for (name of monthNames(); track $index) {
-            <option [value]="$index" [selected]="$index === month()">{{ name }}</option>
-          }
-        </select>
-        <select
-          [attr.aria-label]="i18n.t('cal.year')"
-          (change)="year.set(+$any($event.target).value)"
-        >
-          @for (y of years(); track y) {
-            <option [value]="y" [selected]="y === year()">{{ y }}</option>
-          }
-        </select>
-        <span class="spacer"></span>
-        <button
-          class="arrow"
-          type="button"
-          [attr.aria-label]="i18n.t('cal.nextMonth')"
-          (click)="step(1)"
-        >
-          ›
-        </button>
-      </div>
-
-      <div class="grid7">
-        @for (name of dayNames(); track $index) {
-          <span class="dow">{{ name }}</span>
-        }
-        @for (cell of cells(); track cell.iso) {
+      @if (byMonth()) {
+        <div class="navrow">
           <button
-            class="day"
+            class="arrow"
             type="button"
-            [class.out]="cell.outside"
-            [class.edge]="cell.iso === datePart()"
-            [class.today]="cell.iso === today()"
-            [class.dead]="isDead(cell)"
-            [disabled]="isDead(cell)"
-            (click)="pick(cell)"
+            [attr.aria-label]="i18n.t('cal.prevYear')"
+            (click)="stepYear(-1)"
           >
-            {{ cell.day }}
+            ‹
           </button>
-        }
-      </div>
+          <select
+            [attr.aria-label]="i18n.t('cal.year')"
+            (change)="year.set(+$any($event.target).value)"
+          >
+            @for (y of years(); track y) {
+              <option [value]="y" [selected]="y === year()">{{ y }}</option>
+            }
+          </select>
+          <span class="spacer"></span>
+          <button
+            class="arrow"
+            type="button"
+            [attr.aria-label]="i18n.t('cal.nextYear')"
+            (click)="stepYear(1)"
+          >
+            ›
+          </button>
+        </div>
+        <div class="grid3">
+          @for (m of monthCells(); track m.ym) {
+            <button
+              class="day mcell"
+              type="button"
+              [class.edge]="m.ym === value()"
+              [class.today]="m.ym === today().slice(0, 7)"
+              [class.dead]="monthDead(m.ym)"
+              [disabled]="monthDead(m.ym)"
+              (click)="pickMonth(m.ym)"
+            >
+              {{ m.name }}
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="navrow">
+          <button
+            class="arrow"
+            type="button"
+            [attr.aria-label]="i18n.t('cal.prevMonth')"
+            (click)="step(-1)"
+          >
+            ‹
+          </button>
+          <select
+            [attr.aria-label]="i18n.t('cal.month')"
+            (change)="month.set(+$any($event.target).value)"
+          >
+            @for (name of monthNames(); track $index) {
+              <option [value]="$index" [selected]="$index === month()">{{ name }}</option>
+            }
+          </select>
+          <select
+            [attr.aria-label]="i18n.t('cal.year')"
+            (change)="year.set(+$any($event.target).value)"
+          >
+            @for (y of years(); track y) {
+              <option [value]="y" [selected]="y === year()">{{ y }}</option>
+            }
+          </select>
+          <span class="spacer"></span>
+          <button
+            class="arrow"
+            type="button"
+            [attr.aria-label]="i18n.t('cal.nextMonth')"
+            (click)="step(1)"
+          >
+            ›
+          </button>
+        </div>
 
-      @if (withTime()) {
+        <div class="grid7">
+          @for (name of dayNames(); track $index) {
+            <span class="dow">{{ name }}</span>
+          }
+          @for (cell of cells(); track cell.iso) {
+            <button
+              class="day"
+              type="button"
+              [class.out]="cell.outside"
+              [class.edge]="cell.iso === datePart()"
+              [class.today]="cell.iso === today()"
+              [class.dead]="isDead(cell)"
+              [disabled]="isDead(cell)"
+              (click)="pick(cell)"
+            >
+              {{ cell.day }}
+            </button>
+          }
+        </div>
+      }
+
+      @if (withTime() && !byMonth()) {
         <div class="timecols">
           <div class="tcol" role="listbox" [attr.aria-label]="i18n.t('cal.hour')">
             @for (h of hours; track h) {

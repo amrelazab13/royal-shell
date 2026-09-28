@@ -26,6 +26,9 @@ export const PICK: Record<string, { en: string; ar: string }> = {
   'cal.pickDate': { en: 'Pick a date', ar: 'اختر تاريخًا' },
   'cal.pickDateTime': { en: 'Pick a date and time', ar: 'اختر التاريخ والوقت' },
   'cal.pickTime': { en: 'Pick a time', ar: 'اختر وقتًا' },
+  'cal.pickMonth': { en: 'Pick a month', ar: 'اختر شهرًا' },
+  'cal.prevYear': { en: 'Previous year', ar: 'السنة السابقة' },
+  'cal.nextYear': { en: 'Next year', ar: 'السنة التالية' },
   'cal.noDate': { en: 'No date', ar: 'بلا تاريخ' },
   'cal.noTime': { en: 'No time', ar: 'بلا وقت' },
   'cal.hour': { en: 'Hour', ar: 'الساعة' },
@@ -110,14 +113,22 @@ export class DatePickControl implements ControlValueAccessor {
   /** The minutes offered, every `minuteStep`. */
   readonly minuteStep = input<number>(5);
   readonly frame = input<PanelFrame>('auto');
+  /** 'month' picks a whole month (a payroll month): the value is `YYYY-MM`,
+   *  what `<input type="month">` held, and the panel is the year's twelve months. */
+  readonly granularity = input<'day' | 'month'>('day');
+  protected readonly byMonth = computed(() => this.granularity() === 'month');
 
   protected readonly hours = Array.from({ length: 24 }, (_, i) => pad2(i));
   protected readonly minutes = computed(() => {
     const step = Math.max(1, Math.min(30, this.minuteStep()));
     return Array.from({ length: Math.ceil(60 / step) }, (_, i) => pad2(i * step));
   });
-  /** The date part of the value, whatever the mode. */
-  protected readonly datePart = computed(() => this.value()?.slice(0, 10) ?? null);
+  /** The date part of the value, whatever the mode (a month reads as its 1st). */
+  protected readonly datePart = computed(() => {
+    const v = this.value();
+    if (!v) return null;
+    return v.length === 7 ? `${v}-01` : v.slice(0, 10);
+  });
   protected readonly timePart = computed(() => this.value()?.slice(11, 16) || null);
 
   protected readonly disabled = signal(false);
@@ -141,6 +152,31 @@ export class DatePickControl implements ControlValueAccessor {
       new Date(2000, i, 1).toLocaleDateString(this.locale(), { month: 'long' }),
     ),
   );
+
+  /** The year's months as cells, for month granularity. */
+  protected readonly monthCells = computed(() =>
+    Array.from({ length: 12 }, (_, i) => ({
+      ym: `${this.year()}-${pad2(i + 1)}`,
+      name: new Date(2000, i, 1).toLocaleDateString(this.locale(), { month: 'short' }),
+    })),
+  );
+
+  /** A month outside the fence (compared month to month). */
+  protected monthDead(ym: string): boolean {
+    const min = this.min()?.slice(0, 7);
+    const max = this.max()?.slice(0, 7);
+    return !!((min && ym < min) || (max && ym > max));
+  }
+
+  protected pickMonth(ym: string): void {
+    if (this.monthDead(ym)) return;
+    this.set(ym);
+    this.close();
+  }
+
+  protected stepYear(direction: number): void {
+    this.year.update((y) => y + direction);
+  }
 
   /** Sunday first, as the working week here starts on Sunday. */
   protected readonly dayNames = computed(() =>
@@ -187,13 +223,23 @@ export class DatePickControl implements ControlValueAccessor {
 
   /** The pill's face: day first, the way the owner reads a date; then the time. */
   protected shown(value: string): string {
+    if (value.length === 7) {
+      // A month reads as words, "September 2026" / "سبتمبر 2026".
+      const [y, m] = value.split('-');
+      return `${this.monthNames()[Number(m) - 1]} ${y}`;
+    }
     const [y, m, d] = value.slice(0, 10).split('-');
     const time = value.slice(11, 16);
     return time ? `${d}-${m}-${y} ${time}` : `${d}-${m}-${y}`;
   }
 
   protected emptyWords(): string {
-    return this.placeholder() || this.i18n.t(this.withTime() ? 'cal.pickDateTime' : 'cal.pickDate');
+    const key = this.byMonth()
+      ? 'cal.pickMonth'
+      : this.withTime()
+        ? 'cal.pickDateTime'
+        : 'cal.pickDate';
+    return this.placeholder() || this.i18n.t(key);
   }
 
   protected openPanel(): void {
@@ -256,6 +302,12 @@ export class DatePickControl implements ControlValueAccessor {
   /** Today, unless today is outside the fence; then nothing happens. */
   protected pickToday(): void {
     const today = todayInCairo();
+    if (this.byMonth()) {
+      if (this.monthDead(today.slice(0, 7))) return;
+      this.set(today.slice(0, 7));
+      this.close();
+      return;
+    }
     if (this.isDead({ iso: today, day: 0, outside: false })) return;
     this.set(this.withTime() ? `${today}T${nowInCairo()}` : today);
     this.close();
@@ -282,7 +334,8 @@ export class DatePickControl implements ControlValueAccessor {
   // ControlValueAccessor: so a reactive or template form can bind it like an input.
   writeValue(value: string | null): void {
     // A datetime-local string may carry seconds; the control holds minutes.
-    this.value.set(value ? (this.withTime() ? value.slice(0, 16) : value.slice(0, 10)) : null);
+    const keep = this.byMonth() ? 7 : this.withTime() ? 16 : 10;
+    this.value.set(value ? value.slice(0, keep) : null);
   }
   registerOnChange(fn: (value: string | null) => void): void {
     this.onChange = fn;
