@@ -23,7 +23,8 @@ const styles = ['src/styles.scss', 'src/styles.css'].find((p) => existsSync(p));
 if (!styles) problems.push('no src/styles.scss or src/styles.css found');
 else {
   const text = readFileSync(styles, 'utf8');
-  if (!/@use\s+['"][^'"]*shared\/fonts\/fonts['"]/.test(text) && !/@font-face/.test(text))
+  const listed = existsSync('angular.json') && /shared\/fonts\/fonts\.scss/.test(readFileSync('angular.json', 'utf8'));
+  if (!/@use\s+['"][^'"]*shared\/fonts\/fonts['"]/.test(text) && !listed)
     problems.push(`${styles} does not @use 'shared/fonts/fonts'`);
   if (GOOGLE.test(text)) problems.push(`${styles} imports from Google's font hosts`);
 }
@@ -37,9 +38,16 @@ if (built) {
   const dir = join(built, 'fonts');
   const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.woff2')) : [];
   if (files.length !== 8) problems.push(`${dir}: ${files.length} .woff2 files, expected 8`);
+  let faces = 0;
   for (const f of readdirSync(built).filter((f) => f.endsWith('.css'))) {
-    if (GOOGLE.test(readFileSync(join(built, f), 'utf8'))) problems.push(`${f} reaches Google's font hosts`);
+    const css = readFileSync(join(built, f), 'utf8');
+    if (GOOGLE.test(css)) problems.push(`${f} reaches Google's font hosts`);
+    faces += (css.match(/@font-face\s*\{[^}]*url\(\/fonts\/[^)]*\.woff2\)/g) ?? []).length;
   }
+  // The OUTCOME, whichever way the source reached it (Royal Me, 29 Sep 2026:
+  // the source check refused a correct setup that listed the sheet in
+  // angular.json instead of @use-ing it). Eight faces naming /fonts/.
+  if (faces < 8) problems.push(`the built CSS declares ${faces} @font-face on /fonts/, expected 8`);
 }
 
 if (problems.length) {

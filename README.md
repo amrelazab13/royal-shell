@@ -31,11 +31,12 @@ Only the parts that are genuinely the same everywhere:
 - `fonts/` — the four Royal faces (Unbounded, Nunito, Cairo, JetBrains Mono),
   served from the module's own origin, never from Google (the owner, 29 Sep
   2026, A-52). Eight variable .woff2 files split by unicode-range, their OFL
-  licences, and `fonts.scss`. A module: `@use 'shared/fonts/fonts';` in its
-  styles; `{ "glob": "*.woff2", "input": "src/shared/fonts", "output": "fonts" }`
+  licences, and `fonts.scss`. A module: `@use 'shared/fonts/fonts';` at the top of its
+  styles.scss (the one way); `{ "glob": "*.woff2", "input": "src/shared/fonts", "output": "fonts" }`
   in angular.json's build assets; no Google font link or preconnect in
   index.html; `COPY src/royal-ui/build/policy/fonts.conf /etc/nginx/royal-policy/`
-  in its Dockerfile. `tools/fonts-check.mjs [dist/<app>/browser]` is the gate.
+  in its Dockerfile. `tools/fonts-check.mjs [dist/<app>/browser]` is the gate; with a build it
+  checks the outcome (eight @font-face on /fonts/, eight files, no Google).
 - `dates/dates.ts` — Cairo time for everything a module sends: `todayInCairo`,
   `shiftIsoDate`, `monthEndOf`, `toCairoIso` and the rest. Never
   `toISOString().slice(0, 10)` for "today".
