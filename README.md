@@ -82,6 +82,11 @@ production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   over `[(ngModel)]` properties is fine. An edit-in-place form that opens
   filled with the stored values compares with what was LOADED, never with
   emptiness, or pressing Edit alone would hold every new version (Royal Me).
+- `search/` — search the CRM's way, shared (28 Sep 2026, written by the CEO
+  portal): `debounce(ms, fn, destroyRef)`, `Latest` (latest-wins), and
+  `fold`/`matches`, the Arabic-and-Latin fold (`\p{Mn}`, never
+  `\p{Diacritic}`, F68) held to the same case table as royal-module-kit's
+  server fold (`FOLD_CASES` here, `contracts/fold-cases.json` there).
 - `masthead/masthead.scss` — the masthead and the page head, shared (bible
   §3.3, §3.5). The ORDER is decided here, by `data-slot` on each direct child
   of `<header class="top">`: burger, logo, module, search, online, bell, role,
