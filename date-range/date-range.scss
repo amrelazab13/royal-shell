@@ -355,3 +355,29 @@
   opacity: 0.28;
   cursor: not-allowed;
 }
+
+/* ── one date (app-date-pick, bible §8 C-5) ──
+   The same pill as a range end, used as a form field: a picked date is the
+   field's content, not a filter narrowing the view, so it takes the ink, not
+   the accent, and the one-pixel border every other form field has. */
+.pill.single {
+  min-inline-size: 150px;
+  justify-content: space-between;
+  border-width: 1px;
+}
+
+.pill.single.set {
+  color: var(--ink);
+  background: var(--surface-2);
+  border-color: var(--line);
+  font-weight: 500;
+}
+
+.pill.single.live {
+  border-color: var(--accent);
+}
+
+.pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

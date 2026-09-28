@@ -1,0 +1,117 @@
+<div class="datewrap">
+  <!-- The range control's field with one pill: the mark, then the date, day
+       first, or the words when nothing is picked. -->
+  <div class="dfield" [class.on]="!!value()">
+    <span class="calmark" aria-hidden="true"><app-icon name="calendar" /></span>
+    <button
+      class="pill single"
+      type="button"
+      [class.set]="!!value()"
+      [class.live]="open()"
+      [disabled]="disabled()"
+      [attr.aria-label]="label() || i18n.t('cal.pickDate')"
+      [attr.aria-haspopup]="'dialog'"
+      [attr.aria-expanded]="open()"
+      (click)="openPanel()"
+    >
+      <span class="ptxt">
+        @if (value(); as picked) {
+          <bdi dir="ltr">{{ shown(picked) }}</bdi>
+        } @else {
+          {{ placeholder() || i18n.t('cal.pickDate') }}
+        }
+      </span>
+      <span class="chev"><app-icon name="chev" /></span>
+    </button>
+  </div>
+
+  @if (open()) {
+    <div class="calscrim" (pointerdown)="close()"></div>
+    <div
+      #cal
+      class="cal open"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="label() || i18n.t('cal.pickDate')"
+      tabindex="-1"
+      (keydown.escape)="close()"
+    >
+      <div class="calhead">
+        {{ label() || i18n.t('cal.pickDate') }}
+        <button class="x" type="button" [attr.aria-label]="i18n.t('cal.close')" (click)="close()">
+          <app-icon name="x" />
+        </button>
+      </div>
+
+      <div class="presets">
+        <button type="button" (click)="pickToday()">{{ i18n.t('cal.today') }}</button>
+      </div>
+
+      <div class="navrow">
+        <button
+          class="arrow"
+          type="button"
+          [attr.aria-label]="i18n.t('cal.prevMonth')"
+          (click)="step(-1)"
+        >
+          ‹
+        </button>
+        <select
+          [attr.aria-label]="i18n.t('cal.month')"
+          (change)="month.set(+$any($event.target).value)"
+        >
+          @for (name of monthNames(); track $index) {
+            <option [value]="$index" [selected]="$index === month()">{{ name }}</option>
+          }
+        </select>
+        <select
+          [attr.aria-label]="i18n.t('cal.year')"
+          (change)="year.set(+$any($event.target).value)"
+        >
+          @for (y of years(); track y) {
+            <option [value]="y" [selected]="y === year()">{{ y }}</option>
+          }
+        </select>
+        <span class="spacer"></span>
+        <button
+          class="arrow"
+          type="button"
+          [attr.aria-label]="i18n.t('cal.nextMonth')"
+          (click)="step(1)"
+        >
+          ›
+        </button>
+      </div>
+
+      <div class="grid7">
+        @for (name of dayNames(); track $index) {
+          <span class="dow">{{ name }}</span>
+        }
+        @for (cell of cells(); track cell.iso) {
+          <button
+            class="day"
+            type="button"
+            [class.out]="cell.outside"
+            [class.edge]="cell.iso === value()"
+            [class.today]="cell.iso === today()"
+            [class.dead]="isDead(cell)"
+            [disabled]="isDead(cell)"
+            (click)="pick(cell)"
+          >
+            {{ cell.day }}
+          </button>
+        }
+      </div>
+
+      <div class="calfoot">
+        <span class="rng">
+          <bdi dir="ltr">{{ value() ? shown(value()!) : i18n.t('cal.noDate') }}</bdi>
+        </span>
+        @if (clearable()) {
+          <button class="btn sec" type="button" (click)="clear()">{{ i18n.t('cal.clear') }}</button>
+        }
+        <button class="btn pri" type="button" (click)="close()">{{ i18n.t('cal.done') }}</button>
+      </div>
+    </div>
+  }
+</div>

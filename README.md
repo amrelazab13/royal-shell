@@ -19,6 +19,11 @@ Only the parts that are genuinely the same everywhere:
 - `date-range/` — the one date control: two pills, seven presets, month and
   year, the range shaded across the grid, Cairo's calendar. The CRM's own,
   moved here on 25 Sep 2026 so there is one original and no copies.
+  `date-range/date-pick.ts` (`<app-date-pick>`) is the same control for ONE
+  date, in a form or a page header: `[(value)]` or `formControlName`, `min`/`max`
+  fences, future dates allowed. No native `<input type="date">` anywhere a
+  person sees it (bible §8 C-5, 28 Sep 2026); `tools/native-date-check.mjs` is
+  the gate.
 - `dates/dates.ts` — Cairo time for everything a module sends: `todayInCairo`,
   `shiftIsoDate`, `monthEndOf`, `toCairoIso` and the rest. Never
   `toISOString().slice(0, 10)` for "today".
