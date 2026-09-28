@@ -63,6 +63,14 @@ production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   and when the tab returns; `needs.count('leads')` sums a trail path). The
   counts are the server's, computed from the data: they clear when the thing
   is resolved, never when it is seen.
+- `version/` — everyone on the latest version without losing a draft (the
+  owner, 28 Sep 2026). `provideVersionCheck({ unsaved })` in the app's
+  providers and `<app-new-version />` once in the shell. Every minute while
+  the tab is visible, and when it comes back into view, it compares the
+  main script the server would load (`main-XXXX.js`) with the one running;
+  once a newer one is live, the next move to another screen loads it fully,
+  never while `unsaved()` is true. Meanwhile a small notice says so, with
+  "Reload now". The page must be served `no-cache` (royal-ui's nginx is).
 - `masthead/masthead.scss` — the masthead and the page head, shared (bible
   §3.3, §3.5). The ORDER is decided here, by `data-slot` on each direct child
   of `<header class="top">`: burger, logo, module, search, online, bell, role,

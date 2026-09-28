@@ -237,6 +237,9 @@ import { Component, input } from '@angular/core';
         <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
         <circle cx="12" cy="12" r="3" />
       </symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24">
+        <path d="M20 11A8 8 0 006.3 5.3L4 8M4 3v5h5M4 13a8 8 0 0013.7 5.7L20 16M20 21v-5h-5" />
+      </symbol>
       <symbol id="i-eye-off" viewBox="0 0 24 24">
         <path
           d="M9.9 5.2A10 10 0 0112 5c6.4 0 10 7 10 7a18 18 0 01-3.2 4.1M6.2 6.2A18 18 0 002 12s3.6 7 10 7a10 10 0 004.2-.9"
