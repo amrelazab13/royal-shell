@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { NavigationStart, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 
+import { SHELL_WORDS } from '../words';
 import { NewVersion, Version, mainScriptOf, provideVersionCheck, runningScript } from './version';
 
 const page = (main: string) =>
@@ -145,6 +146,28 @@ describe('provideVersionCheck', () => {
 });
 
 describe('NewVersion', () => {
+  it("renders its own words when the module's t() throws on an unknown key", async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        {
+          provide: SHELL_WORDS,
+          useValue: {
+            t: () => {
+              throw new TypeError("Cannot read properties of undefined (reading 'ar')");
+            },
+            isRtl: () => false,
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(NewVersion);
+    TestBed.inject(Version).ready.set(true);
+    await fixture.whenStable();
+    expect(fixture.nativeElement.textContent).toContain('A new version is ready');
+  });
+
   it('reads Arabic from the page when the module gives no words', async () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });

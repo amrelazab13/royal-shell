@@ -75,6 +75,9 @@ production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   once a newer one is live, the next move to another screen loads it fully,
   never while `unsaved()` is true. Meanwhile a small notice says so, with
   "Reload now". The page must be served `no-cache` (royal-ui's nginx is).
+  **`unsaved` means typed and not yet saved**, never merely "a form is open":
+  an empty form left open would hold a new version back indefinitely. Register
+  the screen's own dirty signal, and let it go when the screen is destroyed.
 - `masthead/masthead.scss` — the masthead and the page head, shared (bible
   §3.3, §3.5). The ORDER is decided here, by `data-slot` on each direct child
   of `<header class="top">`: burger, logo, module, search, online, bell, role,

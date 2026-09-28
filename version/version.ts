@@ -164,7 +164,14 @@ function wordsFor(module: ShellWords | null): ShellWords {
   return {
     isRtl,
     t: (key: string) => {
-      const said = module?.t(key);
+      // A module's `t` may throw on a key it does not hold (Royal Me's did, and
+      // the notice never rendered, silently). A shared control never trusts it.
+      let said: string | undefined;
+      try {
+        said = module?.t(key);
+      } catch {
+        said = undefined;
+      }
       if (said && said !== key) return said;
       return VERSION_WORDS[key]?.[isRtl() ? 'ar' : 'en'] ?? key;
     },

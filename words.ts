@@ -13,7 +13,10 @@ import { InjectionToken, Provider, Type } from '@angular/core';
  * Anything with these two members fits. The CRM's `I18nService` already does.
  */
 export interface ShellWords {
-  /** The module's word for `key`, or `key` itself when it has none. */
+  /** The module's word for `key`, or `key` itself when it has none. It must
+   *  NOT throw on an unknown key: the shared controls ask for their own keys
+   *  (`version.ready`, `cal.*`) first. They guard against it, but a module
+   *  whose `t` throws is broken for its own screens too. */
   t(key: string): string;
   /** True while the page reads right to left. */
   isRtl(): boolean;
