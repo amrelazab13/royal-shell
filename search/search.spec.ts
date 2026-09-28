@@ -15,8 +15,13 @@ describe('fold', () => {
     expect(matches(['أحمد علي'], 'احمد')).toBe(true);
   });
 
-  it('never folds ة to ه', () => {
-    expect(fold('سمية')).not.toBe(fold('سميه'));
+  it('a word-final ة finds its ه twin, and the other way round', () => {
+    expect(matches(['فاطمة محمد'], 'فاطمه')).toBe(true);
+    expect(matches(['فاطمه محمد'], 'فاطمة')).toBe(true);
+  });
+
+  it('a mid-word ة is left alone', () => {
+    expect(fold('ةا')).toBe('ةا');
   });
 
   it('every word must appear, in any field', () => {

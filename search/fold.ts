@@ -16,8 +16,13 @@
  *   · Arabic-Indic and extended digits folded to 0-9.
  *   · lower-cased, runs of space collapsed.
  *
- * `ة` is deliberately NOT folded to `ه`: it is the aggressive step in most
- * normalisers, and it changes names rather than spellings.
+ * A WORD-FINAL `ة` folds to `ه`, in the search key only (the CRM measured it,
+ * 28 Sep 2026: 108 names on live are spelled both ways, فاطمه/فاطمة split
+ * 22/34 and اسامه/اسامة 54/38, so either spelling found about half the
+ * people; and عبداللة, a slip, joins عبدالله's 188). It changes nothing a
+ * person reads: the stored and shown name keep their letter. Mid-word `ة` is
+ * left alone. It was first kept apart ("it changes names rather than
+ * spellings", right about display); the measurement showed it splits people.
  *
  * **The server folds the same way**: royal-module-kit's
  * `royal_kit.common.fold`, held to the SAME case table (`FOLD_CASES` below and
@@ -31,6 +36,7 @@ export function fold(text: string): string {
     .replace(/\p{Mn}/gu, '')
     .replace(/ـ/g, '')
     .replace(/ى/g, 'ي')
+    .replace(/ة(?=\s|$)/g, 'ه')
     .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
     .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
     .toLowerCase()
@@ -61,15 +67,18 @@ export const FOLD_CASES: Readonly<Record<string, string>> = {
   احمد: 'احمد',
   إبراهيم: 'ابراهيم',
   ابراهيم: 'ابراهيم',
-  آمنة: 'امنة',
-  امنة: 'امنة',
+  آمنة: 'امنه',
+  امنة: 'امنه',
   مُحَمَّد: 'محمد',
   محمد: 'محمد',
   محــمد: 'محمد',
   يحيى: 'يحيي',
   يحيي: 'يحيي',
-  سمية: 'سمية',
+  سمية: 'سميه',
   سميه: 'سميه',
+  فاطمة: 'فاطمه',
+  فاطمه: 'فاطمه',
+  'مروة علي': 'مروه علي',
   '١٢٣٤': '1234',
   '۱۲۳': '123',
   '0042': '0042',
