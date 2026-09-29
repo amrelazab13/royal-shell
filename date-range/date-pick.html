@@ -152,6 +152,23 @@
             </button>
           }
         </div>
+
+        <!-- A greyed day says it cannot be picked and never says why, so a
+             person who meets one concludes the control is broken rather than
+             fenced (29 Sep 2026, reported from the sales desk). One line, in
+             their own language, answers it before it is asked. -->
+        @if (minDay() || maxDay()) {
+          <p class="fence">
+            @if (minDay() && maxDay()) {
+              {{ i18n.t('cal.fenceFrom') }} <bdi dir="ltr">{{ shown(minDay()!) }}</bdi>
+              {{ i18n.t('cal.fenceTo') }} <bdi dir="ltr">{{ shown(maxDay()!) }}</bdi>
+            } @else if (minDay()) {
+              {{ i18n.t('cal.fenceNotBefore') }} <bdi dir="ltr">{{ shown(minDay()!) }}</bdi>
+            } @else {
+              {{ i18n.t('cal.fenceNotAfter') }} <bdi dir="ltr">{{ shown(maxDay()!) }}</bdi>
+            }
+          </p>
+        }
       }
 
       @if (withTime() && !byMonth()) {
@@ -163,6 +180,8 @@
                 role="option"
                 class="tbtn"
                 [class.edge]="draftHour() === h"
+                [class.dead]="hourDead(h)"
+                [disabled]="hourDead(h)"
                 [attr.aria-selected]="draftHour() === h"
                 (click)="setTime('h', h)"
               >
@@ -177,6 +196,8 @@
                 role="option"
                 class="tbtn"
                 [class.edge]="draftMinute() === m"
+                [class.dead]="minuteDead(m)"
+                [disabled]="minuteDead(m)"
                 [attr.aria-selected]="draftMinute() === m"
                 (click)="setTime('m', m)"
               >

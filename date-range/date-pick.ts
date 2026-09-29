@@ -34,6 +34,12 @@ export const PICK: Record<string, { en: string; ar: string }> = {
   'cal.hour': { en: 'Hour', ar: 'الساعة' },
   'cal.minute': { en: 'Minute', ar: 'الدقيقة' },
   'cal.now': { en: 'Now', ar: 'الآن' },
+  // The window, named under the grid. A greyed day says it cannot be picked
+  // and never says why (29 Sep 2026).
+  'cal.fenceFrom': { en: 'From', ar: 'من' },
+  'cal.fenceTo': { en: 'to', ar: 'إلى' },
+  'cal.fenceNotBefore': { en: 'Not before', ar: 'ليس قبل' },
+  'cal.fenceNotAfter': { en: 'Not after', ar: 'ليس بعد' },
 };
 
 /** Where the panel opens: 'auto' is the web's (anchored, a centred sheet under
@@ -139,6 +145,29 @@ export class DatePickControl implements ControlValueAccessor {
     return v.length === 7 ? `${v}-01` : v.slice(0, 10);
   });
   protected readonly timePart = computed(() => this.value()?.slice(11, 16) || null);
+
+  /**
+   * The fence, read as DAYS and as CLOCK TIMES.
+   *
+   * A form may hand `min` or `max` as a Cairo wall clock — "2026-10-01T01:30",
+   * the shape `toCairoInput` returns and the shape the native
+   * `datetime-local` field wanted. Everything here compared them as dates, and
+   * a day sorts BEFORE its own instant ("2026-10-01" < "2026-10-01T01:30"), so
+   * three things broke together on 29 September 2026, reported from the sales
+   * desk: today was marked dead; the "Now" chip, which asks the same question,
+   * did nothing; and `fenced()` handed the instant back as the panel's anchor,
+   * where `new Date(anchor + 'T00:00:00Z')` is an Invalid Date, so the month
+   * and the year were NaN and the grid built NO cells. What a person saw was
+   * the weekday row with the hour and minute columns directly under it, a
+   * month select stuck on January, and Done committing nothing.
+   *
+   * So the grid is fenced by the DAY part and the clock by the TIME part. A
+   * fence with no time fences no hour.
+   */
+  protected readonly minDay = computed(() => this.min()?.slice(0, 10) || null);
+  protected readonly maxDay = computed(() => this.max()?.slice(0, 10) || null);
+  private readonly minTime = computed(() => this.min()?.slice(11, 16) || null);
+  private readonly maxTime = computed(() => this.max()?.slice(11, 16) || null);
 
   /** For `[(value)]` use; a form control disables it through the form instead
    *  (the CRM, 28 Sep 2026: a view-only role sees the value and cannot open it). */
@@ -315,9 +344,38 @@ export class DatePickControl implements ControlValueAccessor {
 
   /** Outside the fence: shown, and not pickable. */
   protected isDead(cell: Cell): boolean {
-    const min = this.min();
-    const max = this.max();
+    const min = this.minDay();
+    const max = this.maxDay();
     return !!((min && cell.iso < min) || (max && cell.iso > max));
+  }
+
+  /**
+   * An hour outside the fence, on the fence's own day.
+   *
+   * Fencing the grid by day alone would let somebody set a follow-up for 00:15
+   * today when the fence says "not before 01:30 today": the server refuses it
+   * and the person is told nothing they can act on. Every hour of every other
+   * day is open.
+   */
+  protected hourDead(h: string): boolean {
+    const day = this.draftDate();
+    if (!day) return false;
+    const low = day === this.minDay() ? this.minTime() : null;
+    const high = day === this.maxDay() ? this.maxTime() : null;
+    return !!((low && h < low.slice(0, 2)) || (high && h > high.slice(0, 2)));
+  }
+
+  /** A minute outside the fence, in the fence's own hour on its own day. */
+  protected minuteDead(m: string): boolean {
+    const day = this.draftDate();
+    const h = this.draftH();
+    if (!day || !h) return false;
+    const low = day === this.minDay() ? this.minTime() : null;
+    const high = day === this.maxDay() ? this.maxTime() : null;
+    return !!(
+      (low && h === low.slice(0, 2) && m < low.slice(3, 5)) ||
+      (high && h === high.slice(0, 2) && m > high.slice(3, 5))
+    );
   }
 
   protected pick(cell: Cell): void {
@@ -325,6 +383,15 @@ export class DatePickControl implements ControlValueAccessor {
     if (this.withTime()) {
       // The day goes into the draft; the panel stays open for the time.
       this.draftDate.set(cell.iso);
+      // The new day may forbid the hour the old one allowed (the fence day's
+      // own clock). Drop it rather than commit an instant the server refuses.
+      const held = this.draftH();
+      if (held && this.hourDead(held)) {
+        this.draftH.set(null);
+        this.draftM.set(null);
+        this.minuteChosen = false;
+        return;
+      }
       if (this.minuteChosen) this.commitInstant();
       return;
     }
@@ -336,10 +403,12 @@ export class DatePickControl implements ControlValueAccessor {
    *  there is a day and an hour. */
   protected setTime(part: 'h' | 'm', to: string): void {
     if (part === 'h') {
+      if (this.hourDead(to)) return;
       this.draftH.set(to);
       if (this.minuteChosen) this.commitInstant();
       return;
     }
+    if (this.minuteDead(to)) return;
     this.draftM.set(to);
     this.minuteChosen = true;
     this.commitInstant();
@@ -386,8 +455,8 @@ export class DatePickControl implements ControlValueAccessor {
   }
 
   private fenced(iso: string): string {
-    const min = this.min();
-    const max = this.max();
+    const min = this.minDay();
+    const max = this.maxDay();
     if (min && iso < min) return min;
     if (max && iso > max) return max;
     return iso;

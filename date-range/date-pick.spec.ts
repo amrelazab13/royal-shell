@@ -166,3 +166,155 @@ describe('DatePickControl in a reactive form', () => {
     vi.useRealTimers();
   });
 });
+
+/**
+ * A fence that carries a time — the fault a sales colleague hit on 29 September
+ * 2026, reported through the owner.
+ *
+ * `New Activity → FOLLOW UP` passes `min` and `max` as Cairo wall clocks
+ * ("2026-10-01T01:30"), which is what the native `datetime-local` field wanted
+ * and what `toCairoInput` still returns. Every comparison in here read them as
+ * dates. Three things broke at once, all from that:
+ *
+ *  - `fenced()` decided today was before the fence, because the string
+ *    "2026-10-01" sorts before "2026-10-01T01:30", and handed back the fence.
+ *    The anchor became "2026-10-01T01:30T00:00:00Z" — an Invalid Date — so the
+ *    month and year were NaN and the grid built no cells at all. What a person
+ *    saw was the weekday row, then the hour and minute columns directly under
+ *    it, and a month select stuck on January. Tapping a number set an hour, no
+ *    day was ever chosen, and Done committed nothing: "No date".
+ *  - `isDead()` marked TODAY dead for the same reason, so even a drawn grid
+ *    would have refused the one day most follow-ups are set for.
+ *  - `pickToday()` asks `isDead()` first, so the "Now" chip did nothing —
+ *    which is why there was no way round it from inside the app.
+ *
+ * The fence is a DAY fence for the grid and an INSTANT fence for the clock, so
+ * both are tested here.
+ */
+interface Timed extends Control {
+  cells: () => { iso: string; day: number; outside: boolean }[];
+  setTime: (part: 'h' | 'm', to: string) => void;
+  done: () => void;
+  hourDead: (h: string) => boolean;
+}
+
+describe('DatePickControl with a fence that carries a time', () => {
+  let fixture: ComponentFixture<DatePickControl>;
+  let control: Timed;
+
+  beforeEach(async () => {
+    document.documentElement.dir = 'ltr';
+    vi.useFakeTimers({ toFake: ['Date'] });
+    // 22:30 UTC on 30 September is 01:30 on 1 October in Cairo (+03:00).
+    vi.setSystemTime(new Date('2026-09-30T22:30:00Z'));
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [DatePickControl],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    fixture = TestBed.createComponent(DatePickControl);
+    fixture.componentRef.setInput('withTime', true);
+    // Exactly what lead-detail binds: `toCairoInput(new Date())` and the same
+    // ninety days on.
+    fixture.componentRef.setInput('min', '2026-10-01T01:30');
+    fixture.componentRef.setInput('max', '2026-12-30T01:30');
+    fixture.detectChanges();
+    control = fixture.componentInstance as unknown as Timed;
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it('opens on this month, not January, and draws the days', () => {
+    control.openPanel();
+    expect(control.year()).toBe(2026);
+    expect(control.month()).toBe(9); // October
+    const days = control.cells();
+    // Whole weeks, and every day of October among them. The count was NaN
+    // before the fix, so the grid was empty.
+    expect(days.length % 7).toBe(0);
+    expect(days.length).toBeGreaterThanOrEqual(28);
+    expect(days.filter((d) => !d.outside).length).toBe(31);
+    expect(days.some((d) => d.iso === '2026-10-11')).toBe(true);
+    // The grid is in the DOM, not just in the signal.
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.grid7 .day').length).toBe(
+      days.length,
+    );
+  });
+
+  it('leaves today alive, and the day after the max day dead', () => {
+    expect(control.isDead(cell('2026-10-01'))).toBe(false);
+    expect(control.isDead(cell('2026-10-11'))).toBe(false);
+    expect(control.isDead(cell('2026-12-30'))).toBe(false);
+    expect(control.isDead(cell('2026-12-31'))).toBe(true);
+    expect(control.isDead(cell('2026-09-30'))).toBe(true);
+  });
+
+  it('picks 11 October 2026 at 10:00 and keeps it on Done', () => {
+    control.openPanel();
+    control.pick(cell('2026-10-11'));
+    control.setTime('h', '10');
+    control.setTime('m', '00');
+    control.done();
+    expect(control.value()).toBe('2026-10-11T10:00');
+  });
+
+  it('refuses an hour before the fence on the fence day, and allows it after', () => {
+    control.openPanel();
+    control.pick(cell('2026-10-01'));
+    expect(control.hourDead('00')).toBe(true); // 00:xx is before 01:30 today
+    expect(control.hourDead('02')).toBe(false);
+    control.pick(cell('2026-10-11'));
+    expect(control.hourDead('00')).toBe(false); // a later day is wide open
+  });
+
+  it('lets the Now chip set an instant', () => {
+    control.openPanel();
+    control.pickToday();
+    expect(control.value()).toBe('2026-10-01T01:30');
+  });
+
+  it('names the window under the grid, so a greyed day is explained', () => {
+    control.openPanel();
+    fixture.detectChanges();
+    const fence = (fixture.nativeElement as HTMLElement).querySelector('.fence');
+    expect(fence).not.toBeNull();
+    // Day first, the way the owner reads a date, and both ends named.
+    expect(fence?.textContent?.replace(/\s+/g, ' ').trim()).toBe('From 01-10-2026 to 30-12-2026');
+  });
+
+  it('draws the same grid and keeps the same instant in Arabic, mirrored', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [DatePickControl],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: SHELL_WORDS, useValue: { isRtl: () => true, t: (k: string) => k } },
+      ],
+    }).compileComponents();
+    const ar = TestBed.createComponent(DatePickControl);
+    ar.componentRef.setInput('withTime', true);
+    ar.componentRef.setInput('min', '2026-10-01T01:30');
+    ar.componentRef.setInput('max', '2026-12-30T01:30');
+    ar.detectChanges();
+    const rtl = ar.componentInstance as unknown as Timed;
+    rtl.openPanel();
+    ar.detectChanges();
+    expect(rtl.month()).toBe(9);
+    expect((ar.nativeElement as HTMLElement).querySelectorAll('.grid7 .day').length).toBe(
+      rtl.cells().length,
+    );
+    expect(
+      (ar.nativeElement as HTMLElement)
+        .querySelector('.fence')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim(),
+    ).toBe('من 01-10-2026 إلى 30-12-2026');
+    rtl.pick(cell('2026-10-11'));
+    rtl.setTime('h', '10');
+    rtl.setTime('m', '00');
+    rtl.done();
+    // The value is the same instant whatever the app's language reads.
+    expect(rtl.value()).toBe('2026-10-11T10:00');
+  });
+});
