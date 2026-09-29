@@ -66,6 +66,17 @@
      the only thing that changes is the width, and a width can be
      animated. The column stays 60px either way, so the page does not
      move. */
+  /* The column the page sees. Retracted, the grid reserves 60px for the
+     rail, so the page starts where the icons end. It is set on the BODY
+     state and not on the rail's own rule, because a peek widens the rail
+     and must not move the page. It lived only in each module's styles
+     until 30 Sep 2026, when HR's copy was found EMPTY: a 176px strip
+     between the icons and the page, dead to the eye and to the wheel,
+     ringed by the owner on /chart and /sites. One place now. */
+  body.side-collapsed {
+    --sw: 60px;
+  }
+
   body.side-collapsed .side {
     position: absolute;
     inset-block: 0;
