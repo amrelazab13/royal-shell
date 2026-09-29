@@ -30,11 +30,16 @@ import { SHELL_WORDS, ShellWords } from '../words';
  *   compares the name of the main script with the one it is running. Every
  *   build names that script by its content (`main-XXXX.js`), so a different
  *   name means a new release. No build step, no version file.
- * - Once a newer version is live, the next move to another screen loads it
- *   fully, instead of switching inside the old one. Nobody notices more than
- *   one slower screen.
- * - While something is being written (the module says so through `unsaved`),
- *   it never reloads. It shows the notice below, and waits.
+ * - Once a newer version is live, the page RELOADS ITSELF, there and then,
+ *   on the screen the person is looking at. The owner, 29 Sep 2026, after
+ *   opening Users & teams nine minutes after a release and seeing the old
+ *   layout: "why didnt it do that on itself, didnt we fix that??". The first
+ *   version waited for a move to another screen, and a person who stays on
+ *   the screen that changed never makes one.
+ * - Never while something is being written: the module's `unsaved`, or the
+ *   cursor in a box (a search half typed is not "unsaved work" to a module
+ *   but it is to the person). Then it shows the notice below, loads on the
+ *   next move to another screen, and reloads the moment the box is left.
  *
  * The page itself is served `no-cache` (royal-ui's nginx, the CRM's), so a
  * fresh load gets the newest build.
@@ -52,6 +57,13 @@ export const VERSION_CHECK = new InjectionToken<VersionCheck>('royal-shell.versi
 export function mainScriptOf(html: string): string | null {
   const found = /<script[^>]+src="([^"]*\bmain-[A-Za-z0-9_-]+\.js)"/.exec(html);
   return found ? found[1].replace(/^.*\//, '') : null;
+}
+
+/** True while the cursor is in something a person types into. */
+export function typing(doc: Document = document): boolean {
+  const el = doc.activeElement as HTMLElement | null;
+  if (!el || el === doc.body) return false;
+  return el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
 }
 
 /** The main script this tab is running. */
@@ -125,9 +137,19 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
       const unsaved = () =>
         config.unsaved ? runInInjectionContext(injector, config.unsaved) : false;
       const visible = () => document.visibilityState !== 'hidden';
-      const ask = () => visible() && void version.check();
+      // Reload here and now when nothing on screen would be lost.
+      const settle = () => {
+        if (visible() && version.ready() && !unsaved() && !typing()) version.reload();
+      };
+      const ask = () => {
+        if (!visible()) return;
+        void version.check().then(settle);
+      };
+      // Leaving a box is the moment a held reload may go ahead.
+      const left = () => setTimeout(settle, 0);
       const timer = setInterval(ask, config.everyMs ?? 60_000);
       document.addEventListener('visibilitychange', ask);
+      document.addEventListener('focusout', left);
       // The next move to another screen loads the new version fully, never
       // while something is being written.
       const moves = router?.events.subscribe((event) => {
@@ -138,6 +160,7 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
       inject(DestroyRef).onDestroy(() => {
         clearInterval(timer);
         document.removeEventListener('visibilitychange', ask);
+        document.removeEventListener('focusout', left);
         moves?.unsubscribe();
       });
     }),
@@ -151,8 +174,8 @@ function pageIsRtl(): boolean {
 /** The notice's own words, in both languages; the module's win. */
 export const VERSION_WORDS: Record<string, { en: string; ar: string }> = {
   'version.ready': {
-    en: 'A new version is ready. It opens when you move to another screen.',
-    ar: 'نسخة جديدة جاهزة. ستُفتح عند انتقالك إلى شاشة أخرى.',
+    en: 'A new version is ready. It opens as soon as you finish what you are writing.',
+    ar: 'نسخة جديدة جاهزة. ستُفتح فور انتهائك مما تكتبه.',
   },
   'version.reload': { en: 'Reload now', ar: 'أعد التحميل الآن' },
 };

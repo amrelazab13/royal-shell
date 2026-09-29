@@ -136,6 +136,51 @@ describe('provideVersionCheck', () => {
     expect(assigned).toEqual([]);
   });
 
+  /** The tab comes into view and the server answers with a new build. */
+  async function aNewBuildIsFound(v: Version) {
+    vi.spyOn(v, 'check').mockImplementation(async () => v.ready.set(true));
+    document.dispatchEvent(new Event('visibilitychange'));
+    await Promise.resolve();
+    await Promise.resolve();
+  }
+
+  it('reloads by itself on the screen the person is on (the owner, 29 Sep)', async () => {
+    unsaved = false;
+    const v = boot();
+    const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+    await aNewBuildIsFound(v);
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(assigned).toEqual([]); // no move was needed
+  });
+
+  it('holds while the cursor is in a box, and reloads when the box is left', async () => {
+    unsaved = false;
+    const v = boot();
+    const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+    const box = document.createElement('input');
+    document.body.appendChild(box);
+    box.focus();
+    try {
+      await aNewBuildIsFound(v);
+      expect(reload).not.toHaveBeenCalled();
+      box.blur();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(reload).toHaveBeenCalledTimes(1);
+    } finally {
+      box.remove();
+    }
+  });
+
+  it('never reloads by itself while something is unsaved', async () => {
+    unsaved = true;
+    const v = boot();
+    const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+    await aNewBuildIsFound(v);
+    document.dispatchEvent(new FocusEvent('focusout'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(reload).not.toHaveBeenCalled();
+  });
+
   it('never while something is being written', () => {
     unsaved = true;
     const v = boot();
