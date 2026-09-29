@@ -137,9 +137,17 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
       const unsaved = () =>
         config.unsaved ? runInInjectionContext(injector, config.unsaved) : false;
       const visible = () => document.visibilityState !== 'hidden';
-      // Reload here and now when nothing on screen would be lost.
+      // Reload here and now when nothing on screen would be lost. ONCE: the
+      // check and leaving a box can both arrive at a safe moment together,
+      // and a second reload is noise at best (HR found the test flaking one
+      // run in three on exactly that race, 29 Sep 2026).
+      let reloading = false;
       const settle = () => {
-        if (visible() && version.ready() && !unsaved() && !typing()) version.reload();
+        if (reloading) return;
+        if (visible() && version.ready() && !unsaved() && !typing()) {
+          reloading = true;
+          version.reload();
+        }
       };
       const ask = () => {
         if (!visible()) return;

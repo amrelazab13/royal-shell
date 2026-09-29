@@ -171,6 +171,19 @@ describe('provideVersionCheck', () => {
     }
   });
 
+  it('reloads once, even when the check and leaving a box both arrive', async () => {
+    unsaved = false;
+    const v = boot();
+    const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+    await aNewBuildIsFound(v);
+    document.dispatchEvent(new Event('visibilitychange'));
+    document.dispatchEvent(new FocusEvent('focusout'));
+    document.dispatchEvent(new FocusEvent('focusout'));
+    await new Promise((r) => setTimeout(r, 0));
+    await Promise.resolve();
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
   it('never reloads by itself while something is unsaved', async () => {
     unsaved = true;
     const v = boot();
