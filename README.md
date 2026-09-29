@@ -105,6 +105,22 @@ production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   `fold`/`matches`, the Arabic-and-Latin fold (`\p{Mn}`, never
   `\p{Diacritic}`, F68) held to the same case table as royal-module-kit's
   server fold (`FOLD_CASES` here, `contracts/fold-cases.json` there).
+- `pin/pin-height.ts` — `appPinHeight`, for a list screen where the filter bar
+  and the table's column heads are BOTH sticky against the same scroller
+  (bible §4.9). Put it on the bar; it measures the bar and writes `--pin-h` on
+  the bar's parent, and the heads read `top: var(--pin-h, <a little more than
+  the bar>)`. The height cannot be typed: it changes with the language and the
+  bar wraps at 375px. The fallback must be a little MORE than the bar has ever
+  measured, never less — a head slightly too low shows a hairline of rows,
+  a head slightly too high hides behind the bar — and it is also what stands
+  wherever `ResizeObserver` never fires (a background tab, a hidden pane), so
+  the screen has to be right without this, not merely close. A DIRECTIVE
+  rather than a lookup from the screen: the CEO portal wrote it three other
+  ways first (`afterNextRender`, which in a zoneless app waits for a render
+  that never comes after a route change; a `MutationObserver`; a `viewChild`
+  in an `effect`), each a guess about when Angular has the element, each
+  failing quietly because the fallback is close. (29 Sep 2026, written by the
+  CEO portal when its audit log stopped scrolling itself, F53.)
 - `masthead/masthead.scss` — the masthead and the page head, shared (bible
   §3.3, §3.5). The ORDER is decided here, by `data-slot` on each direct child
   of `<header class="top">`: burger, logo, module, search, online, bell, role,
