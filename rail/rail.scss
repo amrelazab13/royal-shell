@@ -88,9 +88,17 @@
       box-shadow 160ms ease;
   }
 
+  /* Open by a peek, the panel lies OVER the page, so it must read as a
+     panel on top and never as words that end: with `--sh-2` alone, on a
+     dark ground only 6% darker than the panel, a line running under it
+     looked cut off (the owner, Royal Me /team, 30 Sep 2026: "ays asked
+     for…"). So a peeked panel takes the popover's elevation and a drawn
+     edge against the page. The reserved column stays 60px: widening it on
+     hover would reflow the whole page under the pointer. */
   body.side-collapsed.side-peek .side {
     inline-size: 236px;
-    box-shadow: var(--sh-2);
+    box-shadow: var(--sh-pop);
+    border-inline-end: 1px solid var(--line);
   }
 
   /* What the rail hid, the open panel shows again. */
