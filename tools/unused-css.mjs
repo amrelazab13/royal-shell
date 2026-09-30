@@ -105,10 +105,15 @@ for (const sheet of SHEETS) {
   const built = [...css.matchAll(/\/\*\s*built:\s*([\w-]+)\*\s*\*\//g)].map((m) => m[1]);
   const stripped = uncomment(css).split('\n');
   stripped.forEach((line, i) => {
-    // Only a selector line, not a declaration: `border-bottom: 1px` holds no
-    // class, and `.a, .b {` and `.a .b {` both do.
-    if (!/\{\s*$/.test(line) && !/,\s*$/.test(line)) return;
-    for (const [, name] of line.matchAll(/\.([a-zA-Z][\w-]*)/g)) {
+    // Only the selector part, never a declaration: `border-bottom: 1px`
+    // holds no class. A selector is what stands before a `{` — on its own
+    // line (`.a .b {`) or with the rule on the same line (`.a { x: y; }`),
+    // which a line-ends-in-`{` test missed (the CRM, 1 Oct 2026: a one-line
+    // dead rule read as 0 dead) — or a line of a list ending in `,`.
+    const brace = line.indexOf('{');
+    const selector = brace >= 0 ? line.slice(0, brace) : /,\s*$/.test(line) ? line : '';
+    if (!selector) return;
+    for (const [, name] of selector.matchAll(/\.([a-zA-Z][\w-]*)/g)) {
       if (seen.has(name)) continue;
       seen.add(name);
       total += 1;
