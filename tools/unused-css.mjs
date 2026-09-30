@@ -66,6 +66,8 @@ const sources = walk(join(ROOT, LOOK_IN)).filter(
   (file) => !SHEETS.some((sheet) => file.endsWith(sheet.replace(/^\.\//, ''))),
 );
 const haystack = sources.map((file) => readFileSync(file, 'utf8')).join('\n');
+const usedWhole = (name) =>
+  new RegExp(`(^|[^\\w-])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w-])`).test(haystack);
 
 // Where a class name is assembled rather than written. Whatever these build,
 // this tool cannot see — so it says so rather than pretending to be complete.
@@ -105,7 +107,11 @@ for (const sheet of SHEETS) {
       if (seen.has(name)) continue;
       seen.add(name);
       total += 1;
-      if (!haystack.includes(name) && !built.some((prefix) => name.startsWith(prefix))) {
+      // A WHOLE name, never a substring: `row--btn` was found inside
+      // `mrow--btn` and reported as used after a rename left the rule dead
+      // (Royal Me, 1 Oct 2026). A class name is letters, digits, `-` and
+      // `_`, so anything else on either side is a boundary.
+      if (!usedWhole(name) && !built.some((prefix) => name.startsWith(prefix))) {
         dead.push({ sheet, line: i + 1, name, text: lines[i].trim() });
       }
     }
