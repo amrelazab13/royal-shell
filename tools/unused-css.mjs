@@ -88,6 +88,10 @@ const building = sources
 
 let total = 0;
 const dead = [];
+// A sheet that cannot be read is an ERROR, never skipped: a gate over a
+// list that resolved to nothing reported "0 of 0 (0%)" and exit 0 under
+// --strict (HR and Royal Me, 1 Oct 2026: an unsplit path, a stale glob).
+const unread = [];
 
 for (const sheet of SHEETS) {
   let css;
@@ -95,6 +99,7 @@ for (const sheet of SHEETS) {
     css = readFileSync(join(ROOT, sheet), 'utf8');
   } catch {
     console.error(`no stylesheet at ${sheet}`);
+    unread.push(sheet);
     continue;
   }
   const lines = css.split('\n');
@@ -128,7 +133,16 @@ for (const sheet of SHEETS) {
   });
 }
 
-const share = total ? Math.round((dead.length / total) * 100) : 0;
+if (unread.length || total === 0) {
+  console.error(
+    bold(
+      `\nCOULD NOT CHECK: ${unread.length} stylesheet(s) unreadable and ${total} class name(s) read. ` +
+        'Nothing was proved dead or alive; this is an error, not a result.',
+    ),
+  );
+  process.exit(2);
+}
+const share = Math.round((dead.length / total) * 100);
 console.log(
   bold(`\n${dead.length} of ${total} class names (${share}%) appear nowhere this app renders.\n`),
 );
