@@ -47,6 +47,9 @@
   --surface-3: #164058;
   --line: #1c4157;
   --line-soft: #132f42;
+  /* An edge that must read as a boundary against the page: 3.6:1 on
+     --ground (--line is 1.7:1). The peeked rail's edge (F154). */
+  --line-edge: #537284;
   --ink: #eaf2f6;
   --ink-2: #b9ccd6;
   --ink-3: #8aa3b1;
@@ -129,6 +132,7 @@
     --surface-3: #e7eff4;
     --line: #d2e0e8;
     --line-soft: #e6eef2;
+    --line-edge: #728996;
     --ink: #04161f;
     --ink-2: #26414f;
     --ink-3: #5a7382;
@@ -174,6 +178,7 @@
   --surface-3: #e7eff4;
   --line: #d2e0e8;
   --line-soft: #e6eef2;
+  --line-edge: #728996;
   --ink: #04161f;
   --ink-2: #26414f;
   --ink-3: #5a7382;

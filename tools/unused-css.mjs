@@ -34,7 +34,12 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOT = process.cwd();
-const SHEETS = process.argv.slice(2).length ? process.argv.slice(2) : ['src/styles.scss'];
+// `--strict` makes it a gate: exit 1 when any name is dead and no `built:`
+// prefix covers it (Royal Me, 1 Oct 2026: a step that can only pass is
+// decoration). Without it, it stays a list to judge by hand.
+const STRICT = process.argv.includes('--strict');
+const ARGS = process.argv.slice(2).filter((a) => a !== '--strict');
+const SHEETS = ARGS.length ? ARGS : ['src/styles.scss'];
 const LOOK_IN = 'src';
 const SOURCE = ['.html', '.ts', '.scss'];
 
@@ -135,9 +140,9 @@ if (building.length) {
 }
 console.log(
   dim(
-    '\n  A list to judge, never a gate. A rule whose EVERY class is listed cannot match\n' +
+    '\n  A list to judge (a gate only with --strict). A rule whose EVERY class is listed cannot match\n' +
       '  anything, which is the only safe way to delete in bulk — then look at the rendered\n' +
       '  pages, because the tests pass either way and that is the whole problem.\n',
   ),
 );
-process.exit(0);
+process.exit(STRICT && dead.length ? 1 : 0);

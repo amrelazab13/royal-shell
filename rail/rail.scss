@@ -94,11 +94,14 @@
      looked cut off (the owner, Royal Me /team, 30 Sep 2026: "ays asked
      for…"). So a peeked panel takes the popover's elevation and a drawn
      edge against the page. The reserved column stays 60px: widening it on
-     hover would reflow the whole page under the pointer. */
+     hover would reflow the whole page under the pointer. The edge is
+     --line-edge, 3:1 or better against the page in both themes: a --line
+     edge was 1.7:1 and did not read as a boundary (Royal Me measured it,
+     1 Oct 2026). */
   body.side-collapsed.side-peek .side {
     inline-size: 236px;
     box-shadow: var(--sh-pop);
-    border-inline-end: 1px solid var(--line);
+    border-inline-end: 1px solid var(--line-edge);
   }
 
   /* What the rail hid, the open panel shows again. */
