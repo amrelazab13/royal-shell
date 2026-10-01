@@ -70,7 +70,21 @@ const uncomment = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\
 const sources = walk(join(ROOT, LOOK_IN)).filter(
   (file) => !SHEETS.some((sheet) => file.endsWith(sheet.replace(/^\.\//, ''))),
 );
-const haystack = sources.map((file) => readFileSync(file, 'utf8')).join('\n');
+// The haystack is uncommented too, not only the sheet: a class named in a
+// sentence is not a use. `.spin` stayed alive because a docstring said "spin
+// it", `.go` because ten comments said "go" (the CEO portal, 1 Oct 2026: 16
+// dead names hidden by prose, 60 of 158 reported, 76 true). An HTML comment
+// is `<!-- -->` wherever it sits (a template inside a .ts too); `/* */` and
+// `//` only in .ts and .scss, and only where a comment can START — at a line
+// start or after a space — so `'src/**/*.ts'` in a string does not open a
+// comment that swallows the code after it and calls a live class dead.
+const stripComments = (text, file) => {
+  const noHtml = text.replace(/<!--[\s\S]*?-->/g, '');
+  return file.endsWith('.html')
+    ? noHtml
+    : noHtml.replace(/(^|\s)\/\*[\s\S]*?\*\//gm, '$1').replace(/(^|\s)\/\/.*$/gm, '$1');
+};
+const haystack = sources.map((file) => stripComments(readFileSync(file, 'utf8'), file)).join('\n');
 const usedWhole = (name) =>
   new RegExp(`(^|[^\\w-])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w-])`).test(haystack);
 
