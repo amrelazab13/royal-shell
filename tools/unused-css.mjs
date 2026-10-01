@@ -17,7 +17,12 @@
  *
  *   node src/shared/tools/unused-css.mjs [stylesheet …]
  *
- * Default: `src/styles.scss`. Always exits 0.
+ * Default: `src/styles.scss`. Exits 0 unless `--strict` (see below).
+ *
+ * **It reads CLASS names only.** An attribute condition is invisible to it:
+ * `.m-input[aria-invalid='true']` counts as alive while `.m-input` is used,
+ * even if nothing ever sets `aria-invalid` (Royal Me, 1 Oct 2026). Hold such
+ * a rule with the component's own spec, which asserts the attribute is set.
  *
  * **REPORT ONLY, AND IT MUST STAY THAT WAY.** It cannot see a class built at
  * run time — `'p-' + light`, `'is-' + tone`, a name in a data file — so some
