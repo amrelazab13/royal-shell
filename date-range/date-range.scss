@@ -391,48 +391,118 @@
   text-align: center;
 }
 
-/* ── the hour and minute columns (app-time-pick, and app-date-pick withTime) ── */
-.timecols {
+/* ── the hour and minute WHEELS (app-date-pick withTime, app-time-pick) ──
+   The owner, 1 Oct 2026, looking at the follow-up picker: "the 7 days fence
+   works, but for the time, thats too complex, make it like iphone". What was
+   here was twenty-four hour buttons in rows of four with twelve minutes
+   beside them — every value at once, which reads as a keypad rather than a
+   choice.
+
+   Drawn, never `<input type="time">`: the OS picker looks different on every
+   platform, speaks its own language rather than the app's, and knows nothing
+   of the fence. C-5 forbids it and this is why.
+
+   Plain scroll-snap, no library. The row height is written ONCE, in ROW_PX in
+   wheel.ts, and arrives here as `--wheel-row` on the element: a wheel whose
+   stylesheet and whose arithmetic disagree lands half a row off every time and
+   nobody can say why, and two numbers that must match are better made one than
+   policed by a test. The declaration below is the fallback for anything that
+   renders this CSS without the component. */
+.wheels {
+  --wheel-row: 34px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-block: 4px 10px;
+  gap: 10px;
+  margin-block: 6px 10px;
 }
 
-.tcol {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 3px;
-  max-block-size: 168px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 2px;
+.wheel {
+  position: relative;
+  block-size: calc(var(--wheel-row) * 5);
   border: 1px solid var(--line-soft);
   border-radius: var(--rs);
-}
+  overflow: hidden;
 
-.tbtn {
-  block-size: 30px;
-  border-radius: var(--rs);
-  font-size: 12.5px;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-2);
-  transition: all var(--fast);
-
-  &:hover {
+  /* The lit band the chosen row sits in, under the rows rather than over. */
+  .wheel__win {
+    position: absolute;
+    inset-inline: 4px;
+    inset-block-start: 50%;
+    block-size: var(--wheel-row);
+    margin-block-start: calc(var(--wheel-row) / -2);
+    border-radius: var(--rs);
     background: var(--surface-2);
-    color: var(--ink);
+    pointer-events: none;
   }
 
-  &.edge {
-    background: var(--accent);
-    color: var(--on-accent);
+  /* The fade top and bottom, which is most of what makes it read as a wheel
+     rather than a list. Built from the panel's own token, so it follows the
+     theme instead of being a second opinion about the background. */
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    block-size: 48px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  &::before {
+    inset-block-start: 0;
+    background: linear-gradient(var(--surface), transparent);
+  }
+  &::after {
+    inset-block-end: 0;
+    background: linear-gradient(transparent, var(--surface));
+  }
+}
+
+.wheel__col {
+  position: relative;
+  z-index: 1;
+  block-size: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  /* Two rows either side, so the first and last can reach the middle. */
+  padding-block: calc(var(--wheel-row) * 2);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-hi);
+    outline-offset: -2px;
+  }
+}
+
+.wheel__row {
+  block-size: var(--wheel-row);
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color var(--fast);
+
+  &.on {
+    color: var(--ink);
     font-weight: 700;
   }
 
   &.dead {
     opacity: 0.28;
     cursor: not-allowed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel__col {
+    scroll-behavior: auto;
   }
 }
 

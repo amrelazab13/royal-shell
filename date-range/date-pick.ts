@@ -14,6 +14,7 @@ import { todayInCairo } from '../dates/dates';
 import { Icon } from '../icons/icons';
 import { SHELL_WORDS } from '../words';
 import { CAL, wordsFor } from './date-range';
+import { ROW_PX, WHEEL_TICK, centredIndex, nearestLive, offsetFor, wheelId } from './wheel';
 
 interface Cell {
   iso: string;
@@ -134,6 +135,16 @@ export class DatePickControl implements ControlValueAccessor {
   protected readonly byMonth = computed(() => this.granularity() === 'month');
 
   protected readonly hours = Array.from({ length: 24 }, (_, i) => pad2(i));
+
+  /** A tick as the wheel passes a value, where the platform has one. Absent on
+   *  the web, which is why it is injected rather than imported (see wheel.ts). */
+  private readonly tick = inject(WHEEL_TICK, { optional: true });
+  private readonly hourWheel = viewChild<ElementRef<HTMLElement>>('hourWheel');
+  private readonly minuteWheel = viewChild<ElementRef<HTMLElement>>('minuteWheel');
+  private settling: Record<'h' | 'm', ReturnType<typeof setTimeout> | null> = { h: null, m: null };
+  protected readonly rowPx = ROW_PX;
+  /** This picker's own stem for the wheels' option ids. */
+  protected readonly id = wheelId();
   protected readonly minutes = computed(() => {
     const step = Math.max(1, Math.min(30, this.minuteStep()));
     return Array.from({ length: Math.ceil(60 / step) }, (_, i) => pad2(i * step));
@@ -323,7 +334,43 @@ export class DatePickControl implements ControlValueAccessor {
     this.year.set(date.getUTCFullYear());
     this.open.set(true);
     this.openedFrom = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    setTimeout(() => this.cal()?.nativeElement.focus());
+    setTimeout(() => {
+      this.cal()?.nativeElement.focus();
+      this.restWheels();
+    });
+  }
+
+  /**
+   * Put the wheels where they belong before anybody sees them.
+   *
+   * On the drafted value if there is one; otherwise on the first row that may
+   * be chosen, so the window is never sitting over a greyed hour. Without
+   * this both wheels open at midnight and a 16:40 follow-up starts sixteen
+   * flicks away.
+   *
+   * No value is SET here. The wheel showing 09 and 09 being chosen are
+   * different things, and a picker that silently decided a time because it was
+   * opened would commit an instant nobody asked for.
+   */
+  private restWheels(): void {
+    const put = (
+      el: HTMLElement | undefined,
+      list: string[],
+      at: string | null,
+      dead: (index: number) => boolean,
+    ) => {
+      if (!el) return;
+      const known = at ? list.indexOf(at) : -1;
+      const landed = known >= 0 ? known : nearestLive(list.length, 0, dead);
+      if (landed >= 0) el.scrollTop = offsetFor(landed);
+    };
+    put(this.hourWheel()?.nativeElement, this.hours, this.draftHour(), (i) =>
+      this.hourDead(this.hours[i]),
+    );
+    const minutes = this.minutes();
+    put(this.minuteWheel()?.nativeElement, minutes, this.draftMinute(), (i) =>
+      this.minuteDead(minutes[i]),
+    );
   }
 
   protected close(): void {
@@ -401,6 +448,61 @@ export class DatePickControl implements ControlValueAccessor {
     }
     this.set(cell.iso);
     this.close();
+  }
+
+  /**
+   * The wheel came to rest: take the row under the window, or the nearest row
+   * that may be chosen.
+   *
+   * Debounced rather than driven by `scrollend`, which Safari only learnt
+   * recently and this app has to run on iOS 15. Ninety milliseconds is long
+   * enough that a flick is one settle rather than forty, and short enough that
+   * letting go feels like choosing.
+   */
+  protected wheelSettled(part: 'h' | 'm', el: HTMLElement): void {
+    const list = part === 'h' ? this.hours : this.minutes();
+    const dead = (i: number) => (part === 'h' ? this.hourDead(list[i]) : this.minuteDead(list[i]));
+    const landed = nearestLive(list.length, centredIndex(el.scrollTop), dead);
+    if (landed < 0) return; // every row fenced off: leave the wheel alone
+    const want = offsetFor(landed);
+    if (Math.abs(el.scrollTop - want) > 1) el.scrollTo({ top: want, behavior: 'smooth' });
+    const already = part === 'h' ? this.draftHour() : this.draftMinute();
+    if (already === list[landed]) return;
+    this.tick?.();
+    this.setTime(part, list[landed]);
+  }
+
+  /** Every scroll event asks again, and only the last one wins. */
+  protected onWheelScroll(part: 'h' | 'm', target: EventTarget | null): void {
+    const el = target as HTMLElement | null;
+    if (!el) return;
+    const pending = this.settling[part];
+    if (pending) clearTimeout(pending);
+    this.settling[part] = setTimeout(() => this.wheelSettled(part, el), 90);
+  }
+
+  /**
+   * Arrow keys, because a wheel a mouse can spin is not a wheel a keyboard can
+   * use, and this control is on the web CRM too.
+   *
+   * Moves by one LIVE row rather than one row: stepping onto a fenced hour and
+   * being bounced back off it would make the key feel broken.
+   */
+  protected onWheelKey(part: 'h' | 'm', event: KeyboardEvent): void {
+    const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+    if (!step) return;
+    event.preventDefault();
+    const list = part === 'h' ? this.hours : this.minutes();
+    const dead = (i: number) => (part === 'h' ? this.hourDead(list[i]) : this.minuteDead(list[i]));
+    const now = list.indexOf((part === 'h' ? this.draftHour() : this.draftMinute()) ?? '');
+    const from = now < 0 ? 0 : now + step;
+    const landed = nearestLive(list.length, Math.min(Math.max(from, 0), list.length - 1), dead);
+    if (landed < 0 || list[landed] === (part === 'h' ? this.draftHour() : this.draftMinute()))
+      return;
+    this.tick?.();
+    this.setTime(part, list[landed]);
+    const el = (part === 'h' ? this.hourWheel() : this.minuteWheel())?.nativeElement;
+    el?.scrollTo({ top: offsetFor(landed), behavior: 'smooth' });
   }
 
   /** An hour or a minute into the draft; the minute completes the instant once

@@ -172,38 +172,64 @@
       }
 
       @if (withTime() && !byMonth()) {
-        <div class="timecols">
-          <div class="tcol" role="listbox" [attr.aria-label]="i18n.t('cal.hour')">
-            @for (h of hours; track h) {
-              <button
-                type="button"
-                role="option"
-                class="tbtn"
-                [class.edge]="draftHour() === h"
-                [class.dead]="hourDead(h)"
-                [disabled]="hourDead(h)"
-                [attr.aria-selected]="draftHour() === h"
-                (click)="setTime('h', h)"
-              >
-                {{ h }}
-              </button>
-            }
+        <!-- A clock reads left to right in both languages: hours, then minutes.
+             The wheels mirror nothing; only the panel around them does. -->
+        <div class="wheels" dir="ltr" [style.--wheel-row.px]="rowPx">
+          <div class="wheel">
+            <div class="wheel__win" aria-hidden="true"></div>
+            <div
+              #hourWheel
+              class="wheel__col"
+              role="listbox"
+              tabindex="0"
+              [attr.aria-label]="i18n.t('cal.hour')"
+              [attr.aria-activedescendant]="draftHour() ? id + '-h-' + draftHour() : null"
+              (scroll)="onWheelScroll('h', $event.target)"
+              (keydown)="onWheelKey('h', $event)"
+            >
+              @for (h of hours; track h) {
+                <div
+                  class="wheel__row"
+                  role="option"
+                  [id]="id + '-h-' + h"
+                  [class.on]="draftHour() === h"
+                  [class.dead]="hourDead(h)"
+                  [attr.aria-selected]="draftHour() === h"
+                  [attr.aria-disabled]="hourDead(h)"
+                  (click)="setTime('h', h)"
+                >
+                  {{ h }}
+                </div>
+              }
+            </div>
           </div>
-          <div class="tcol" role="listbox" [attr.aria-label]="i18n.t('cal.minute')">
-            @for (m of minutes(); track m) {
-              <button
-                type="button"
-                role="option"
-                class="tbtn"
-                [class.edge]="draftMinute() === m"
-                [class.dead]="minuteDead(m)"
-                [disabled]="minuteDead(m)"
-                [attr.aria-selected]="draftMinute() === m"
-                (click)="setTime('m', m)"
-              >
-                {{ m }}
-              </button>
-            }
+          <div class="wheel">
+            <div class="wheel__win" aria-hidden="true"></div>
+            <div
+              #minuteWheel
+              class="wheel__col"
+              role="listbox"
+              tabindex="0"
+              [attr.aria-label]="i18n.t('cal.minute')"
+              [attr.aria-activedescendant]="draftMinute() ? id + '-m-' + draftMinute() : null"
+              (scroll)="onWheelScroll('m', $event.target)"
+              (keydown)="onWheelKey('m', $event)"
+            >
+              @for (m of minutes(); track m) {
+                <div
+                  class="wheel__row"
+                  role="option"
+                  [id]="id + '-m-' + m"
+                  [class.on]="draftMinute() === m"
+                  [class.dead]="minuteDead(m)"
+                  [attr.aria-selected]="draftMinute() === m"
+                  [attr.aria-disabled]="minuteDead(m)"
+                  (click)="setTime('m', m)"
+                >
+                  {{ m }}
+                </div>
+              }
+            </div>
           </div>
         </div>
       }

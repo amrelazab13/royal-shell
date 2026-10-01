@@ -13,6 +13,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Icon } from '../icons/icons';
 import { SHELL_WORDS } from '../words';
 import { PICK, PanelFrame, nowInCairo, pad2 } from './date-pick';
+import { ROW_PX, WHEEL_TICK, centredIndex, nearestLive, offsetFor, wheelId } from './wheel';
 import { CAL, wordsFor } from './date-range';
 
 /**
@@ -83,6 +84,16 @@ export class TimePickControl implements ControlValueAccessor {
   protected readonly minute = computed(() => this.draftM());
 
   private readonly cal = viewChild<ElementRef<HTMLElement>>('cal');
+
+  /* The same wheels as the date picker's time half — one control, one way of
+     asking for a time. See wheel.ts for why the tick is injected rather than
+     imported. */
+  private readonly tick = inject(WHEEL_TICK, { optional: true });
+  private readonly hourWheel = viewChild<ElementRef<HTMLElement>>('hourWheel');
+  private readonly minuteWheel = viewChild<ElementRef<HTMLElement>>('minuteWheel');
+  private settling: Record<'h' | 'm', ReturnType<typeof setTimeout> | null> = { h: null, m: null };
+  protected readonly rowPx = ROW_PX;
+  protected readonly id = wheelId();
   private openedFrom: HTMLElement | null = null;
   private onChange: (value: string | null) => void = () => {};
   private onTouched: () => void = () => {};
@@ -112,7 +123,72 @@ export class TimePickControl implements ControlValueAccessor {
     this.minuteChosen = false;
     this.open.set(true);
     this.openedFrom = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    setTimeout(() => this.cal()?.nativeElement.focus());
+    setTimeout(() => {
+      this.cal()?.nativeElement.focus();
+      this.restWheels();
+    });
+  }
+
+  /** On the chosen value, or the first row that may be chosen. Sets nothing. */
+  private restWheels(): void {
+    const put = (
+      el: HTMLElement | undefined,
+      list: string[],
+      at: string | null,
+      dead: (index: number) => boolean,
+    ) => {
+      if (!el) return;
+      const known = at ? list.indexOf(at) : -1;
+      const landed = known >= 0 ? known : nearestLive(list.length, 0, dead);
+      if (landed >= 0) el.scrollTop = offsetFor(landed);
+    };
+    put(this.hourWheel()?.nativeElement, this.hours, this.hour(), (i) =>
+      this.hourDead(this.hours[i]),
+    );
+    const minutes = this.minutes();
+    put(this.minuteWheel()?.nativeElement, minutes, this.minute(), (i) =>
+      this.minuteDead(minutes[i]),
+    );
+  }
+
+  /** The wheel came to rest: the row under the window, or the nearest live one. */
+  protected wheelSettled(part: 'h' | 'm', el: HTMLElement): void {
+    const list = part === 'h' ? this.hours : this.minutes();
+    const dead = (i: number) => (part === 'h' ? this.hourDead(list[i]) : this.minuteDead(list[i]));
+    const landed = nearestLive(list.length, centredIndex(el.scrollTop), dead);
+    if (landed < 0) return;
+    const want = offsetFor(landed);
+    if (Math.abs(el.scrollTop - want) > 1) el.scrollTo({ top: want, behavior: 'smooth' });
+    const already = part === 'h' ? this.hour() : this.minute();
+    if (already === list[landed]) return;
+    this.tick?.();
+    this.setPart(part, list[landed]);
+  }
+
+  /** Every scroll asks again; only the last one wins. 90ms, as the date picker. */
+  protected onWheelScroll(part: 'h' | 'm', target: EventTarget | null): void {
+    const el = target as HTMLElement | null;
+    if (!el) return;
+    const pending = this.settling[part];
+    if (pending) clearTimeout(pending);
+    this.settling[part] = setTimeout(() => this.wheelSettled(part, el), 90);
+  }
+
+  /** Arrow keys, by one LIVE row, so a fenced value never bounces the key. */
+  protected onWheelKey(part: 'h' | 'm', event: KeyboardEvent): void {
+    const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+    if (!step) return;
+    event.preventDefault();
+    const list = part === 'h' ? this.hours : this.minutes();
+    const dead = (i: number) => (part === 'h' ? this.hourDead(list[i]) : this.minuteDead(list[i]));
+    const now = list.indexOf((part === 'h' ? this.hour() : this.minute()) ?? '');
+    const from = now < 0 ? 0 : now + step;
+    const landed = nearestLive(list.length, Math.min(Math.max(from, 0), list.length - 1), dead);
+    if (landed < 0 || list[landed] === (part === 'h' ? this.hour() : this.minute())) return;
+    this.tick?.();
+    this.setPart(part, list[landed]);
+    const el = (part === 'h' ? this.hourWheel() : this.minuteWheel())?.nativeElement;
+    el?.scrollTo({ top: offsetFor(landed), behavior: 'smooth' });
   }
 
   protected close(): void {

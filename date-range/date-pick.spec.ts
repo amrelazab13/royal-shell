@@ -3,6 +3,7 @@ import { Component, provideZonelessChangeDetection, signal } from '@angular/core
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { SHELL_WORDS } from '../words';
 import { DatePickControl } from './date-pick';
+import { ROW_PX } from './wheel';
 
 /** The control's own members are protected; the spec reaches them by name. */
 interface Control {
@@ -208,7 +209,22 @@ interface Timed extends Control {
   setTime: (part: 'h' | 'm', to: string) => void;
   done: () => void;
   hourDead: (h: string) => boolean;
+  wheelSettled: (part: 'h' | 'm', el: HTMLElement) => void;
+  onWheelKey: (part: 'h' | 'm', event: KeyboardEvent) => void;
 }
+
+/** A scroll container, as much of one as the wheel actually touches. */
+const column = (scrollTop: number) => {
+  const went: number[] = [];
+  const el = {
+    scrollTop,
+    scrollTo: (to: { top: number }) => {
+      went.push(to.top);
+      el.scrollTop = to.top;
+    },
+  };
+  return { el: el as unknown as HTMLElement, went };
+};
 
 describe('DatePickControl with a fence that carries a time', () => {
   let fixture: ComponentFixture<DatePickControl>;
@@ -328,5 +344,56 @@ describe('DatePickControl with a fence that carries a time', () => {
     rtl.done();
     // The value is the same instant whatever the app's language reads.
     expect(rtl.value()).toBe('2026-10-11T10:00');
+  });
+  it('will not rest the wheel on an hour the fence forbids', () => {
+    // 01:30 is the fence, so 00 is dead. Let the wheel go at the top and it
+    // must settle on 01, not sit on a greyed row showing a time nobody can
+    // choose.
+    control.openPanel();
+    control.pick(cell('2026-10-01'));
+    const { el, went } = column(0);
+    control.wheelSettled('h', el);
+    expect(went).toEqual([ROW_PX]); // scrolled down one row, to 01
+    expect(control.value()).toBeNull(); // nothing committed on an hour alone
+  });
+
+  it('takes the row under the window on a day with no fence', () => {
+    control.openPanel();
+    control.pick(cell('2026-10-11'));
+    const { el, went } = column(ROW_PX * 10);
+    control.wheelSettled('h', el);
+    expect(went).toEqual([]); // already centred: no correcting shove
+    const minutes = column(ROW_PX * 6); // 30, in fives
+    control.wheelSettled('m', minutes.el);
+    // Day, hour and minute are all there now, so the instant is emitted.
+    expect(control.value()).toBe('2026-10-11T10:30');
+  });
+
+  it('steps by arrow key, over the fenced hours rather than into them', () => {
+    control.openPanel();
+    control.pick(cell('2026-10-01'));
+    control.setTime('h', '02');
+    control.onWheelKey('h', new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    // 01 is the first live hour; 00 is behind the fence and is stepped over.
+    control.onWheelKey('h', new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    // 00 past the hour is itself behind the fence on this day — 01:30 is the
+    // earliest instant — so the minute wheel's first live row is 30, and the
+    // control refuses 00 rather than committing a time already gone.
+    control.setTime('m', '00');
+    control.done();
+    expect(control.value()).toBeNull();
+    control.setTime('m', '30');
+    control.done();
+    expect(control.value()).toBe('2026-10-01T01:30');
+  });
+
+  it('ignores a key that is not a step', () => {
+    control.openPanel();
+    control.pick(cell('2026-10-11'));
+    control.setTime('h', '10');
+    control.onWheelKey('h', new KeyboardEvent('keydown', { key: 'a' }));
+    control.setTime('m', '00');
+    control.done();
+    expect(control.value()).toBe('2026-10-11T10:00');
   });
 });
