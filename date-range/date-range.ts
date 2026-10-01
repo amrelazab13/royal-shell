@@ -151,6 +151,8 @@ export class DateRangeControl {
     Array.from({ length: 7 }, (_, i) =>
       new Date(Date.UTC(2024, 0, 6 + i)).toLocaleDateString(this.locale(), {
         weekday: 'short',
+        // Named in UTC, or a zone west of Greenwich reads the row Fri..Thu.
+        timeZone: 'UTC',
       }),
     ),
   );

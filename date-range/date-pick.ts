@@ -258,7 +258,13 @@ export class DatePickControl implements ControlValueAccessor {
    *  Saturday, so the header is read from there. */
   protected readonly dayNames = computed(() =>
     Array.from({ length: 7 }, (_, i) =>
-      new Date(Date.UTC(2024, 0, 6 + i)).toLocaleDateString(this.locale(), { weekday: 'short' }),
+      // Named in UTC: the instant is UTC midnight, and read in a zone west of
+      // Greenwich it is still the day before, so the row read Fri..Thu
+      // (Mobile CRM, 1 Oct 2026, caught by a Los Angeles test run).
+      new Date(Date.UTC(2024, 0, 6 + i)).toLocaleDateString(this.locale(), {
+        weekday: 'short',
+        timeZone: 'UTC',
+      }),
     ),
   );
 
