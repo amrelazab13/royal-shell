@@ -144,10 +144,12 @@ export class DateRangeControl {
     ),
   );
 
-  /** Sunday first, as the working week here starts on Sunday. */
+  /** SATURDAY first: the owner, 1 Oct 2026, "the week starts on saturday not
+   *  sunday" (Egypt's week runs Saturday to Friday). 6 Jan 2024 was a
+   *  Saturday, so the header is read from there. */
   protected readonly dayNames = computed(() =>
     Array.from({ length: 7 }, (_, i) =>
-      new Date(Date.UTC(2024, 0, 7 + i)).toLocaleDateString(this.locale(), {
+      new Date(Date.UTC(2024, 0, 6 + i)).toLocaleDateString(this.locale(), {
         weekday: 'short',
       }),
     ),
@@ -177,7 +179,9 @@ export class DateRangeControl {
   protected readonly cells = computed<Cell[]>(() => {
     const year = this.year();
     const month = this.month();
-    const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
+    // How many days of the previous month lead the grid, counting from
+    // SATURDAY (getUTCDay: Saturday is 6), not from Sunday.
+    const firstDow = (new Date(Date.UTC(year, month, 1)).getUTCDay() + 1) % 7;
     const daysThis = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
     const daysPrev = new Date(Date.UTC(year, month, 0)).getUTCDate();
 

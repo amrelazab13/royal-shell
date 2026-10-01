@@ -80,6 +80,18 @@ describe('DatePickControl', () => {
     expect(control.value()).toBe('2026-10-01');
   });
 
+  it('starts the week on SATURDAY (the owner, 1 Oct 2026)', async () => {
+    control.openPanel();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const names = [...el().querySelectorAll('.grid7 .dow')].map((n) => n.textContent?.trim());
+    expect(names).toEqual(['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+    // October 2026 opens on a Thursday: five days of September lead it,
+    // Saturday 26 to Wednesday 30, so the 1st sits under "Thu".
+    const days = [...el().querySelectorAll('.grid7 button')].map((b) => b.textContent?.trim());
+    expect(days.slice(0, 6)).toEqual(['26', '27', '28', '29', '30', '1']);
+  });
+
   it('opens on the picked month, or on today when empty', () => {
     control.openPanel();
     expect([control.year(), control.month()]).toEqual([2026, 9]);
