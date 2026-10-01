@@ -65,7 +65,12 @@ function walk(dir, out = []) {
 }
 
 /** Comments out, so a class name in prose is not read as a selector. */
-const uncomment = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
+// A block comment keeps its newlines, so line N of the uncommented text is
+// line N of the file: dropping them reported `.rulegrid` at 918 when it sits
+// at 1983 (the CEO portal, 1 Oct 2026).
+const keepLines = (m) => m.replace(/[^\n]/g, '');
+const uncomment = (css) =>
+  css.replace(/\/\*[\s\S]*?\*\//g, keepLines).replace(/(^|\s)\/\/.*$/gm, '$1');
 
 const sources = walk(join(ROOT, LOOK_IN)).filter(
   (file) => !SHEETS.some((sheet) => file.endsWith(sheet.replace(/^\.\//, ''))),
