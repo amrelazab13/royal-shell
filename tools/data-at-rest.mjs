@@ -34,7 +34,7 @@
  *
  * Exit 1 when anything real is found.
  */
-import { existsSync, readdirSync, statSync, createReadStream } from 'node:fs';
+import { createReadStream, existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { join, basename } from 'node:path';
 
 const args = process.argv.slice(2);
@@ -149,7 +149,17 @@ function defaultRoots() {
       walkForScratch(join(base, dir), roots, 0);
     }
   }
-  return [...new Set(roots)];
+  // RESOLVED before de-duplicating: on macOS /tmp is a link to
+  // /private/tmp, so every scratch file was read and counted twice (the
+  // CRM, 1 Oct 2026: "78" was 39 files of its own). One real path, once.
+  const real = roots.map((root) => {
+    try {
+      return realpathSync(root);
+    } catch {
+      return root;
+    }
+  });
+  return [...new Set(real)];
 }
 
 function walkForScratch(dir, out, depth) {
