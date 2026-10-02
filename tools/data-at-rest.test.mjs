@@ -214,6 +214,28 @@ rmSync(join(dir, 'real.txt'));
   check('and prints a count per root', /\n\s+\d+ seen\s+\S*dar-cwd-/.test(r.out));
   r = go('--project', 'proj-Nobody');
   check('--project with no matching scratch is COULD NOT LOOK', r.code === 2);
+
+  // The scratchpad's siblings: a tool call's transcript and its screenshots.
+  rmSync(join(mine, 'mine.txt'));
+  const tasks = join(base, 'proj-Mine', 's1', 'tasks');
+  mkdirSync(tasks, { recursive: true });
+  const dashes = piece('-----');
+  writeFileSync(
+    join(tasks, 'call.output'),
+    `grep found:\n${dashes}BEGIN ${piece('PRIVATE', ' KEY')}${dashes}\nTm90LXJlYWw=\n`,
+  );
+  r = go('--project', 'proj-Mine');
+  check(
+    'a key in the tasks/ sibling is read and fails',
+    r.code === 1 && r.out.includes('call.output'),
+  );
+  writeFileSync(
+    join(tasks, 'call.output'),
+    `the pattern is ^${dashes}BEGIN ${piece('PRIVATE', ' KEY')}${dashes}$ (anchored)\n`,
+  );
+  r = go('--project', 'proj-Mine');
+  check('a transcript that only MENTIONS the pattern stays quiet (the control)', r.code === 0);
+  check('and tasks/ is counted as a root of its own', /\n\s+1 seen\s+\S*\/tasks\n/.test(r.out));
   rmSync(base, { recursive: true, force: true });
   rmSync(cwd, { recursive: true, force: true });
 }

@@ -264,7 +264,17 @@ function walkForScratch(dir, out, depth) {
   for (const e of entries) {
     if (!e.isDirectory()) continue;
     if (e.name === 'scratchpad') {
-      if (!PROJECT || join(dir, e.name).includes(PROJECT)) out.push(join(dir, e.name));
+      if (PROJECT && !join(dir, e.name).includes(PROJECT)) continue;
+      out.push(join(dir, e.name));
+      // Its SIBLINGS too (HR, 3 Oct 2026): `tasks/` holds every tool call's
+      // output, so a call that returned real rows or a key lands there, and
+      // `images/` holds screenshots, which are copies of what was on screen.
+      // Both sat beside the scratchpad and were never read. Each is a root of
+      // its own, so its count is printed apart; the anchored patterns keep a
+      // transcript that merely MENTIONS a pattern quiet (F189).
+      for (const sibling of ['tasks', 'images']) {
+        if (existsSync(join(dir, sibling))) out.push(join(dir, sibling));
+      }
     } else walkForScratch(join(dir, e.name), out, depth + 1);
   }
 }
