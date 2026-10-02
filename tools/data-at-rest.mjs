@@ -29,6 +29,7 @@
  *
  *   node src/shared/tools/data-at-rest.mjs                  # this tree, and the scratchpads
  *   node src/shared/tools/data-at-rest.mjs --in /some/dir   # somewhere else (repeatable)
+ *   node src/shared/tools/data-at-rest.mjs --project Royal-CEO  # this tree + THIS module's scratch
  *   node src/shared/tools/data-at-rest.mjs --max-mb 20      # a different "big"
  *   node src/shared/tools/data-at-rest.mjs --quiet          # findings only
  *
@@ -47,6 +48,11 @@ const MAX_MB = Number(flag('--max-mb', 5));
 const READ_CAP = 32 * 1024 * 1024;
 const QUIET = args.includes('--quiet');
 const given = args.flatMap((a, i) => (a === '--in' ? [args[i + 1]] : []));
+// A module's own scope: its tree plus the scratch of ITS sessions only, chosen
+// by a piece of the project folder's name (the CEO portal, 2 Oct 2026: the
+// bare sweep reads every module's scratch, so another module's leftovers
+// turned this module's gate red and taught it to look away).
+const PROJECT = flag('--project', '');
 
 /** Directories whose contents are somebody else's, or are rebuilt from source. */
 const SKIP = new Set([
@@ -175,7 +181,14 @@ function defaultRoots() {
       return root;
     }
   });
-  return [...new Set(real)];
+  const unique = [...new Set(real)];
+  // Asked for one module's scratch and found none: say so, never scan only
+  // the tree and call the scratch clean.
+  if (PROJECT && unique.length < 2) {
+    console.error(`data-at-rest: COULD NOT LOOK. No scratch folder matches --project ${PROJECT}.`);
+    process.exit(2);
+  }
+  return unique;
 }
 
 function walkForScratch(dir, out, depth) {
@@ -188,8 +201,9 @@ function walkForScratch(dir, out, depth) {
   }
   for (const e of entries) {
     if (!e.isDirectory()) continue;
-    if (e.name === 'scratchpad') out.push(join(dir, e.name));
-    else walkForScratch(join(dir, e.name), out, depth + 1);
+    if (e.name === 'scratchpad') {
+      if (!PROJECT || join(dir, e.name).includes(PROJECT)) out.push(join(dir, e.name));
+    } else walkForScratch(join(dir, e.name), out, depth + 1);
   }
 }
 

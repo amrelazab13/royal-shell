@@ -182,6 +182,39 @@ check(
 );
 rmSync(join(dir, 'real.txt'));
 
+// --project: this tree plus ONE module's scratch, and nobody else's.
+{
+  const base = mkdtempSync('/tmp/claude-dar-selftest-');
+  const mine = join(base, 'proj-Mine', 's1', 'scratchpad');
+  const theirs = join(base, 'proj-Theirs', 's1', 'scratchpad');
+  mkdirSync(mine, { recursive: true });
+  mkdirSync(theirs, { recursive: true });
+  writeFileSync(
+    join(mine, 'mine.txt'),
+    `${invented.company('ops')}\n${invented.company('a.other')}\n`,
+  );
+  writeFileSync(
+    join(theirs, 'theirs.txt'),
+    `${invented.company('ops')}\n${invented.company('a.other')}\n`,
+  );
+  const cwd = mkdtempSync(join(tmpdir(), 'dar-cwd-'));
+  writeFileSync(join(cwd, 'ok.txt'), 'nothing here\n');
+  const go = (...a) => {
+    try {
+      return { code: 0, out: execFileSync('node', [SCANNER, ...a], { encoding: 'utf8', cwd }) };
+    } catch (e) {
+      return { code: e.status, out: (e.stdout ?? '') + (e.stderr ?? '') };
+    }
+  };
+  r = go('--project', 'proj-Mine');
+  check('--project reads its own scratch', r.code === 1 && r.out.includes('mine.txt'));
+  check("--project does not read another module's scratch", !r.out.includes('theirs.txt'));
+  r = go('--project', 'proj-Nobody');
+  check('--project with no matching scratch is COULD NOT LOOK', r.code === 2);
+  rmSync(base, { recursive: true, force: true });
+  rmSync(cwd, { recursive: true, force: true });
+}
+
 // ── the sweep itself ────────────────────────────────────────────────────────
 // A big file with nothing real in it is worth seeing and is not a failure.
 writeFileSync(join(dir, 'big.bin'), Buffer.alloc(2 * 1024 * 1024, 0x41));
