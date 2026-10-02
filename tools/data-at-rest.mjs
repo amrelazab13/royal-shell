@@ -178,8 +178,8 @@ const realPhones = (text, pattern) =>
   [...text.matchAll(pattern)].filter((m) => !placeholder(m[0])).length;
 
 /** Where to look when nobody says. */
-function defaultRoots() {
-  const roots = [process.cwd()];
+function defaultRoots(tree = [process.cwd()]) {
+  const roots = [...tree];
   // Session scratch directories. This is the place the fault actually lived,
   // and it is outside every repository by design.
   for (const base of ['/tmp', '/private/tmp']) {
@@ -202,7 +202,7 @@ function defaultRoots() {
   const unique = [...new Set(real)];
   // Asked for one module's scratch and found none: say so, never scan only
   // the tree and call the scratch clean.
-  if (PROJECT && unique.length < 2) {
+  if (PROJECT && unique.length <= tree.length) {
     console.error(`data-at-rest: COULD NOT LOOK. No scratch folder matches --project ${PROJECT}.`);
     process.exit(2);
   }
@@ -283,7 +283,16 @@ async function countReal(path, { arabic = false } = {}) {
   return found;
 }
 
-const roots = given.length ? given : defaultRoots();
+// `--in` with `--project`: the given trees PLUS that module's scratch. It used
+// to be one or the other, so `--project` was silently dropped whenever `--in`
+// was given (Royal Me, 2 Oct 2026). On a CI runner there is no scratch, so CI
+// uses `--in` alone and the release step uses `--project`.
+const roots = PROJECT
+  ? defaultRoots(given.length ? given : [process.cwd()])
+  : given.length
+    ? given
+    : defaultRoots();
+const perRoot = new Map();
 const looked = [];
 const findings = [];
 let seen = 0;
@@ -305,6 +314,7 @@ for (const root of roots) {
   const walk = statSync(root).isFile() ? [root] : files(root);
   for (const path of walk) {
     seen += 1;
+    perRoot.set(root, (perRoot.get(root) ?? 0) + 1);
     const size = statSync(path).size;
     const name = basename(path);
     if (SCREENSHOT.test(name)) {
@@ -351,6 +361,11 @@ const mb = (n) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 
 if (!QUIET) {
   console.log(`data-at-rest: read ${looked.length} file(s) under ${roots.length} root(s).`);
+  // The count PER ROOT, because a scan run from frontend/ instead of the
+  // module root read 315 files where it should have read 607, and both
+  // printed PASS (Royal Me, 2 Oct 2026). A number is only readable beside
+  // the one it should have been.
+  for (const root of roots) console.log(`  ${String(perRoot.get(root) ?? 0).padStart(6)}  ${root}`);
   const notable = looked.filter((o) => o.big || o.shaped);
   for (const one of notable) {
     console.log(`  ${mb(one.size).padStart(9)}  ${one.shaped ? 'shaped' : 'large '}  ${one.path}`);
