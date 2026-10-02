@@ -96,6 +96,17 @@ const SHAPES =
 // a dependency list. Every real domain ends in letters; no version does.
 const EMAIL =
   /[A-Za-z0-9._%+-]{1,64}@([A-Za-z0-9-]{1,63}(?:\.[A-Za-z0-9-]{1,63}){0,3}\.[A-Za-z]{2,24})/g;
+/**
+ * A reserved domain the pattern ran PAST: in a SQLite page the next column's
+ * bytes follow with no separator, so `fixture.invalid` reads as
+ * `fixture.invalidsales` (HR, 2 Oct 2026: its dev database, 27 invented
+ * people, flagged as 42 real addresses). A LAST label that merely begins with
+ * a reserved word is that reserved domain, run on.
+ */
+// Only `.invalid`: nothing real begins a label with it, whereas `testing.com`
+// or `examples.org` are real domains and must still count (see the control).
+// And ANY label, not just the last: the next row's local part runs on too.
+const RUN_ON_TEST_DOMAIN = /(^|\.)invalid[a-z0-9-]*(\.|$)/i;
 const TEST_DOMAINS =
   /^(fixture\.invalid|example\.(com|org|net)|test|localhost|invalid|.*\.test|.*\.invalid|.*\.example)$/i;
 
@@ -264,7 +275,12 @@ async function countReal(path, { arabic = false } = {}) {
     // needs the real characters, so it is read again as UTF-8.
     const text = carry + chunk.toString('latin1');
     for (const m of text.matchAll(EMAIL)) {
-      if (TEST_DOMAINS.test(m[1]) || MACHINE_DOMAINS.test(m[1]) || FILE_NAME_DOMAIN.test(m[1]))
+      if (
+        TEST_DOMAINS.test(m[1]) ||
+        RUN_ON_TEST_DOMAIN.test(m[1]) ||
+        MACHINE_DOMAINS.test(m[1]) ||
+        FILE_NAME_DOMAIN.test(m[1])
+      )
         continue;
       // A company address is counted ONCE, as a company address. Counted as
       // both, a single company address (one mailbox at the company's domain) reached the "two is a list"

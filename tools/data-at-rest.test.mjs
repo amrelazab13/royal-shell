@@ -238,6 +238,22 @@ check('a loose screenshot is still listed (the control)', r.out.includes('captur
 rmSync(join(dir, 'assets'), { recursive: true });
 rmSync(join(dir, 'capture.png'));
 
+// A reserved domain run into the next column, as in a SQLite page, is still reserved.
+writeFileSync(
+  join(dir, 'dev.sqlite3'),
+  `SQLite format 3\u0000${invented.fixture('a.one')}sales${invented.fixture('b.two')}hr\n`,
+);
+r = run();
+check(
+  'fixture.invalid run into the next field is not a real address',
+  r.code === 0 && !/email\(s\) at a real domain/.test(r.out),
+);
+rmSync(join(dir, 'dev.sqlite3'));
+writeFileSync(join(dir, 'testing.csv'), `email\n${piece('a', '@', 'testing', '.', 'com')}\n`);
+r = run();
+check('but a real domain that only starts with test still counts (the control)', r.code === 1);
+rmSync(join(dir, 'testing.csv'));
+
 // ── the sweep itself ────────────────────────────────────────────────────────
 // A big file with nothing real in it is worth seeing and is not a failure.
 writeFileSync(join(dir, 'big.bin'), Buffer.alloc(2 * 1024 * 1024, 0x41));
