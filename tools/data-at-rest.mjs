@@ -365,7 +365,11 @@ if (!QUIET) {
   // module root read 315 files where it should have read 607, and both
   // printed PASS (Royal Me, 2 Oct 2026). A number is only readable beside
   // the one it should have been.
-  for (const root of roots) console.log(`  ${String(perRoot.get(root) ?? 0).padStart(6)}  ${root}`);
+  for (const root of roots)
+    console.log(`  ${String(perRoot.get(root) ?? 0).padStart(6)} seen  ${root}`);
+  console.log(
+    '  (seen = every file met under that root; "read" above excludes pictures and artwork)',
+  );
   const notable = looked.filter((o) => o.big || o.shaped);
   for (const one of notable) {
     console.log(`  ${mb(one.size).padStart(9)}  ${one.shaped ? 'shaped' : 'large '}  ${one.path}`);
