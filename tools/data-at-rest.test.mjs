@@ -368,6 +368,46 @@ check(
 );
 rmSync(join(dir, 'guard.py'));
 
+// ── key material and dumps, each with a control that must NOT fire ─────────
+// HR, 3 Oct 2026: a planted PEM block and a service-account file were READ and
+// the scanner said "nothing holding real data". Every kind below fires on one,
+// in any file; its documentation, written mid-line, does not.
+const dashes = piece('-----');
+const secretCases = [
+  [
+    'private key',
+    `${dashes}BEGIN ${piece('PRIVATE', ' KEY')}${dashes}\nTm90LWEtcmVhbC1rZXktYXQtYWxs\n${dashes}END ${piece('PRIVATE', ' KEY')}${dashes}\n`,
+    `the detector matches "${dashes}BEGIN ${piece('PRIVATE', ' KEY')}${dashes}" at a line start\n`,
+  ],
+  [
+    'certificate',
+    `${dashes}BEGIN ${piece('CERTIF', 'ICATE')}${dashes}\nTm90LWEtcmVhbA==\n`,
+    `see ${dashes}BEGIN ${piece('CERTIF', 'ICATE')}${dashes} in the docs\n`,
+  ],
+  [
+    'service-account key',
+    `{"type": "service_account", "${piece('private', '_key_id')}": "${'3f9a'.repeat(10)}"}\n`,
+    `{"type": "service_account", "${piece('private', '_key_id')}": "${'0'.repeat(40)}"}\n`,
+  ],
+  [
+    'database dump',
+    `${piece('--', ' PostgreSQL database dump')}\nSET statement_timeout = 0;\n`,
+    `a file that starts ${piece('--', ' PostgreSQL database dump')} is a dump\n`,
+  ],
+];
+for (const [kind, real, control] of secretCases) {
+  writeFileSync(join(dir, 'planted.txt'), real);
+  r = run();
+  check(
+    `one ${kind} in a plain file is a finding`,
+    r.code === 1 && r.out.includes(kind.toUpperCase()),
+  );
+  writeFileSync(join(dir, 'planted.txt'), control);
+  r = run();
+  check(`its documentation, or a placeholder, is not (the control): ${kind}`, r.code === 0);
+}
+rmSync(join(dir, 'planted.txt'));
+
 rmSync(dir, { recursive: true, force: true });
 
 if (failures.length) {

@@ -162,6 +162,23 @@ const ANY_PHONE = /(?<![0-9A-Za-z])\+(?:[0-9][\s-]?){8,15}(?![0-9])/g;
  * to ignore this. In a CSV, a dump, a log or a `.txt` it is somebody's name.
  */
 const ARABIC = /[\u0600-\u06FF]{3,}/g;
+
+/**
+ * KEY MATERIAL and DUMPS, by structure (the 30 Sep 2026 rule, after Royal Me's
+ * live VAPID private key sat in its scratch for a day; HR, 3 Oct 2026, proved
+ * this scanner had no such check by planting one and reading exit 0).
+ *
+ * ANCHORED to a whole line, so a module's own documentation of a pattern, or a
+ * detector's source, does not fire (F189); a real PEM block or dump header
+ * always stands on its own line. A service-account key is its `private_key_id`
+ * with a real-length hex id; all zeros is a placeholder. ONE is a finding.
+ */
+const SECRETS = [
+  ['private key', /^-----BEGIN [A-Z ]*PRIVATE KEY-----\r?$/gm],
+  ['certificate', /^-----BEGIN CERTIFICATE-----\r?$/gm],
+  ['service-account key', /"private_key_id"\s*:\s*"(?!0+")[0-9a-f]{32,}"/g],
+  ['database dump', /^-- PostgreSQL database dump\r?$/gm],
+];
 const SOURCE = /\.(ts|tsx|js|mjs|cjs|jsx|py|scss|css|html|md|yml|yaml|json|toml|lock|sh|conf)$/i;
 
 /** A picture of a live screen is a copy of what was on it. */
@@ -276,7 +293,7 @@ function* files(dir) {
  * without keeping a single one of them.
  */
 async function countReal(path, { arabic = false } = {}) {
-  const found = { emails: 0, company: 0, phones: 0, foreign: 0, arabic: 0 };
+  const found = { emails: 0, company: 0, phones: 0, foreign: 0, arabic: 0, secrets: {} };
   let carry = '';
   let read = 0;
   const stream = createReadStream(path, { highWaterMark: 1 << 20 });
@@ -307,6 +324,11 @@ async function countReal(path, { arabic = false } = {}) {
     COMPANY.lastIndex = 0;
     found.company += [...text.matchAll(COMPANY)].length;
     found.phones += realPhones(text, PHONE);
+    for (const [kind, pattern] of SECRETS) {
+      pattern.lastIndex = 0;
+      const n = [...text.matchAll(pattern)].length;
+      if (n) found.secrets[kind] = (found.secrets[kind] ?? 0) + n;
+    }
     found.foreign += realPhones(text, ANY_PHONE);
     if (arabic) found.arabic += [...chunk.toString('utf8').matchAll(ARABIC)].length;
     // Keep the tail, in case a match straddles the boundary.
@@ -376,6 +398,7 @@ if (seen === 0) {
 for (const one of looked) {
   const counts = await countReal(one.path, { arabic: !one.source });
   const hits = counts.emails + counts.company + counts.phones + counts.foreign;
+  const secrets = Object.values(counts.secrets).reduce((a, b) => a + b, 0);
   // **One address is a contact; two is a list.**
   //
   // A README with the maintainer's address in it is documentation, and a tool
@@ -384,7 +407,9 @@ for (const one of looked) {
   // somebody's book has ROWS. So a plain file needs two before it is a
   // finding, while a row-shaped or oversized file is a finding on one: a CSV
   // with a single person in it is still a copy of that person.
-  const real = one.shaped || one.big ? hits : hits >= 2 ? hits : 0;
+  // A key or a dump is a finding on ONE, in any file: there is no "contact"
+  // reading of a private key.
+  const real = secrets + (one.shaped || one.big ? hits : hits >= 2 ? hits : 0);
   // Arabic alone in a data file is reported but does not fail on its own: a
   // name list is a finding, a translated fixture is not, and only a person
   // can tell them apart.
@@ -434,6 +459,7 @@ if (carrying.length) {
       f.phones && `${f.phones} Egyptian mobile(s)`,
       f.foreign && `${f.foreign} international number(s)`,
       f.arabic && `${f.arabic} run(s) of Arabic text`,
+      ...Object.entries(f.secrets).map(([kind, n]) => `${n} ${kind.toUpperCase()}(S)`),
     ].filter(Boolean);
     console.error(`  ${f.path}\n    ${mb(f.size)} · ${bits.join(' · ')}`);
   }
