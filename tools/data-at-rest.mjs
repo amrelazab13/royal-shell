@@ -141,6 +141,18 @@ const SCREENSHOT = /\.(png|jpe?g|gif|webp|heic|pdf|mov|mp4)$/i;
 // phone-shaped strings in a repository, which is the thing this reports.
 const PHONE = /(?<![0-9])(?:\+?20[\s-]?|0)1[0125](?:[\s-]?[0-9]){8}(?![0-9])/g;
 
+/**
+ * A placeholder is not a person: a number whose subscriber part (its last
+ * eight digits) uses one or two distinct digits, like 0100 000 0000 or
+ * +20 111 111 1111, is a fixture written to be unmistakable (Royal Me and
+ * Mobile CRM, 2 Oct 2026). Without this the scan flags every fixture file
+ * and cannot gate a module. A real number almost never repeats like that;
+ * one that does is a price worth paying for a gate people keep running.
+ */
+const placeholder = (m) => new Set(m.replace(/[^0-9]/g, '').slice(-8)).size <= 2;
+const realPhones = (text, pattern) =>
+  [...text.matchAll(pattern)].filter((m) => !placeholder(m[0])).length;
+
 /** Where to look when nobody says. */
 function defaultRoots() {
   const roots = [process.cwd()];
@@ -229,8 +241,8 @@ async function countReal(path, { arabic = false } = {}) {
     }
     COMPANY.lastIndex = 0;
     found.company += [...text.matchAll(COMPANY)].length;
-    found.phones += [...text.matchAll(PHONE)].length;
-    found.foreign += [...text.matchAll(ANY_PHONE)].length;
+    found.phones += realPhones(text, PHONE);
+    found.foreign += realPhones(text, ANY_PHONE);
     if (arabic) found.arabic += [...chunk.toString('utf8').matchAll(ARABIC)].length;
     // Keep the tail, in case a match straddles the boundary.
     carry = text.slice(-64);

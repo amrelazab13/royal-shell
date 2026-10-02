@@ -163,6 +163,25 @@ r = run();
 check('a package version is not read as an address', r.code === 0);
 rmSync(join(dir, 'deps.yml'));
 
+// A placeholder is not a person: one or two distinct digits in the last eight.
+writeFileSync(
+  join(dir, 'fixtures.txt'),
+  `${piece('0100 ', '000 ', '0000')}\n${piece('+20 ', '111 ', '111 ', '1111')}\n${piece('+44 ', '0000 ', '000000')}\n`,
+);
+r = run();
+check('placeholder numbers are not findings', r.code === 0 && !r.out.includes('fixtures.txt'));
+rmSync(join(dir, 'fixtures.txt'));
+writeFileSync(
+  join(dir, 'real.txt'),
+  `${invented.egypt('12345678')}\n${invented.egypt('23456789')}\n`,
+);
+r = run();
+check(
+  'a number with varied digits still is (the control)',
+  r.code === 1 && /2 Egyptian mobile/.test(r.out),
+);
+rmSync(join(dir, 'real.txt'));
+
 // ── the sweep itself ────────────────────────────────────────────────────────
 // A big file with nothing real in it is worth seeing and is not a failure.
 writeFileSync(join(dir, 'big.bin'), Buffer.alloc(2 * 1024 * 1024, 0x41));
