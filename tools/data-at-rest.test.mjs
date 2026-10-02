@@ -12,7 +12,7 @@
  * real-shaped addresses living in the repository is the fault this tool exists
  * to find.
  */
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -175,7 +175,60 @@ rmSync(join(dir, 'seed.csv'));
 rmSync(join(dir, 'registry.sqlite3'));
 rmSync(join(dir, 'big.bin'));
 r = run();
-check('finds nothing in an empty folder', r.code === 0 && /nothing holding real data/.test(r.out));
+check(
+  'an empty folder is COULD NOT LOOK, never a clean scan',
+  r.code === 2 && /COULD NOT LOOK/.test(r.out),
+);
+
+// The two ways a scan used to read nothing and pass (the CEO portal, 2 Oct 2026).
+writeFileSync(join(dir, 'one.csv'), `email\n${invented.company('ops')}\n`);
+r = (() => {
+  try {
+    return {
+      code: 0,
+      out: execFileSync('node', [SCANNER, '--in', join(dir, 'one.csv')], { encoding: 'utf8' }),
+    };
+  } catch (e) {
+    return { code: e.status, out: (e.stdout ?? '') + (e.stderr ?? '') };
+  }
+})();
+check('--in a FILE reads that file', r.code === 1 && r.out.includes('one.csv'));
+rmSync(join(dir, 'one.csv'));
+r = (() => {
+  try {
+    return {
+      code: 0,
+      out: execFileSync('node', [SCANNER, '--in', join(dir, 'no-such-place')], {
+        encoding: 'utf8',
+      }),
+    };
+  } catch (e) {
+    return { code: e.status, out: (e.stdout ?? '') + (e.stderr ?? '') };
+  }
+})();
+check(
+  '--in a path that does not exist is COULD NOT LOOK',
+  r.code === 2 && /do not exist/.test(r.out),
+);
+
+// A virtualenv's packages are skipped, whatever the folder is called.
+mkdirSync(join(dir, 'tools-env', 'lib'), { recursive: true });
+writeFileSync(join(dir, 'tools-env', 'pyvenv.cfg'), 'home = /usr/bin\n');
+writeFileSync(
+  join(dir, 'tools-env', 'lib', 'django.po'),
+  `${invented.email('translator.one')}\n${invented.email('translator.two')}\n`,
+);
+writeFileSync(join(dir, 'keep.txt'), 'nothing here\n');
+r = run();
+check('a virtualenv is not read', r.code === 0 && !r.out.includes('django.po'));
+rmSync(join(dir, 'tools-env', 'pyvenv.cfg'));
+r = run();
+check(
+  'the same folder without pyvenv.cfg IS read (the control)',
+  r.code === 1 && r.out.includes('django.po'),
+);
+rmSync(join(dir, 'tools-env'), { recursive: true });
+rmSync(join(dir, 'keep.txt'));
 
 rmSync(dir, { recursive: true, force: true });
 

@@ -62,6 +62,10 @@ const SKIP = new Set([
   'coverage',
   '.mypy_cache',
   '.pytest_cache',
+  // A Python virtualenv's packages: Django's own translation files carry their
+  // translators' addresses, which are not the company's data (the CEO portal,
+  // 2 Oct 2026: 1,049 findings, almost all inside site-packages).
+  'site-packages',
 ]);
 
 /** Shapes that hold rows rather than code. */
@@ -188,7 +192,8 @@ function* files(dir) {
     const path = join(dir, e.name);
     if (e.isSymbolicLink()) continue;
     if (e.isDirectory()) {
-      if (!SKIP.has(e.name)) yield* files(path);
+      // Any virtualenv, whatever it is called, announces itself by this file.
+      if (!SKIP.has(e.name) && !existsSync(join(path, 'pyvenv.cfg'))) yield* files(path);
     } else if (e.isFile()) {
       yield path;
     }
@@ -240,9 +245,20 @@ let seen = 0;
 
 const pictures = [];
 
+// A root that was GIVEN and does not exist is a mistake, not an empty place:
+// skipping it read as a clean scan of something never opened.
+const missing = given.filter((root) => !existsSync(root));
+if (missing.length) {
+  console.error(`data-at-rest: COULD NOT LOOK. These do not exist: ${missing.join(', ')}`);
+  process.exit(2);
+}
+
 for (const root of roots) {
   if (!existsSync(root)) continue;
-  for (const path of files(root)) {
+  // `--in some/file` reads that file; it used to walk it as a directory, read
+  // nothing and exit 0 (the CEO portal, 2 Oct 2026).
+  const walk = statSync(root).isFile() ? [root] : files(root);
+  for (const path of walk) {
     seen += 1;
     const size = statSync(path).size;
     const name = basename(path);
@@ -258,6 +274,13 @@ for (const root of roots) {
       source: SOURCE.test(name),
     });
   }
+}
+
+// Read nothing, proved nothing. A scan that opened no file must not say
+// "nothing holding real data", which is what it used to print (F179, F189).
+if (seen === 0) {
+  console.error(`data-at-rest: COULD NOT LOOK. ${roots.length} root(s) given, 0 files read.`);
+  process.exit(2);
 }
 
 for (const one of looked) {
@@ -311,7 +334,7 @@ if (carrying.length) {
     console.error(`  ${f.path}\n    ${mb(f.size)} · ${bits.join(' · ')}`);
   }
   console.error(
-    `\nCount them, name them to the owner, then delete them. No copy of production` +
+    `\nCount them, name them to the owner, then move them to the Trash on his word. No copy of production` +
       `\nlives on a laptop (Royal New System/CLAUDE.md). Nothing above is a value —` +
       `\nand do not paste one anywhere to "check": the count is the check.`,
   );
