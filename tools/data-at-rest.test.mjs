@@ -349,6 +349,19 @@ r = run();
 check('the same name with content IS shaped (the control)', /shaped .*db\.sqlite3/.test(r.out));
 rmSync(join(dir, 'db.sqlite3'));
 
+// A bare company DOMAIN is not a mailbox (HR, 3 Oct 2026): a guard that refuses
+// real addresses has to name the domain to recognise it.
+writeFileSync(
+  join(dir, 'guard.py'),
+  `COMPANY = ("${piece('@', 'royal', 'dev', '.', 'com')}", "${piece('@', 'royal', 'developments', '.', 'com')}")\n`,
+);
+r = run();
+check('a bare company domain is not a company address', r.code === 0 && !/COMPANY/.test(r.out));
+writeFileSync(join(dir, 'guard.py'), `COMPANY = ("${invented.company('ops')}", "${invented.company('a.other')}")\n`);
+r = run();
+check('the same file with mailboxes IS (the control)', r.code === 1 && /2 COMPANY address\(es\)/.test(r.out));
+rmSync(join(dir, 'guard.py'));
+
 rmSync(dir, { recursive: true, force: true });
 
 if (failures.length) {

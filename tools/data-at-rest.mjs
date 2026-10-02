@@ -130,8 +130,17 @@ const MACHINE_DOMAINS =
  */
 const FILE_NAME_DOMAIN = /\.(png|jpe?g|gif|webp|svg|pdf|css|js|ts|json|html?|map|car)$/i;
 
-/** The company's own addresses, which are the clearest signal of all. */
-const COMPANY = /@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-9-]*\.[A-Za-z]{2,}/gi;
+/** The company's own domain, as a domain: is a found address one of OURS? */
+const COMPANY_DOMAIN = /^@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-9-]*\.[A-Za-z]{2,}$/i;
+
+/**
+ * The company's own addresses, which are the clearest signal of all. A MAILBOX:
+ * something before the `@`. A bare `@royaldev.com` is the domain, which is not
+ * a person's data, and the guards that refuse real addresses have to name it to
+ * recognise it (HR, 3 Oct 2026: its own fixture-address test was the one file
+ * this scanner fired on, for ever, which is how a release step stops being read).
+ */
+const COMPANY = /[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-9-]*\.[A-Za-z]{2,}/gi;
 
 /**
  * A phone number of ANY country, not just Egypt's.
@@ -290,7 +299,7 @@ async function countReal(path, { arabic = false } = {}) {
       // A company address is counted ONCE, as a company address. Counted as
       // both, a single company address (one mailbox at the company's domain) reached the "two is a list"
       // threshold on its own and turned every README into a finding.
-      if (COMPANY.test('@' + m[1])) continue;
+      if (COMPANY_DOMAIN.test('@' + m[1])) continue;
       found.emails += 1;
     }
     COMPANY.lastIndex = 0;
