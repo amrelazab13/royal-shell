@@ -357,9 +357,15 @@ writeFileSync(
 );
 r = run();
 check('a bare company domain is not a company address', r.code === 0 && !/COMPANY/.test(r.out));
-writeFileSync(join(dir, 'guard.py'), `COMPANY = ("${invented.company('ops')}", "${invented.company('a.other')}")\n`);
+writeFileSync(
+  join(dir, 'guard.py'),
+  `COMPANY = ("${invented.company('ops')}", "${invented.company('a.other')}")\n`,
+);
 r = run();
-check('the same file with mailboxes IS (the control)', r.code === 1 && /2 COMPANY address\(es\)/.test(r.out));
+check(
+  'the same file with mailboxes IS (the control)',
+  r.code === 1 && /2 COMPANY address\(es\)/.test(r.out),
+);
 rmSync(join(dir, 'guard.py'));
 
 rmSync(dir, { recursive: true, force: true });

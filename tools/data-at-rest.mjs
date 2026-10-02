@@ -131,7 +131,8 @@ const MACHINE_DOMAINS =
 const FILE_NAME_DOMAIN = /\.(png|jpe?g|gif|webp|svg|pdf|css|js|ts|json|html?|map|car)$/i;
 
 /** The company's own domain, as a domain: is a found address one of OURS? */
-const COMPANY_DOMAIN = /^@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-9-]*\.[A-Za-z]{2,}$/i;
+const COMPANY_DOMAIN =
+  /^@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-9-]*\.[A-Za-z]{2,}$/i;
 
 /**
  * The company's own addresses, which are the clearest signal of all. A MAILBOX:
@@ -140,7 +141,8 @@ const COMPANY_DOMAIN = /^@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-
  * recognise it (HR, 3 Oct 2026: its own fixture-address test was the one file
  * this scanner fired on, for ever, which is how a release step stops being read).
  */
-const COMPANY = /[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-9-]*\.[A-Za-z]{2,}/gi;
+const COMPANY =
+  /[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-9-]*\.[A-Za-z]{2,}/gi;
 
 /**
  * A phone number of ANY country, not just Egypt's.
