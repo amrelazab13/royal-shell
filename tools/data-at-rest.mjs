@@ -111,6 +111,14 @@ const TEST_DOMAINS =
 const MACHINE_DOMAINS =
   /(^|\.)(iam\.gserviceaccount\.com|appspot\.gserviceaccount\.com|users\.noreply\.github\.com)$/i;
 
+/**
+ * A file name, not a mailbox: `AppIcon-512@2x.png` parses as an address at the
+ * "domain" `2x.png` (Mobile CRM, 2 Oct 2026: 3 of its 10 findings, and every
+ * module with an iOS build carries them). A last label that is a file
+ * extension is never a real domain.
+ */
+const FILE_NAME_DOMAIN = /\.(png|jpe?g|gif|webp|svg|pdf|css|js|ts|json|html?|map|car)$/i;
+
 /** The company's own addresses, which are the clearest signal of all. */
 const COMPANY = /@(?:[A-Za-z0-9-]+\.)?royal(?:dev|developments)[A-Za-z0-9-]*\.[A-Za-z]{2,}/gi;
 
@@ -136,6 +144,16 @@ const SOURCE = /\.(ts|tsx|js|mjs|cjs|jsx|py|scss|css|html|md|yml|yaml|json|toml|
 
 /** A picture of a live screen is a copy of what was on it. */
 const SCREENSHOT = /\.(png|jpe?g|gif|webp|heic|pdf|mov|mp4)$/i;
+
+/**
+ * Committed artwork, not a screenshot: launcher icons, splash screens, logos,
+ * an asset catalogue. Listing 36 icons put the one screenshot that matters on
+ * page two (Mobile CRM, 2 Oct 2026). They are COUNTED, never silently dropped,
+ * so a screenshot hidden under an assets folder still shows as a number.
+ */
+const ARTWORK =
+  /(\/(public|assets|res|resources|icons?|images?)\/|\.xcassets\/|\.(appiconset|imageset|launchimage)\/|\/(mipmap|drawable)[^/]*\/|(^|\/)(favicon|appicon|icon|splash|logo|royal-logo)[^/]*$)/i;
+let artwork = 0;
 
 /** An Egyptian mobile: 010/011/012/015 and eight digits, however it is spaced. */
 // Any spacing a person might use: run together, grouped four and four, or
@@ -246,7 +264,8 @@ async function countReal(path, { arabic = false } = {}) {
     // needs the real characters, so it is read again as UTF-8.
     const text = carry + chunk.toString('latin1');
     for (const m of text.matchAll(EMAIL)) {
-      if (TEST_DOMAINS.test(m[1]) || MACHINE_DOMAINS.test(m[1])) continue;
+      if (TEST_DOMAINS.test(m[1]) || MACHINE_DOMAINS.test(m[1]) || FILE_NAME_DOMAIN.test(m[1]))
+        continue;
       // A company address is counted ONCE, as a company address. Counted as
       // both, a single company address (one mailbox at the company's domain) reached the "two is a list"
       // threshold on its own and turned every README into a finding.
@@ -289,7 +308,8 @@ for (const root of roots) {
     const size = statSync(path).size;
     const name = basename(path);
     if (SCREENSHOT.test(name)) {
-      pictures.push({ path, size });
+      if (ARTWORK.test(path)) artwork += 1;
+      else pictures.push({ path, size });
       continue;
     }
     looked.push({
@@ -337,6 +357,11 @@ if (!QUIET) {
   }
 }
 
+if (artwork) {
+  console.log(
+    `\ndata-at-rest: ${artwork} committed artwork image(s) (icons, splash, logos) not listed.`,
+  );
+}
 if (pictures.length) {
   console.log(`\ndata-at-rest: ${pictures.length} picture(s) or recording(s).`);
   console.log('  A screenshot of a live screen is a copy of what was on it. List these to');

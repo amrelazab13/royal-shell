@@ -215,6 +215,26 @@ rmSync(join(dir, 'real.txt'));
   rmSync(cwd, { recursive: true, force: true });
 }
 
+// A retina file name is not an address; committed artwork is counted, not listed.
+writeFileSync(
+  join(dir, 'Contents.json'),
+  `${piece('AppIcon-512', '@', '2x', '.png')} ${piece('Splash', '@', '3x', '.png')}\n`,
+);
+r = run();
+check('AppIcon-512 at 2x.png is not an address', r.code === 0 && !r.out.includes('Contents.json'));
+rmSync(join(dir, 'Contents.json'));
+mkdirSync(join(dir, 'assets', 'icons'), { recursive: true });
+writeFileSync(join(dir, 'assets', 'icons', 'icon-192.png'), Buffer.from('89504e470d0a1a0a', 'hex'));
+writeFileSync(join(dir, 'capture.png'), Buffer.from('89504e470d0a1a0a', 'hex'));
+r = run();
+check(
+  'artwork is counted, not listed',
+  /1 committed artwork/.test(r.out) && !r.out.includes('icon-192.png'),
+);
+check('a loose screenshot is still listed (the control)', r.out.includes('capture.png'));
+rmSync(join(dir, 'assets'), { recursive: true });
+rmSync(join(dir, 'capture.png'));
+
 // ── the sweep itself ────────────────────────────────────────────────────────
 // A big file with nothing real in it is worth seeing and is not a failure.
 writeFileSync(join(dir, 'big.bin'), Buffer.alloc(2 * 1024 * 1024, 0x41));
