@@ -174,7 +174,12 @@ let artwork = 0;
 //
 // Written as a description rather than as examples, because examples here are
 // phone-shaped strings in a repository, which is the thing this reports.
-const PHONE = /(?<![0-9])(?:\+?20[\s-]?|0)1[0125](?:[\s-]?[0-9]){8}(?![0-9])/g;
+// Not after a HEX character: in a SQLite page a uuid's tail runs straight into
+// the next column, so `...b39b1420...011` + `2026-09-28` read as 01120260928
+// (HR, 2 Oct 2026: a dev database with no phones at all reported one). A number
+// somebody dialled is never glued to the end of an identifier; after a space,
+// a colon, any other letter, or at a line start it still counts (controls).
+const PHONE = /(?<![0-9a-fA-F])(?:\+?20[\s-]?|0)1[0125](?:[\s-]?[0-9]){8}(?![0-9])/g;
 
 /**
  * A placeholder is not a person: a number whose subscriber part (its last

@@ -254,6 +254,25 @@ r = run();
 check('but a real domain that only starts with test still counts (the control)', r.code === 1);
 rmSync(join(dir, 'testing.csv'));
 
+// A uuid's hex tail glued to the next column's date is not a phone (SQLite).
+writeFileSync(
+  join(dir, 'attend.sqlite3'),
+  `SQLite format 3\u0000${piece('fb39b1420d8b4ec8a44f999def9eb', '011')}${piece('2026', '-09-28')}present\n`,
+);
+r = run();
+check('a hex tail run into a date is not a mobile', !/Egyptian mobile/.test(r.out));
+rmSync(join(dir, 'attend.sqlite3'));
+writeFileSync(
+  join(dir, 'calls.csv'),
+  `phone\n${invented.egypt('12345678')}\nTel:${invented.egypt('23456789')}\nm${invented.egypt('34567890')}\n`,
+);
+r = run();
+check(
+  'after a line start, a colon, or a non-hex letter it still counts (the control)',
+  /3 Egyptian mobile/.test(r.out),
+);
+rmSync(join(dir, 'calls.csv'));
+
 // ── the sweep itself ────────────────────────────────────────────────────────
 // A big file with nothing real in it is worth seeing and is not a failure.
 writeFileSync(join(dir, 'big.bin'), Buffer.alloc(2 * 1024 * 1024, 0x41));
