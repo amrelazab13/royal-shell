@@ -340,6 +340,15 @@ check(
 rmSync(join(dir, 'tools-env'), { recursive: true });
 rmSync(join(dir, 'keep.txt'));
 
+// An empty file of a data shape holds no rows; a non-empty one is still shaped.
+writeFileSync(join(dir, 'db.sqlite3'), '');
+r = run();
+check('an EMPTY db.sqlite3 is not reported as shaped', !/shaped .*db\.sqlite3/.test(r.out));
+writeFileSync(join(dir, 'db.sqlite3'), 'SQLite format 3\u0000');
+r = run();
+check('the same name with content IS shaped (the control)', /shaped .*db\.sqlite3/.test(r.out));
+rmSync(join(dir, 'db.sqlite3'));
+
 rmSync(dir, { recursive: true, force: true });
 
 if (failures.length) {

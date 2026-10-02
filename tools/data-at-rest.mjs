@@ -347,7 +347,9 @@ for (const root of roots) {
       path,
       size,
       big: size > MAX_MB * 1024 * 1024,
-      shaped: SHAPES.test(name),
+      // An EMPTY file holds no rows, whatever it is called (the CRM, 2 Oct
+      // 2026: a 0-byte db.sqlite3 placeholder was reported as shaped).
+      shaped: size > 0 && SHAPES.test(name),
       source: SOURCE.test(name),
     });
   }
