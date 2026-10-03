@@ -203,7 +203,8 @@ let artwork = 0;
 // Written as a description rather than as examples, because examples here are
 // phone-shaped strings in a repository, which is the thing this reports.
 // Not after a HEX character: in a SQLite page a uuid's tail runs straight into
-// the next column, so `...b39b1420...011` + `2026-09-28` read as 01120260928
+// the next column, so a uuid's hex tail ending in 011 plus the next column's
+// date read as a single eleven-digit string that looked like a mobile number
 // (HR, 2 Oct 2026: a dev database with no phones at all reported one). A number
 // somebody dialled is never glued to the end of an identifier; after a space,
 // a colon, any other letter, or at a line start it still counts (controls).
