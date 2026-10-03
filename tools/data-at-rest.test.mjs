@@ -212,6 +212,40 @@ rmSync(join(dir, 'real.txt'));
   r = go('--in', cwd, '--project', 'proj-Mine');
   check('--in with --project reads both, not one', r.code === 1 && r.out.includes('mine.txt'));
   check('and prints a count per root', /\n\s+\d+ seen\s+\S*dar-cwd-/.test(r.out));
+  // The shared /tmp: its top-level files are read and reported apart, never
+  // counted in the verdict (the CEO portal, 3 Oct 2026).
+  const sharedTmp = mkdtempSync(join(tmpdir(), 'dar-shared-'));
+  writeFileSync(
+    join(sharedTmp, 'page.html'),
+    `${invented.company('ops')} ${invented.company('a.other')}\n`,
+  );
+  writeFileSync(join(sharedTmp, 'clean.txt'), 'nothing here\n');
+  const goShared = (...a) => {
+    try {
+      return {
+        code: 0,
+        out: execFileSync('node', [SCANNER, ...a], {
+          encoding: 'utf8',
+          cwd,
+          env: { ...process.env, DATA_AT_REST_SHARED_TMP: sharedTmp },
+        }),
+      };
+    } catch (e) {
+      return { code: e.status, out: (e.stdout ?? '') + (e.stderr ?? '') };
+    }
+  };
+  r = goShared('--in', cwd, '--project', 'proj-Mine');
+  check(
+    'a shared /tmp file is reported in its own section',
+    /SHARED .*owner not known/.test(r.out) && r.out.includes('page.html'),
+  );
+  check('and a clean one is not listed (the control)', !r.out.includes('clean.txt'));
+  check(
+    'and it does not set the verdict',
+    r.code === go('--in', cwd, '--project', 'proj-Mine').code,
+  );
+  rmSync(sharedTmp, { recursive: true, force: true });
+
   r = go('--project', 'proj-Nobody');
   check('--project with no matching scratch is COULD NOT LOOK', r.code === 2);
 

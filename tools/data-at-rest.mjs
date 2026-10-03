@@ -458,6 +458,50 @@ if (pictures.length) {
   for (const one of pictures) console.log(`  ${mb(one.size).padStart(9)}  ${one.path}`);
 }
 
+// THE SHARED /tmp (the CEO portal, 3 Oct 2026): `> /tmp/x.html` is where a
+// fetched page or a script's output lands by default, and no root above read
+// it, so every release line was true and said nothing about it (four files
+// there held company addresses and phone-shaped numbers, nobody's by name).
+// Its top-level FILES are read whenever the default roots are (a --project or
+// an unscoped run), and reported in a section of their own. They do NOT set
+// this run's exit code: nobody can tell from here whose they are, and a red
+// that is never the reader's own teaches the reader to stop looking. Quote the
+// section in the release line; whoever wrote a file moves it to the Trash.
+const SHARED_TMP = process.env.DATA_AT_REST_SHARED_TMP || '/tmp';
+const shared = [];
+if ((PROJECT || !given.length) && existsSync(SHARED_TMP)) {
+  for (const e of readdirSync(SHARED_TMP, { withFileTypes: true })) {
+    if (!e.isFile()) continue;
+    const path = join(SHARED_TMP, e.name);
+    const size = statSync(path).size;
+    if (size === 0 || SCREENSHOT.test(e.name)) continue;
+    const counts = await countReal(path);
+    const secrets = Object.values(counts.secrets).reduce((a, b) => a + b, 0);
+    const hits = counts.emails + counts.company + counts.phones + counts.foreign;
+    if (secrets || hits >= 2 || (SHAPES.test(e.name) && hits))
+      shared.push({ path, size, ...counts });
+  }
+}
+if (shared.length) {
+  console.log(
+    `\ndata-at-rest: ${shared.length} file(s) in the SHARED ${SHARED_TMP}, owner not known. COUNTS ONLY:`,
+  );
+  for (const f of shared) {
+    const bits = [
+      f.emails && `${f.emails} email(s) at a real domain`,
+      f.company && `${f.company} COMPANY address(es)`,
+      f.phones && `${f.phones} Egyptian mobile(s)`,
+      f.foreign && `${f.foreign} international number(s)`,
+      ...Object.entries(f.secrets).map(([kind, n]) => `${n} ${kind.toUpperCase()}(S)`),
+    ].filter(Boolean);
+    console.log(`  ${f.path}\n    ${mb(f.size)} · ${bits.join(' · ')}`);
+  }
+  console.log(
+    '  Not counted in this verdict. Quote this section in the release line; the session that\n' +
+      '  wrote a file moves it to the Trash, named, and tells Royal New System folder structure.',
+  );
+}
+
 const carrying = findings.filter((f) => f.real);
 if (carrying.length) {
   console.error(
