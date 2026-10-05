@@ -474,8 +474,35 @@ rmSync(join(dir, 'planted.txt'));
 
 rmSync(dir, { recursive: true, force: true });
 
+// A file that vanishes between the listing and the read (another session
+// cleaning its tasks/, the CRM, 5 Oct 2026) is counted and named, never a
+// crash: the crash used to exit 1, the code for "real people found".
+{
+  const vdir = mkdtempSync(join(tmpdir(), 'dar-vanish-'));
+  writeFileSync(join(vdir, 'stays.txt'), 'nothing here\n');
+  writeFileSync(join(vdir, 'goes.txt'), 'nothing here either\n');
+  let out = '';
+  let code = 0;
+  try {
+    out = execFileSync('node', [SCANNER, '--in', vdir], {
+      encoding: 'utf8',
+      env: { ...process.env, DATA_AT_REST_TEST_VANISH: 'goes.txt' },
+    });
+  } catch (e) {
+    code = e.status;
+    out = (e.stdout ?? '') + (e.stderr ?? '');
+  }
+  check('a file that vanishes mid-scan is not a crash and not a finding', code === 0);
+  check(
+    'and it is counted and named',
+    /1 file\(s\) vanished mid-scan/.test(out) && out.includes('goes.txt'),
+  );
+  rmSync(vdir, { recursive: true, force: true });
+}
+
 if (failures.length) {
   console.error(`\ndata-at-rest self-test: ${failures.length} failed`);
   process.exit(1);
 }
+
 console.log('\ndata-at-rest self-test: the scanner flags what it must and stays quiet otherwise.');

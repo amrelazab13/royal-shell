@@ -35,7 +35,14 @@
  *
  * Exit 1 when anything real is found.
  */
-import { createReadStream, existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import {
+  createReadStream,
+  existsSync,
+  readdirSync,
+  realpathSync,
+  statSync,
+  unlinkSync,
+} from 'node:fs';
 import { join, basename } from 'node:path';
 
 const args = process.argv.slice(2);
@@ -367,6 +374,8 @@ const roots = PROJECT
     : defaultRoots();
 const perRoot = new Map();
 const looked = [];
+/** Files listed, then gone before they could be read (another session's cleanup). */
+const vanished = [];
 const findings = [];
 let seen = 0;
 
@@ -388,7 +397,27 @@ for (const root of roots) {
   for (const path of walk) {
     seen += 1;
     perRoot.set(root, (perRoot.get(root) ?? 0) + 1);
-    const size = statSync(path).size;
+    // A file can vanish between the listing and the read: another session's
+    // harness cleans its tasks/ while we scan (the CRM, 5 Oct 2026). That used
+    // to crash with an uncaught ENOENT and EXIT 1, the code that means "real
+    // people found", so a scan that covered nothing read as a finding. A file
+    // that no longer exists holds nothing at rest; it is COUNTED and named,
+    // never silently skipped and never a crash.
+    // The self-test's way to make the race happen on demand: it names one
+    // file to delete between the listing and the read. Nothing else sets it.
+    if (
+      process.env.DATA_AT_REST_TEST_VANISH &&
+      basename(path) === process.env.DATA_AT_REST_TEST_VANISH
+    )
+      unlinkSync(path);
+    let size;
+    try {
+      size = statSync(path).size;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+      vanished.push(path);
+      continue;
+    }
     const name = basename(path);
     if (SCREENSHOT.test(name)) {
       if (ARTWORK.test(path)) artwork += 1;
@@ -415,7 +444,14 @@ if (seen === 0) {
 }
 
 for (const one of looked) {
-  const counts = await countReal(one.path, { arabic: !one.source });
+  let counts;
+  try {
+    counts = await countReal(one.path, { arabic: !one.source });
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+    vanished.push(one.path);
+    continue;
+  }
   const hits = counts.emails + counts.company + counts.phones + counts.foreign;
   const secrets = Object.values(counts.secrets).reduce((a, b) => a + b, 0);
   // **One address is a contact; two is a list.**
@@ -452,6 +488,15 @@ if (!QUIET) {
   for (const one of notable) {
     console.log(`  ${mb(one.size).padStart(9)}  ${one.shaped ? 'shaped' : 'large '}  ${one.path}`);
   }
+}
+
+if (vanished.length) {
+  console.log(
+    `\ndata-at-rest: ${vanished.length} file(s) vanished mid-scan (listed, then gone before`,
+  );
+  console.log('  they could be read: another session cleaning its tasks/). Not read, so not');
+  console.log('  vouched for; they no longer exist, so nothing of them is at rest:');
+  for (const path of vanished) console.log(`  ${path}`);
 }
 
 if (artwork) {
