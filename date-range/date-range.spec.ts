@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { SHELL_WORDS } from '../words';
-import { DateRange, DateRangeControl } from './date-range';
+import { DateRange, DateRangeControl, dayOf } from './date-range';
 
 /** The control's own members are protected; the spec reaches them by name. */
 interface Control {
@@ -207,5 +207,19 @@ describe('DateRangeControl with [future]', () => {
     expect(emitted.at(-1)).toEqual({ from: '2026-10-01', to: '2026-10-31' });
     c.applyPreset('next30');
     expect(emitted.at(-1)).toEqual({ from: '2026-09-28', to: '2026-10-27' });
+  });
+});
+
+describe('dayOf', () => {
+  it('passes a plain day through', () => {
+    expect(dayOf('2026-10-01')).toBe('2026-10-01');
+  });
+  it('reads an instant as its Cairo day, never as text', () => {
+    expect(dayOf('2026-10-01T00:00:00+03:00')).toBe('2026-10-01');
+    // 21:30 UTC on the 30th is already the 1st in Cairo.
+    expect(dayOf('2026-09-30T21:30:00Z')).toBe('2026-10-01');
+  });
+  it('shows an unreadable value as given rather than inventing a day', () => {
+    expect(dayOf('all')).toBe('all');
   });
 });

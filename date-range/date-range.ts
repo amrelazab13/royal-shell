@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { monthEndOf, shiftIsoDate, todayInCairo } from '../dates/dates';
+import { isoDateInCairo, monthEndOf, shiftIsoDate, todayInCairo } from '../dates/dates';
 import { Icon } from '../icons/icons';
 import { SHELL_WORDS, ShellWords } from '../words';
 
@@ -230,7 +230,7 @@ export class DateRangeControl {
 
   /** The pill's face: day first, the way the owner reads a date. */
   protected shown(iso: string): string {
-    const [y, m, d] = iso.split('-');
+    const [y, m, d] = dayOf(iso).split('-');
     return `${d}-${m}-${y}`;
   }
 
@@ -349,4 +349,18 @@ export class DateRangeControl {
     if (range.to && range.to > today) range = { ...range, to: today };
     this.changed.emit(range);
   }
+}
+
+/**
+ * The Cairo day a range end names, whatever shape arrived.
+ *
+ * A drill once sent `date_from=2026-10-01T00:00:00+03:00` and the pill read
+ * "01T00:00:00+03:00-10-2026" (the owner, 5 Oct 2026: "why the calendar filter
+ * rendered like that?"). A plain day passes through; an instant is read as the
+ * day it is in Cairo, the company's day; anything unreadable is shown as given.
+ */
+export function dayOf(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const instant = new Date(value);
+  return Number.isNaN(instant.getTime()) ? value : isoDateInCairo(instant);
 }
