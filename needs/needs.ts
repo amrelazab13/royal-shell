@@ -30,6 +30,14 @@ import { DestroyRef, Signal, inject, signal } from '@angular/core';
 export interface NeedsItem {
   key: string;
   count: number;
+  /** The server's own words for this item, in the reader's language. Optional:
+   *  a module that sends it lets a screen draw a chip without a dictionary
+   *  entry of its own (Mobile CRM, 5 Oct 2026). */
+  title?: string;
+  /** Where the number leads: the list that shows exactly `count` rows. The
+   *  trail rule (bible §3.7) is that the number opens what it counted, so a
+   *  module that sends it is the safest way to build the drill. Optional. */
+  link?: string;
 }
 
 export interface NeedsAnswer {
