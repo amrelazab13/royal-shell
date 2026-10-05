@@ -1,10 +1,20 @@
 import { inject, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { NavigationStart, Router } from '@angular/router';
-import { Subject } from 'rxjs';
+import { HttpRequest, HttpResponse } from '@angular/common/http';
+import { NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { Subject, of } from 'rxjs';
 
 import { SHELL_WORDS } from '../words';
-import { NewVersion, Version, mainScriptOf, provideVersionCheck, runningScript } from './version';
+import {
+  NewVersion,
+  Version,
+  dialogOpen,
+  mainScriptOf,
+  provideVersionCheck,
+  runningScript,
+  versionWrites,
+  writesInFlight,
+} from './version';
 
 const page = (main: string) =>
   `<!doctype html><html><head><link rel="stylesheet" href="styles-AB12.css"></head>` +
@@ -200,6 +210,125 @@ describe('provideVersionCheck', () => {
     v.ready.set(true);
     events.next(new NavigationStart(1, '/leads'));
     expect(assigned).toEqual([]);
+  });
+
+  // The owner, 5 Oct 2026: "... it forces hard refresh the moment he/she
+  // finishes, instantly not after a minute".
+
+  it('asks the server at once when the app starts, not a period later', async () => {
+    unsaved = false;
+    events = new Subject();
+    running('main-OLD123.js');
+    TestBed.resetTestingModule();
+    const asked = vi.spyOn(Version.prototype, 'check').mockResolvedValue(undefined);
+    try {
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: Router, useValue: { events } },
+          provideVersionCheck({ everyMs: 3_600_000 }),
+        ],
+      });
+      TestBed.inject(Version);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(asked).toHaveBeenCalled();
+    } finally {
+      asked.mockRestore();
+    }
+  });
+
+  it('asks again on every arrival at a screen', async () => {
+    unsaved = false;
+    const v = boot();
+    const asked = vi.spyOn(v, 'check').mockResolvedValue(undefined);
+    asked.mockClear();
+    events.next(new NavigationEnd(1, '/leads', '/leads'));
+    expect(asked).toHaveBeenCalledTimes(1);
+  });
+
+  it('reloads the moment unsaved work is done, with no move and no new ask', async () => {
+    unsaved = true;
+    // No ask may settle anything here: only the half-second look is tested.
+    const asked = vi.spyOn(Version.prototype, 'check').mockResolvedValue(undefined);
+    try {
+      const v = boot();
+      await new Promise((r) => setTimeout(r, 0));
+      const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+      v.ready.set(true);
+      await new Promise((r) => setTimeout(r, 600));
+      expect(reload).not.toHaveBeenCalled();
+      unsaved = false; // saved: nothing else happens on the page
+      await new Promise((r) => setTimeout(r, 600)); // one half-second look
+      expect(reload).toHaveBeenCalledTimes(1);
+      expect(assigned).toEqual([]);
+    } finally {
+      asked.mockRestore();
+    }
+  });
+
+  it('holds while a dialog is open, and reloads as it closes', async () => {
+    unsaved = false;
+    const v = boot();
+    const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+    const dlg = document.createElement('div');
+    dlg.setAttribute('role', 'dialog');
+    dlg.setAttribute('aria-modal', 'true');
+    document.body.appendChild(dlg);
+    try {
+      expect(dialogOpen()).toBe(true);
+      await aNewBuildIsFound(v);
+      expect(reload).not.toHaveBeenCalled();
+      dlg.remove();
+      document.dispatchEvent(new PointerEvent('pointerup'));
+      await new Promise((r) => setTimeout(r, 0));
+      expect(reload).toHaveBeenCalledTimes(1);
+    } finally {
+      dlg.remove();
+    }
+  });
+
+  it('holds while a save is on its way, and reloads when it lands', async () => {
+    unsaved = false;
+    const asked = vi.spyOn(Version.prototype, 'check').mockResolvedValue(undefined);
+    const v = boot();
+    await new Promise((r) => setTimeout(r, 0));
+    const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+    const landed = new Subject<HttpResponse<unknown>>();
+    const sub = versionWrites(new HttpRequest('POST', '/api/leads/', {}), () => landed).subscribe();
+    try {
+      expect(writesInFlight()).toBe(1);
+      v.ready.set(true);
+      await new Promise((r) => setTimeout(r, 600));
+      expect(reload).not.toHaveBeenCalled();
+      landed.next(new HttpResponse({ status: 201 }));
+      landed.complete();
+      expect(writesInFlight()).toBe(0);
+      await new Promise((r) => setTimeout(r, 600));
+      expect(reload).toHaveBeenCalledTimes(1);
+    } finally {
+      sub.unsubscribe();
+      writesInFlight.set(0);
+      asked.mockRestore();
+    }
+  });
+});
+
+describe('versionWrites', () => {
+  it('counts writes and never reads', () => {
+    writesInFlight.set(0);
+    const read = versionWrites(new HttpRequest('GET', '/api/leads/'), () =>
+      of(new HttpResponse({ status: 200 })),
+    ).subscribe();
+    expect(writesInFlight()).toBe(0);
+    read.unsubscribe();
+    const open = new Subject<HttpResponse<unknown>>();
+    const write = versionWrites(
+      new HttpRequest('PATCH', '/api/leads/1/', {}),
+      () => open,
+    ).subscribe();
+    expect(writesInFlight()).toBe(1);
+    write.unsubscribe(); // a cancelled save also stops counting
+    expect(writesInFlight()).toBe(0);
   });
 });
 

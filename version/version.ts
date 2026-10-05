@@ -11,7 +11,9 @@ import {
   runInInjectionContext,
   signal,
 } from '@angular/core';
-import { NavigationStart, Router } from '@angular/router';
+import { HttpInterceptorFn } from '@angular/common/http';
+import { NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { Icon } from '../icons/icons';
 import { SHELL_WORDS, ShellWords } from '../words';
 
@@ -41,12 +43,32 @@ import { SHELL_WORDS, ShellWords } from '../words';
  *   but it is to the person). Then it shows the notice below, loads on the
  *   next move to another screen, and reloads the moment the box is left.
  *
+ * The owner, 5 Oct 2026: "i want all modules to force hard refresh if there
+ * is an update, unless the user in writing something or in the middle of
+ * doing something then it forces hard refresh the moment he/she finishes,
+ * instantly not after a minute". So, since then:
+ * - it asks at once when the app starts (a tab opened on an old page, or a
+ *   sign-in screen served from a cache, finds out before the first click),
+ *   whenever the tab comes back into view or the window regains focus, after
+ *   every move to another screen, and every 15 seconds while visible;
+ * - "in the middle of doing something" is wider than typing: an open dialog
+ *   (`<dialog open>` or `aria-modal`), and a save still on its way (any
+ *   request that is not a read, counted by `versionWrites`, which the module
+ *   adds to its HTTP interceptors);
+ * - once a newer version is held back, the moment the person finishes is
+ *   watched for, not waited for: leaving a box, releasing a pointer or a key,
+ *   a dialog closing, a save landing, all settle at once, and a half-second
+ *   look (no network) catches anything those miss.
+ *
  * The page itself is served `no-cache` (royal-ui's nginx, the CRM's), so a
  * fresh load gets the newest build.
  */
 export interface VersionCheck {
-  /** How often to ask, in ms. A minute by default. */
+  /** How often to ask the server, in ms. 15 seconds by default. */
   everyMs?: number;
+  /** How often, once a new version is held back, to look whether the person
+   *  has finished, in ms. No network. Half a second by default. */
+  watchMs?: number;
   /** True while the person has unsaved work on screen. */
   unsaved?: () => boolean;
 }
@@ -65,6 +87,26 @@ export function typing(doc: Document = document): boolean {
   if (!el || el === doc.body) return false;
   return el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
 }
+
+/** True while a dialog is open over the page: the person is mid-task. */
+export function dialogOpen(doc: Document = document): boolean {
+  return !!doc.querySelector('dialog[open], [aria-modal="true"]');
+}
+
+/** Saves still on their way: every request that is not a read. */
+export const writesInFlight = signal(0);
+
+const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/**
+ * Add to the module's interceptors (`withInterceptors([..., versionWrites])`)
+ * so a reload never cuts a save off halfway.
+ */
+export const versionWrites: HttpInterceptorFn = (req, next) => {
+  if (READS.has(req.method.toUpperCase())) return next(req);
+  writesInFlight.update((n) => n + 1);
+  return next(req).pipe(finalize(() => writesInFlight.update((n) => Math.max(0, n - 1))));
+};
 
 /** The main script this tab is running. */
 export function runningScript(doc: Document = document): string | null {
@@ -142,9 +184,10 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
       // and a second reload is noise at best (HR found the test flaking one
       // run in three on exactly that race, 29 Sep 2026).
       let reloading = false;
+      const midTask = () => unsaved() || typing() || dialogOpen() || writesInFlight() > 0;
       const settle = () => {
         if (reloading) return;
-        if (visible() && version.ready() && !unsaved() && !typing()) {
+        if (visible() && version.ready() && !midTask()) {
           reloading = true;
           version.reload();
         }
@@ -153,22 +196,37 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
         if (!visible()) return;
         void version.check().then(settle);
       };
-      // Leaving a box is the moment a held reload may go ahead.
-      const left = () => setTimeout(settle, 0);
-      const timer = setInterval(ask, config.everyMs ?? 60_000);
+      // The moment the person finishes is any of these; each settles at once.
+      const finished = () => setTimeout(settle, 0);
+      const FINISHES = ['focusout', 'pointerup', 'keyup', 'close'] as const;
+      // Ask at once on start, not a period later (the owner, 5 Oct 2026:
+      // "instantly not after a minute").
+      const first = setTimeout(ask, 0);
+      const timer = setInterval(ask, config.everyMs ?? 15_000);
+      // Once held back, look every half second whether the task has ended:
+      // local state only, no request.
+      const watch = setInterval(() => {
+        if (version.ready()) settle();
+      }, config.watchMs ?? 500);
       document.addEventListener('visibilitychange', ask);
-      document.addEventListener('focusout', left);
+      window.addEventListener('focus', ask);
+      for (const name of FINISHES) document.addEventListener(name, finished, true);
       // The next move to another screen loads the new version fully, never
-      // while something is being written.
+      // while something is being written; and every arrival asks again.
       const moves = router?.events.subscribe((event) => {
         if (event instanceof NavigationStart && version.ready() && !unsaved()) {
           version.load(event.url);
+        } else if (event instanceof NavigationEnd) {
+          ask();
         }
       });
       inject(DestroyRef).onDestroy(() => {
+        clearTimeout(first);
         clearInterval(timer);
+        clearInterval(watch);
         document.removeEventListener('visibilitychange', ask);
-        document.removeEventListener('focusout', left);
+        window.removeEventListener('focus', ask);
+        for (const name of FINISHES) document.removeEventListener(name, finished, true);
         moves?.unsubscribe();
       });
     }),
