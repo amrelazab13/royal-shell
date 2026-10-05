@@ -32,12 +32,15 @@ export interface NeedsItem {
   count: number;
   /** The server's own words for this item, in the reader's language. Optional:
    *  a module that sends it lets a screen draw a chip without a dictionary
-   *  entry of its own (Mobile CRM, 5 Oct 2026). */
+   *  entry of its own (Mobile CRM, 5 Oct 2026). Only the CRM sends it today. */
   title?: string;
-  /** Where the number leads: the list that shows exactly `count` rows. The
-   *  trail rule (bible §3.7) is that the number opens what it counted, so a
-   *  module that sends it is the safest way to build the drill. Optional. */
-  link?: string;
+  /** Where the number leads: the list that shows exactly `count` rows, as a
+   *  route and its query (the CRM sends `{ path: "/leads", query: {...} }`:
+   *  "the query IS the link"). The trail rule (bible §3.7) is that the number
+   *  opens what it counted. Optional: today only the CRM sends it (measured
+   *  5 Oct 2026; HR and the portal send key and count alone), so read it
+   *  defensively. */
+  link?: { path: string; query?: Record<string, string | number | boolean> };
 }
 
 export interface NeedsAnswer {
