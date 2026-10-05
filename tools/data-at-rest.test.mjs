@@ -184,7 +184,12 @@ rmSync(join(dir, 'real.txt'));
 
 // --project: this tree plus ONE module's scratch, and nobody else's.
 {
-  const base = mkdtempSync('/tmp/claude-dar-selftest-');
+  // A private stand-in for /tmp, never the shared one: a run that dies here
+  // must not leave invented sessions where the real scanner looks.
+  const fakeTmp = mkdtempSync(join(tmpdir(), 'dar-bases-'));
+  process.on('exit', () => rmSync(fakeTmp, { recursive: true, force: true }));
+  const base = mkdtempSync(join(fakeTmp, 'claude-dar-selftest-'));
+  const ENV = { ...process.env, DATA_AT_REST_SCRATCH_BASES: fakeTmp };
   const mine = join(base, 'proj-Mine', 's1', 'scratchpad');
   const theirs = join(base, 'proj-Theirs', 's1', 'scratchpad');
   mkdirSync(mine, { recursive: true });
@@ -201,7 +206,10 @@ rmSync(join(dir, 'real.txt'));
   writeFileSync(join(cwd, 'ok.txt'), 'nothing here\n');
   const go = (...a) => {
     try {
-      return { code: 0, out: execFileSync('node', [SCANNER, ...a], { encoding: 'utf8', cwd }) };
+      return {
+        code: 0,
+        out: execFileSync('node', [SCANNER, ...a], { encoding: 'utf8', cwd, env: ENV }),
+      };
     } catch (e) {
       return { code: e.status, out: (e.stdout ?? '') + (e.stderr ?? '') };
     }
@@ -227,7 +235,7 @@ rmSync(join(dir, 'real.txt'));
         out: execFileSync('node', [SCANNER, ...a], {
           encoding: 'utf8',
           cwd,
-          env: { ...process.env, DATA_AT_REST_SHARED_TMP: sharedTmp },
+          env: { ...ENV, DATA_AT_REST_SHARED_TMP: sharedTmp },
         }),
       };
     } catch (e) {

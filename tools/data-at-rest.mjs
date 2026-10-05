@@ -227,7 +227,15 @@ function defaultRoots(tree = [process.cwd()]) {
   const roots = [...tree];
   // Session scratch directories. This is the place the fault actually lived,
   // and it is outside every repository by design.
-  for (const base of ['/tmp', '/private/tmp']) {
+  // DATA_AT_REST_SCRATCH_BASES exists for the self-test alone: its invented
+  // sessions live in a private directory, never the shared /tmp, so a run that
+  // dies half-way leaves nothing for the next run (or any module) to trip on
+  // (the CEO portal, 5 Oct 2026: two stale self-test sessions in /tmp failed
+  // every later self-test on every machine-wide scan).
+  const bases = process.env.DATA_AT_REST_SCRATCH_BASES
+    ? process.env.DATA_AT_REST_SCRATCH_BASES.split(',')
+    : ['/tmp', '/private/tmp'];
+  for (const base of bases) {
     if (!existsSync(base)) continue;
     for (const dir of readdirSync(base)) {
       if (!dir.startsWith('claude')) continue;
