@@ -82,11 +82,22 @@ export const CHART_WORDS: Record<string, { en: string; ar: string }> = {
   'chart.openPanel': { en: 'Open this person’s permissions', ar: 'فتح صلاحيات هذا الشخص' },
   'chart.reportTo': { en: 'report to', ar: 'يتبع' },
   'chart.seat': { en: 'Governance seat', ar: 'مقعد حوكمة' },
+  'chart.technicalAccount': { en: 'Technical account', ar: 'حساب تقني' },
   'chart.takesAlong': { en: 'and beneath them', ar: 'ومعه' },
   'chart.tickLabel': { en: 'May open this module', ar: 'يستطيع فتح هذه الوحدة' },
   'common.cancel': { en: 'Cancel', ar: 'إلغاء' },
   'common.loading': { en: 'Loading…', ar: 'جارٍ التحميل…' },
 };
+
+/**
+ * The owner's rule 1: "Super Admin", in any spelling, is never read on a
+ * screen. The chart draws people's names and titles straight from the
+ * node, so a row whose name or title carries it would be SAID by every
+ * module's chart while each module's own lists guard it (CEO portal, 6 Oct
+ * 2026: "⌖ 7 · Band Seven  Super Admin  Super Admin" beside a list that read
+ * "Technical account"). Guarded HERE, once, so no consumer has to find it.
+ */
+const FORBIDDEN = /super[\s._-]*admin|سوبر\s*[أا]دمن/i;
 
 /** What the template asks of words: HR's `t` and `pick`, nothing more. */
 export interface ChartWords {
@@ -103,7 +114,7 @@ export function chartWordsFor(module: ShellWords | null): ChartWords {
   // default on an Arabic screen (the date range's rule, HR 28 Sep 2026).
   const isRtl = () =>
     module?.isRtl() ?? (typeof document !== 'undefined' && document.documentElement.dir === 'rtl');
-  return {
+  const words: ChartWords = {
     isRtl,
     t: (key: string) => {
       // A module's `t` may throw on a key it does not hold; a shared control
@@ -122,10 +133,13 @@ export function chartWordsFor(module: ShellWords | null): ChartWords {
       const row = obj as Record<string, unknown>;
       const ar = row[`${base}_ar`];
       const en = row[`${base}_en`];
-      if (isRtl() && typeof ar === 'string' && ar) return ar;
-      return typeof en === 'string' ? en : '';
+      let said = '';
+      if (isRtl() && typeof ar === 'string' && ar) said = ar;
+      else if (typeof en === 'string') said = en;
+      return FORBIDDEN.test(said) ? words.t('chart.technicalAccount') : said;
     },
   };
+  return words;
 }
 
 /** Where a card's name goes when it is a link. `null` draws plain text. */

@@ -1037,4 +1037,39 @@ describe('OrgChart, shared', () => {
     expect(el.querySelector('.benchwrap')).not.toBeNull();
     expect(benchNames(el).length).toBeGreaterThan(0);
   });
+
+  /* ── the owner's rule 1, through the chart itself ── */
+
+  function poisoned(): Chart {
+    const vendor = person({
+      id: 'vendor',
+      full_name_en: 'Super Admin',
+      full_name_ar: 'سوبر أدمن',
+      title_en: 'super_admin',
+      title_ar: 'Super.Admin',
+    });
+    const head = person({ id: 'head', full_name_en: 'Card Head', title_en: 'Card Title', reports: [vendor] });
+    return { tree: [head], reports_to_nobody: [] };
+  }
+
+  it('NEVER says "Super Admin", in any spelling, from a name or a title', async () => {
+    const { el } = await mount({ chart: poisoned() });
+    // the premise: the poisoned card IS drawn, so the absence below means something
+    expect(canvasNames(el)).toContain('Technical account');
+    const text = el.textContent!.toLowerCase();
+    expect(text).not.toMatch(/super[\s._-]*admin/);
+    expect(el.innerHTML).not.toMatch(/super[\s._-]*admin/i);
+  });
+
+  it('nor in Arabic on an Arabic page', async () => {
+    const { el } = await mount({ chart: poisoned(), words: { t: (k) => k, isRtl: () => true } });
+    expect(el.textContent).not.toMatch(/سوبر\s*[أا]دمن|super[\s._-]*admin/i);
+    expect(el.textContent).toContain('حساب تقني');
+  });
+
+  it('an ordinary name and title are drawn exactly as sent', async () => {
+    const { el } = await mount({ chart: poisoned() });
+    expect(canvasNames(el)).toContain('Card Head');
+    expect(el.textContent).toContain('Card Title');
+  });
 });
