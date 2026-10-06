@@ -12,7 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
-import { NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { NavigationEnd, NavigationError, NavigationStart, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Icon } from '../icons/icons';
 import { SHELL_WORDS, ShellWords } from '../words';
@@ -71,6 +71,13 @@ export interface VersionCheck {
   watchMs?: number;
   /** True while the person has unsaved work on screen. */
   unsaved?: () => boolean;
+  /** How long a new build must be answered, unchanged, before this tab moves
+   *  to it, in ms. 30 seconds by default: the owner wants a release on every
+   *  screen at once, so this is the shortest wait that outlasts a rollout. A
+   *  release replaces its pods one at a time, and a tab sent over mid-way can
+   *  be handed the new page by one pod and asked for its pieces by an old one,
+   *  which has none of them. */
+  settleMs?: number;
 }
 
 export const VERSION_CHECK = new InjectionToken<VersionCheck>('royal-shell.version');
@@ -123,18 +130,41 @@ export class Version {
   readonly ready = signal(false);
 
   private readonly running = typeof document === 'undefined' ? null : runningScript();
+  private readonly settleMs = inject(VERSION_CHECK, { optional: true })?.settleMs ?? 30_000;
   private asking = false;
+  /** The new build first answered, and when; forgotten the moment any answer
+   *  names another (the old build again, mid-release, or a newer one). */
+  private seen: { script: string; at: number } | null = null;
 
-  /** Ask the server which version it would load today. */
-  async check(fetchPage: () => Promise<string> = defaultFetch): Promise<void> {
+  /**
+   * Ask the server which version it would load today.
+   *
+   * READY ONLY ONCE THE NEW BUILD HAS SETTLED (the owner, 6 Oct 2026: the CRM
+   * went blank as he moved from the dashboard, five minutes after a release,
+   * and a refresh drew it fine). The first answer naming a new build is the
+   * release BEGINNING: some pods serve it and some do not, and a tab reloaded
+   * then can get the new page from one and a 404 for its scripts from
+   * another. So the same new build must be answered for `settleMs`, with no
+   * answer in between naming anything else, before this tab moves.
+   */
+  async check(
+    fetchPage: () => Promise<string> = defaultFetch,
+    now: number = Date.now(),
+  ): Promise<void> {
     // A dev server has no hashed main script: nothing to compare with.
     if (!this.running || this.ready() || this.asking) return;
     this.asking = true;
     try {
       const live = mainScriptOf(await fetchPage());
       // An answer without a main script (an error page, a proxy's page) is
-      // no evidence of a new version.
-      if (live && live !== this.running) this.ready.set(true);
+      // no evidence of a new version, and no evidence against one either.
+      if (!live) return;
+      if (live === this.running) {
+        this.seen = null; // the old build again: the release is not done
+        return;
+      }
+      if (this.seen?.script !== live) this.seen = { script: live, at: now };
+      if (now - this.seen.at >= this.settleMs) this.ready.set(true);
     } catch {
       // Offline or refused: ask again next time.
     } finally {
@@ -218,8 +248,15 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
           version.load(event.url);
         } else if (event instanceof NavigationEnd) {
           ask();
+        } else if (event instanceof NavigationError && piecesMissing(event.error)) {
+          recover(version, event.url);
         }
       });
+      // A piece of the app asked for outside a navigation fails the same way.
+      const rejected = (e: PromiseRejectionEvent) => {
+        if (piecesMissing(e.reason)) recover(version, location.pathname + location.search);
+      };
+      window.addEventListener('unhandledrejection', rejected);
       inject(DestroyRef).onDestroy(() => {
         clearTimeout(first);
         clearInterval(timer);
@@ -227,10 +264,47 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
         document.removeEventListener('visibilitychange', ask);
         window.removeEventListener('focus', ask);
         for (const name of FINISHES) document.removeEventListener(name, finished, true);
+        window.removeEventListener('unhandledrejection', rejected);
         moves?.unsubscribe();
       });
     }),
   ]);
+}
+
+/**
+ * The screen asked for a piece of the app the server no longer has (or does
+ * not have yet): the tab is running one build and the server serves another.
+ * Left alone that is a blank page. Each browser words it its own way.
+ */
+export function piecesMissing(error: unknown): boolean {
+  const said = error instanceof Error ? `${error.name} ${error.message}` : String(error ?? '');
+  return /dynamically imported module|Importing a module script failed|error loading dynamically imported|ChunkLoadError|Loading chunk [\w-]+ failed/i.test(
+    said,
+  );
+}
+
+const RECOVERED = 'royal-shell.version.recovered';
+
+/**
+ * Load the screen the person was going to, fully, so the page and its
+ * pieces come from one build. ONCE a minute at most: if the fresh page fails
+ * the same way, something else is wrong and reloading forever would hide it.
+ */
+export function recover(version: Version, url: string, now: number = Date.now()): boolean {
+  let last = 0;
+  try {
+    last = Number(sessionStorage.getItem(RECOVERED) ?? 0);
+  } catch {
+    last = 0;
+  }
+  if (now - last < 60_000) return false;
+  try {
+    sessionStorage.setItem(RECOVERED, String(now));
+  } catch {
+    // no storage: still recover once; the next failure will try again
+  }
+  version.load(url);
+  return true;
 }
 
 function pageIsRtl(): boolean {

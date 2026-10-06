@@ -1,7 +1,7 @@
 import { inject, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HttpRequest, HttpResponse } from '@angular/common/http';
-import { NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { NavigationEnd, NavigationError, NavigationStart, Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
 
 import { SHELL_WORDS } from '../words';
@@ -10,6 +10,8 @@ import {
   Version,
   dialogOpen,
   mainScriptOf,
+  piecesMissing,
+  recover,
   provideVersionCheck,
   runningScript,
   versionWrites,
@@ -53,19 +55,40 @@ describe('Version.check', () => {
   it('is ready only when the server loads a different main script', async () => {
     running('main-OLD123.js');
     const v = TestBed.inject(Version);
-    await v.check(async () => page('main-OLD123.js'));
+    await v.check(async () => page('main-OLD123.js'), 0);
     expect(v.ready()).toBe(false);
-    await v.check(async () => page('main-NEW456.js'));
+    await v.check(async () => page('main-NEW456.js'), 0);
+    await v.check(async () => page('main-NEW456.js'), 30_000);
+    expect(v.ready()).toBe(true);
+  });
+
+  it('NOT on the first answer naming a new build: that is the release beginning', async () => {
+    running('main-OLD123.js');
+    const v = TestBed.inject(Version);
+    await v.check(async () => page('main-NEW456.js'), 0);
+    expect(v.ready()).toBe(false);
+    await v.check(async () => page('main-NEW456.js'), 29_999);
+    expect(v.ready()).toBe(false);
+  });
+
+  it('an OLD answer mid-release starts the wait again (pods still mixed)', async () => {
+    running('main-OLD123.js');
+    const v = TestBed.inject(Version);
+    await v.check(async () => page('main-NEW456.js'), 0);
+    await v.check(async () => page('main-OLD123.js'), 30_000);
+    await v.check(async () => page('main-NEW456.js'), 55_000);
+    expect(v.ready()).toBe(false); // 25 s settled, not 30
+    await v.check(async () => page('main-NEW456.js'), 85_000);
     expect(v.ready()).toBe(true);
   });
 
   it('an error page or a failed ask is no evidence of a new version', async () => {
     running('main-OLD123.js');
     const v = TestBed.inject(Version);
-    await v.check(async () => '<html>502</html>');
+    await v.check(async () => '<html>502</html>', 0);
     await v.check(async () => {
       throw new Error('offline');
-    });
+    }, 200_000);
     expect(v.ready()).toBe(false);
   });
 
@@ -310,6 +333,56 @@ describe('provideVersionCheck', () => {
       writesInFlight.set(0);
       asked.mockRestore();
     }
+  });
+});
+
+describe('a missing piece of the app', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  it('is recognised in each browser\u2019s words, and nothing else is', () => {
+    expect(piecesMissing(new TypeError('Failed to fetch dynamically imported module: https://x/chunk-AB.js'))).toBe(true);
+    expect(piecesMissing(new TypeError('Importing a module script failed.'))).toBe(true);
+    expect(piecesMissing(new Error('error loading dynamically imported module'))).toBe(true);
+    expect(piecesMissing(new Error('Http failure response for /api/v1/leads/: 500'))).toBe(false);
+    expect(piecesMissing(undefined)).toBe(false);
+  });
+
+  it('loads the screen the person was going to, fully, ONCE a minute', () => {
+    const v = TestBed.inject(Version);
+    const loads: string[] = [];
+    vi.spyOn(v, 'load').mockImplementation((u: string) => loads.push(u));
+    expect(recover(v, '/leads/abc?x=1', 1_000_000)).toBe(true);
+    expect(recover(v, '/leads/abc?x=1', 1_030_000)).toBe(false); // same failure again: stop
+    expect(recover(v, '/leads/abc?x=1', 1_061_000)).toBe(true);
+    expect(loads).toEqual(['/leads/abc?x=1', '/leads/abc?x=1']);
+  });
+
+  it('a navigation that failed for a missing piece recovers to its own url', () => {
+    const events = new Subject<unknown>();
+    running('main-OLD123.js');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: Router, useValue: { events } },
+        provideVersionCheck({ everyMs: 3_600_000 }),
+      ],
+    });
+    const v = TestBed.inject(Version);
+    const loads: string[] = [];
+    vi.spyOn(v, 'load').mockImplementation((u: string) => loads.push(u));
+    vi.spyOn(v, 'check').mockImplementation(async () => undefined);
+    events.next(new NavigationError(1, '/reports', new Error('Http failure 500')));
+    expect(loads).toEqual([]); // an ordinary failure is not ours to hide
+    events.next(
+      new NavigationError(2, '/leads/abc', new TypeError('Failed to fetch dynamically imported module: /chunk-Z.js')),
+    );
+    expect(loads).toEqual(['/leads/abc']);
+    running(null);
   });
 });
 
