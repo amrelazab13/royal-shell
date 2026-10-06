@@ -56,12 +56,12 @@ function person(extra: Partial<ChartNode> & { id: string }): ChartNode {
 function chart(): Chart {
   const ali = person({
     id: 'e1',
-    full_name_en: 'Ali Agent',
+    full_name_en: 'Card Alpha',
     title_en: 'Senior Sales Consultant',
   });
   const dina = person({
     id: 'e2',
-    full_name_en: 'Dina Director',
+    full_name_en: 'Card Delta',
     title_en: 'Sales Director',
     band: 'D1',
     band_name_en: 'Director',
@@ -72,7 +72,7 @@ function chart(): Chart {
   });
   const driver = person({
     id: 'e3',
-    full_name_en: 'Hassan Driver',
+    full_name_en: 'Card Hotel',
     title_en: 'Driver',
     department: 'administration',
     band: 'A2',
@@ -196,14 +196,14 @@ describe('OrgChart', () => {
       )!;
       card.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
     };
-    pick('Hassan Driver');
+    pick('Card Hotel');
     await settle(fixture);
-    pick('Dina Director');
+    pick('Card Delta');
     await settle(fixture);
 
     expect(moves.length).toBe(1);
     expect(moves[0].manager).toBe('e2');
-    expect(moves[0].person.full_name_en).toContain('Hassan Driver');
+    expect(moves[0].person.full_name_en).toContain('Card Hotel');
   });
 
   it('folds and unfolds through its PUBLIC api, which the masthead drives', async () => {
@@ -264,30 +264,30 @@ describe('OrgChart', () => {
 
   it('draws a tick per card, ON for whoever may open it', async () => {
     const { el } = await decorated((n) => ({ tick: n.id === 'e1' ? 'on' : 'off' }));
-    expect(tickOf(el, 'Ali Agent')!.checked).toBe(true);
-    expect(tickOf(el, 'Dina Director')!.checked).toBe(false);
+    expect(tickOf(el, 'Card Alpha')!.checked).toBe(true);
+    expect(tickOf(el, 'Card Delta')!.checked).toBe(false);
     // The bench is people too, and his sentence says "everyone".
-    expect(tickOf(el, 'Hassan Driver')).not.toBeNull();
+    expect(tickOf(el, 'Card Hotel')).not.toBeNull();
   });
 
   it('DIMS whoever may not open it, and never hides them', async () => {
     const { el } = await decorated((n) => ({ tick: 'off', dimmed: n.id !== 'e1' }));
-    expect(cardOf(el, 'Dina Director').classList).toContain('dimmed');
-    expect(cardOf(el, 'Ali Agent').classList).not.toContain('dimmed');
+    expect(cardOf(el, 'Card Delta').classList).toContain('dimmed');
+    expect(cardOf(el, 'Card Alpha').classList).not.toContain('dimmed');
     // Still drawn, still reachable: ticking a dimmed card is how he grants.
-    expect(tickOf(el, 'Dina Director')!.disabled).toBe(false);
+    expect(tickOf(el, 'Card Delta')!.disabled).toBe(false);
   });
 
   it('says "edited" on a card whose door is not the default', async () => {
     const { el } = await decorated((n) => ({ tick: 'on', edited: n.id === 'e1' }));
-    expect(cardOf(el, 'Ali Agent').classList).toContain('edited');
-    expect(cardOf(el, 'Ali Agent').querySelector('.edited')!.textContent).toContain('edited');
-    expect(cardOf(el, 'Dina Director').querySelector('.edited')).toBeNull();
+    expect(cardOf(el, 'Card Alpha').classList).toContain('edited');
+    expect(cardOf(el, 'Card Alpha').querySelector('.edited')!.textContent).toContain('edited');
+    expect(cardOf(el, 'Card Delta').querySelector('.edited')).toBeNull();
   });
 
   it('ASKS for a tick rather than deciding one, with the INVERSE of what is held', async () => {
     const { el, ticked } = await decorated(() => ({ tick: 'off' }));
-    tickOf(el, 'Ali Agent')!.click();
+    tickOf(el, 'Card Alpha')!.click();
     expect(ticked.length).toBe(1);
     expect(ticked[0].person.id).toBe('e1');
     expect(ticked[0].on).toBe(true);
@@ -295,7 +295,7 @@ describe('OrgChart', () => {
 
   it('asks to CLOSE a door that is open', async () => {
     const { el, ticked } = await decorated(() => ({ tick: 'on' }));
-    tickOf(el, 'Ali Agent')!.click();
+    tickOf(el, 'Card Alpha')!.click();
     expect(ticked[0].on).toBe(false);
   });
 
@@ -303,7 +303,7 @@ describe('OrgChart', () => {
     // A-128: HR's three SEE who holds the door and cannot change it. A
     // hidden tick would hide the answer along with the power.
     const { el, ticked } = await decorated(() => ({ tick: 'on', tickDisabled: true }));
-    const box = tickOf(el, 'Ali Agent')!;
+    const box = tickOf(el, 'Card Alpha')!;
     expect(box).not.toBeNull();
     expect(box.disabled).toBe(true);
     expect(box.checked).toBe(true);
@@ -316,7 +316,7 @@ describe('OrgChart', () => {
     // The guard is asked of `marks`, not of the box, so a click dispatched
     // past `disabled` cannot leave the screen showing a door nobody opened.
     const { el, ticked } = await decorated(() => ({ tick: 'off', tickDisabled: true }));
-    const box = tickOf(el, 'Ali Agent')!;
+    const box = tickOf(el, 'Card Alpha')!;
     box.checked = true;
     box.dispatchEvent(new Event('click', { bubbles: true }));
     expect(ticked.length).toBe(0);
@@ -339,10 +339,10 @@ describe('OrgChart', () => {
     // map handed in would be read when the cards were built and then go
     // stale, so the tick would never follow the server's answer.
     const { fixture, el } = await decorated(() => ({ tick: 'off' }));
-    expect(tickOf(el, 'Ali Agent')!.checked).toBe(false);
+    expect(tickOf(el, 'Card Alpha')!.checked).toBe(false);
     fixture.componentRef.setInput('decorate', () => ({ tick: 'on' }) as CardMarks);
     await settle(fixture);
-    expect(tickOf(el, 'Ali Agent')!.checked).toBe(true);
+    expect(tickOf(el, 'Card Alpha')!.checked).toBe(true);
   });
 
   it('a tick never moves anybody, whatever the host allows', async () => {
@@ -353,7 +353,7 @@ describe('OrgChart', () => {
     fixture.componentInstance.moved.subscribe((m) => moves.push(m));
     fixture.componentRef.setInput('decorate', () => ({ tick: 'off' }) as CardMarks);
     await settle(fixture);
-    tickOf(el, 'Ali Agent')!.click();
+    tickOf(el, 'Card Alpha')!.click();
     expect(moves.length).toBe(0);
   });
 
@@ -386,7 +386,7 @@ describe('OrgChart', () => {
     // A SINGLE click since 5 Oct 2026 (the owner: "ticking only opens, but
     // clicking on the card it self opens the permissions"). It was a
     // double-click, and this test asserted that.
-    cardOf(el, 'Ali Agent').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    cardOf(el, 'Card Alpha').dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(opened.map((n) => n.id)).toEqual(['e1']);
   });
 
@@ -396,7 +396,7 @@ describe('OrgChart', () => {
     fixture.componentInstance.cardOpen.subscribe((n) => opened.push(n));
     fixture.componentRef.setInput('opens', true);
     await settle(fixture);
-    const card = cardOf(el, 'Dina Director');
+    const card = cardOf(el, 'Card Delta');
     expect(card.getAttribute('tabindex')).toBe('0');
     expect(card.getAttribute('role')).toBe('button');
     card.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
@@ -409,7 +409,7 @@ describe('OrgChart', () => {
     fixture.componentInstance.cardOpen.subscribe((n) => opened.push(n));
     fixture.componentRef.setInput('opens', true);
     await settle(fixture);
-    cardOf(el, 'Hassan Driver').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    cardOf(el, 'Card Hotel').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(opened.map((n) => n.id)).toEqual(['e3']);
   });
 
@@ -418,7 +418,7 @@ describe('OrgChart', () => {
     const opened: ChartNode[] = [];
     fixture.componentInstance.cardOpen.subscribe((n) => opened.push(n));
     await settle(fixture);
-    cardOf(el, 'Ali Agent').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    cardOf(el, 'Card Alpha').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(opened.length).toBe(0);
   });
 
@@ -516,7 +516,7 @@ describe('OrgChart', () => {
         clientY: 40,
       }),
     );
-    cardOf(el, 'Ali Agent').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    cardOf(el, 'Card Alpha').dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(opened).toEqual([]);
   });
 
@@ -529,7 +529,7 @@ describe('OrgChart', () => {
     const wrap = el.querySelector('.canvaswrap')!;
     // Two pixels of shake: a hand, not a drag.
     dragOn(wrap, [10, 10], [12, 11]);
-    cardOf(el, 'Ali Agent').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    cardOf(el, 'Card Alpha').dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(opened.map((n) => n.id)).toEqual(['e1']);
   });
 
@@ -548,7 +548,7 @@ describe('OrgChart', () => {
       },
     });
     await settle(fixture);
-    dragOn(cardOf(el, 'Ali Agent'), [10, 10], [120, 60]);
+    dragOn(cardOf(el, 'Card Alpha'), [10, 10], [120, 60]);
     expect(written).toBe(0);
   });
 
@@ -578,7 +578,7 @@ describe('OrgChart', () => {
     fixture.componentInstance.cardOpen.subscribe((n) => opened.push(n));
     fixture.componentRef.setInput('opens', true);
     await settle(fixture);
-    tickOf(el, 'Ali Agent')!.click();
+    tickOf(el, 'Card Alpha')!.click();
     expect(ticked.map((t) => t.on)).toEqual([true]);
     expect(opened).toEqual([]);
   });
@@ -589,7 +589,7 @@ describe('OrgChart', () => {
     fixture.componentInstance.cardOpen.subscribe((n) => opened.push(n));
     fixture.componentRef.setInput('opens', true);
     await settle(fixture);
-    cardOf(el, 'Ali Agent').dispatchEvent(
+    cardOf(el, 'Card Alpha').dispatchEvent(
       new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }),
     );
     expect(ticked.map((t) => t.on)).toEqual([true]);
@@ -599,7 +599,7 @@ describe('OrgChart', () => {
   it('space does NOT toggle a box that is not his to press', async () => {
     const { fixture, el, ticked } = await decorated(() => ({ tick: 'off', tickDisabled: true }));
     await settle(fixture);
-    cardOf(el, 'Ali Agent').dispatchEvent(
+    cardOf(el, 'Card Alpha').dispatchEvent(
       new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }),
     );
     expect(ticked).toEqual([]);
@@ -611,7 +611,7 @@ describe('OrgChart', () => {
     const { fixture, el, ticked } = await decorated(() => ({ tick: 'off' }));
     fixture.componentRef.setInput('opens', true);
     await settle(fixture);
-    const card = cardOf(el, 'Ali Agent');
+    const card = cardOf(el, 'Card Alpha');
     card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     card.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
@@ -752,7 +752,7 @@ describe('OrgChart, shared', () => {
     const { el } = await mount({ chart: drawn, words: { t: (k) => k, isRtl: () => true } });
     expect(canvasNames(el)).toEqual(expect.arrayContaining(['المدير بيتا', 'الوكيل ألفا']));
     // The bench driver holds no Arabic name: HR's `pick` falls back to English.
-    expect(benchNames(el)).toEqual(['Hassan Driver']);
+    expect(benchNames(el)).toEqual(['Card Hotel']);
     expect(el.querySelector('.ocard .dp')!.textContent).toContain('المبيعات');
   });
 
@@ -852,9 +852,9 @@ describe('OrgChart, shared', () => {
     const moves: Move[] = [];
     fixture.componentInstance.moved.subscribe((m) => moves.push(m));
     const space = () => new KeyboardEvent('keydown', { key: ' ', bubbles: true });
-    cardNamed(el, 'Hassan Driver').dispatchEvent(space());
+    cardNamed(el, 'Card Hotel').dispatchEvent(space());
     await settle(fixture);
-    cardNamed(el, 'Dina Director').dispatchEvent(space());
+    cardNamed(el, 'Card Delta').dispatchEvent(space());
     await settle(fixture);
     expect(moves).toEqual([]);
     expect(el.querySelector('.carrying')).toBeNull();
@@ -869,7 +869,7 @@ describe('OrgChart, shared', () => {
     const ticked: unknown[] = [];
     fixture.componentInstance.ticked.subscribe((t) => ticked.push(t));
     expect(el.querySelectorAll('.tick').length).toBe(0);
-    cardNamed(el, 'Ali Agent').dispatchEvent(
+    cardNamed(el, 'Card Alpha').dispatchEvent(
       new KeyboardEvent('keydown', { key: ' ', bubbles: true }),
     );
     expect(ticked).toEqual([]);
@@ -881,7 +881,7 @@ describe('OrgChart, shared', () => {
     fixture.componentInstance.cardOpen.subscribe((n) => opened.push(n));
     fixture.componentRef.setInput('opens', true);
     await settle(fixture);
-    cardNamed(el, 'Ali Agent').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    cardNamed(el, 'Card Alpha').dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(opened.map((n) => n.id)).toEqual(['e1']);
   });
 
@@ -894,7 +894,7 @@ describe('OrgChart, shared', () => {
     fixture.componentInstance.cardOpen.subscribe((n) => opened.push(n));
     fixture.componentRef.setInput('opens', true);
     await settle(fixture);
-    cardNamed(el, 'Ali Agent').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    cardNamed(el, 'Card Alpha').dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(opened[0]).toBe(drawn.tree[0].reports[0]);
   });
 
@@ -904,7 +904,7 @@ describe('OrgChart, shared', () => {
     const { fixture, el } = await mount({ chart: chart() });
     fixture.componentRef.setInput('cardLink', (n: ChartNode) => ({ commands: ['/team', n.id] }));
     await settle(fixture);
-    const name = cardNamed(el, 'Ali Agent').querySelector('.nm')!;
+    const name = cardNamed(el, 'Card Alpha').querySelector('.nm')!;
     expect(name.tagName.toLowerCase()).toBe('a');
     expect(name.getAttribute('href')).toBe('/team/e1');
   });
