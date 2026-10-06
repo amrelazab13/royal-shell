@@ -1,5 +1,5 @@
 /* The org chart's global half: the canvas that stands in the opposite colour
-   to the page, the seventeen band colours, `--band-ink`, and the `.b-<band>`
+   to the page, the band colours (one per band in HR's book), `--band-ink`, and the `.b-<band>`
    classes the cards wear. Lifted VERBATIM from HR's styles.scss (6 Oct 2026),
    where they lived when the chart was HR's alone; every module that shows the
    shared <royal-org-chart> now imports this ONE copy from its global styles:
@@ -55,69 +55,54 @@
    `.b-<code>` only names the colour, and each place that wears it decides
    what to do with it. Text is always `--ink` on a 16 % tint of the surface,
    so every chip clears WCAG AA in both themes without a per-colour rule. */
+/* ONE LIST, every rule generated from it (6 Oct 2026). The seventeen were
+   hand-written three times plus once more as classes, and HR's book holds
+   EIGHTEEN: C3 had no class, so its two people's cards wore no colour and
+   nothing failed. A band added to the book is added HERE, once. C3 takes the
+   free hue between A2 and D2, far from its neighbours C2 and D1; the other
+   seventeen are unchanged, so nobody's card changes colour. */
+$band-hues: (
+  'b1': 0,
+  'b2': 105.9,
+  'b3': 211.8,
+  'c1': 317.6,
+  'c2': 63.5,
+  'c3': 264.7,
+  'd1': 169.4,
+  'd2': 275.3,
+  'm1': 21.2,
+  'm2': 127.1,
+  'm3': 232.9,
+  's1': 338.8,
+  's2': 84.7,
+  'e1': 190.6,
+  'e2': 296.5,
+  'e3': 42.4,
+  'a1': 148.2,
+  'a2': 254.1,
+);
+
+@mixin band-colours($l, $c) {
+  @each $code, $hue in $band-hues {
+    --band-#{$code}: oklch(#{$l} #{$c} #{$hue});
+  }
+}
+
 :root {
-  --band-b1: oklch(78% 0.14 0);
-  --band-b2: oklch(78% 0.14 105.9);
-  --band-b3: oklch(78% 0.14 211.8);
-  --band-c1: oklch(78% 0.14 317.6);
-  --band-c2: oklch(78% 0.14 63.5);
-  --band-d1: oklch(78% 0.14 169.4);
-  --band-d2: oklch(78% 0.14 275.3);
-  --band-m1: oklch(78% 0.14 21.2);
-  --band-m2: oklch(78% 0.14 127.1);
-  --band-m3: oklch(78% 0.14 232.9);
-  --band-s1: oklch(78% 0.14 338.8);
-  --band-s2: oklch(78% 0.14 84.7);
-  --band-e1: oklch(78% 0.14 190.6);
-  --band-e2: oklch(78% 0.14 296.5);
-  --band-e3: oklch(78% 0.14 42.4);
-  --band-a1: oklch(78% 0.14 148.2);
-  --band-a2: oklch(78% 0.14 254.1);
+  @include band-colours(78%, 0.14);
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
-    --band-b1: oklch(52% 0.15 0);
-    --band-b2: oklch(52% 0.15 105.9);
-    --band-b3: oklch(52% 0.15 211.8);
-    --band-c1: oklch(52% 0.15 317.6);
-    --band-c2: oklch(52% 0.15 63.5);
-    --band-d1: oklch(52% 0.15 169.4);
-    --band-d2: oklch(52% 0.15 275.3);
-    --band-m1: oklch(52% 0.15 21.2);
-    --band-m2: oklch(52% 0.15 127.1);
-    --band-m3: oklch(52% 0.15 232.9);
-    --band-s1: oklch(52% 0.15 338.8);
-    --band-s2: oklch(52% 0.15 84.7);
-    --band-e1: oklch(52% 0.15 190.6);
-    --band-e2: oklch(52% 0.15 296.5);
-    --band-e3: oklch(52% 0.15 42.4);
-    --band-a1: oklch(52% 0.15 148.2);
-    --band-a2: oklch(52% 0.15 254.1);
+    @include band-colours(52%, 0.15);
   }
 }
 :root[data-theme='light'] {
-  --band-b1: oklch(52% 0.15 0);
-  --band-b2: oklch(52% 0.15 105.9);
-  --band-b3: oklch(52% 0.15 211.8);
-  --band-c1: oklch(52% 0.15 317.6);
-  --band-c2: oklch(52% 0.15 63.5);
-  --band-d1: oklch(52% 0.15 169.4);
-  --band-d2: oklch(52% 0.15 275.3);
-  --band-m1: oklch(52% 0.15 21.2);
-  --band-m2: oklch(52% 0.15 127.1);
-  --band-m3: oklch(52% 0.15 232.9);
-  --band-s1: oklch(52% 0.15 338.8);
-  --band-s2: oklch(52% 0.15 84.7);
-  --band-e1: oklch(52% 0.15 190.6);
-  --band-e2: oklch(52% 0.15 296.5);
-  --band-e3: oklch(52% 0.15 42.4);
-  --band-a1: oklch(52% 0.15 148.2);
-  --band-a2: oklch(52% 0.15 254.1);
+  @include band-colours(52%, 0.15);
 }
 /* THE INK THAT SITS ON A BAND COLOUR (the owner, 27 Sep 2026: the chart's
    cards are to be IN the band colour, not merely accented by it).
 
-   One value for all seventeen, not one per band, and that is not a
+   One value for every band, not one per band, and that is not a
    shortcut: every band above shares a single lightness — 78 % where the
    canvas is dark, 52 % where it is light — and only the hue changes. So a
    near-black reads on every one of them in the dark theme and a near-white
@@ -140,56 +125,10 @@
   --band-ink: oklch(21% 0.02 260);
 }
 /* The one job of a `b-` class: say which colour this thing's band is. */
-.b-b1 {
-  --band-c: var(--band-b1);
-}
-.b-b2 {
-  --band-c: var(--band-b2);
-}
-.b-b3 {
-  --band-c: var(--band-b3);
-}
-.b-c1 {
-  --band-c: var(--band-c1);
-}
-.b-c2 {
-  --band-c: var(--band-c2);
-}
-.b-d1 {
-  --band-c: var(--band-d1);
-}
-.b-d2 {
-  --band-c: var(--band-d2);
-}
-.b-m1 {
-  --band-c: var(--band-m1);
-}
-.b-m2 {
-  --band-c: var(--band-m2);
-}
-.b-m3 {
-  --band-c: var(--band-m3);
-}
-.b-s1 {
-  --band-c: var(--band-s1);
-}
-.b-s2 {
-  --band-c: var(--band-s2);
-}
-.b-e1 {
-  --band-c: var(--band-e1);
-}
-.b-e2 {
-  --band-c: var(--band-e2);
-}
-.b-e3 {
-  --band-c: var(--band-e3);
-}
-.b-a1 {
-  --band-c: var(--band-a1);
-}
-.b-a2 {
-  --band-c: var(--band-a2);
+@each $code, $hue in $band-hues {
+  .b-#{$code} {
+    --band-c: var(--band-#{$code});
+  }
 }
 /* Nobody on a band is not a colour; it is the absence of one. */
 .b-none {
