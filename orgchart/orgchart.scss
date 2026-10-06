@@ -1,0 +1,584 @@
+/* The CANVAS: the wall the cards stand on.
+ *
+ * Bands, plots, rails, elbows, the zoom and the bench — everything whose job
+ * is WHERE a card goes. What a card LOOKS like is `org-card.scss`, loaded
+ * beside this one by the same component.
+ *
+ * SPLIT 3 October 2026, and the honest reason is two reasons. The timing was
+ * the build's per-component style budget: this sheet reached 6.91 kB against a
+ * 6.00 kB warning and 8.00 kB error, so it was going to turn a release red.
+ * The LINE of the split is not about size: a reader looking for why a card is
+ * dim should not have to walk past the elbow geometry, and vice versa. Both
+ * halves are now comfortably under the budget, which is a consequence of
+ * splitting it in the right place rather than the purpose of splitting it.
+ *
+ * NOTHING ON SCREEN MOVED. Measured before and after on five screens in both
+ * languages, by geometry and computed style, with a control that proved the
+ * measurement could see a 3 px change.
+ *
+ * ORDER MATTERS: this file is listed FIRST in the component's `styleUrls`, so
+ * the cascade is canvas-then-card, as it was when they were one file.
+ */
+
+/* The wall chart's canvas: a row per band, a tree within it, reporting lines
+   as elbows. Extracted from `chart.scss` on 3 October 2026 with the markup it
+   styles (O-252 Part 1, step 1), so the Permissions tab draws the same chart
+   and not a second set of card styles that drift from these.
+
+   Everything above the canvas inside this component takes the page's own
+   margin back; the canvas fills what is left. */
+/* NO `:host` SIZING HERE. The host is sized by the page that stands it in
+   its column (`.page.p-bleed > app-org-chart` in chart.scss), and the scroll
+   gate refused this file until that copy was gone: six screens once each
+   kept their own copy of a rule the layout already owned, and every one of
+   them was a `:host` block exactly like the one I wrote here first. */
+:host > :not(.canvaswrap) {
+  margin-inline: var(--page-margin);
+  flex: none;
+}
+
+/* What the move will do, said before it happens. */
+.carrying {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-block-end: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r);
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--navy) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--navy-hi) 40%, transparent);
+}
+.carrying b {
+  color: var(--ink);
+}
+.carrying .willdo.dim {
+  color: var(--ink-4);
+}
+.carrying .btn {
+  margin-inline-start: auto;
+}
+
+/* A dozen bands deep needs height; one finger pans, two reach the pinch.
+   It FILLS the page rather than taking a slice of the window: `78vh` left a
+   frame around the canvas where the page had nothing left to scroll, so the
+   wheel over it did nothing at all (the owner, 29 Sep 2026; F53, reopened).
+
+   5 OCT 2026 SUPERSEDES THE WHEEL HALF OF THAT, and the two are not in
+   conflict: on 29 Sep the wheel over the chart did NOTHING, and he wanted it
+   to move something. It now moves THE PAGE, always, and the chart moves by
+   dragging empty space. Filling the content area is still right and still
+   why this is here.
+   The page is `p-bleed`, so what it fills is the content area exactly. */
+.canvaswrap {
+  position: relative;
+  /* THE WHEEL BELONGS TO THE PAGE (the owner, 5 Oct 2026, on both charts).
+     `overflow: auto` with `overscroll-behavior: contain` is the CSS for
+     "this element eats the scroll and passes none on" -- which is exactly
+     what he was complaining about. `hidden` hands the wheel to the page and
+     still allows `scrollLeft` / `scrollTop` to be SET, which is how `fit()`
+     and the drag-to-pan both move the chart. */
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-block-size: 0;
+  /* One finger pans the chart, and the component follows the pointer itself,
+     so the browser must not also claim the gesture. Two fingers still reach
+     the pinch, which is handled in the same place. */
+  touch-action: none;
+  cursor: grab;
+  &:active {
+    cursor: grabbing;
+  }
+  border-block-start: 1px solid var(--line-soft);
+  background:
+    radial-gradient(var(--cv-dot, transparent) 1px, transparent 1px) 0 0/22px 22px,
+    var(--canvas, var(--surface));
+}
+.fitcorner {
+  position: sticky;
+  top: 8px;
+  float: inline-end;
+  margin-inline-end: 8px;
+  z-index: 3;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 15px;
+}
+.fitcorner:hover,
+.canvas {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 34px;
+  min-inline-size: 100%;
+  inline-size: max-content;
+  min-block-size: 260px;
+  padding: 26px 34px 34px;
+}
+.plot {
+  position: relative;
+  flex: none;
+}
+
+/* Band names beside the rows; in the canvas, so it zooms and mirrors. */
+.bandrail {
+  position: relative;
+  flex: none;
+  inline-size: 150px;
+}
+.raillabel {
+  position: absolute;
+  inset-inline-end: 0;
+  translate: 0 -50%;
+  inline-size: 100%;
+  text-align: end;
+  padding-inline-end: 10px;
+  box-sizing: border-box;
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--cv-ink, var(--ink-4));
+  line-height: 1.15;
+  color: var(--band-c, var(--cv-ink, var(--ink-4)));
+}
+.raillabel span {
+  background: color-mix(in srgb, var(--band-c, transparent) 18%, var(--canvas, var(--surface)));
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--band-c, var(--line)) 40%, transparent);
+  font-weight: 700;
+}
+.canvas.tiny .raillabel {
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+/* A faint line through each band: "the same level" seen, not inferred. */
+.bandline {
+  position: absolute;
+  inset-inline: -12px;
+  border-block-start: 1px dashed
+    color-mix(in srgb, var(--band-c, var(--cv-band, var(--line-soft))) 55%, transparent);
+  pointer-events: none;
+}
+.links {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.links path {
+  fill: none;
+  stroke: var(--cv-line, var(--line));
+  stroke-width: 2;
+}
+.slot {
+  position: absolute;
+  inline-size: 152px;
+  z-index: 1;
+}
+
+.none {
+  margin: auto;
+  color: var(--cv-ink, var(--ink-4));
+  font-size: 0.85rem;
+}
+
+.benchwrap {
+  margin-block-start: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 10px 13px 13px;
+  background: var(--surface-2);
+}
+.benchtitle {
+  margin: 0 0 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.benchtitle .n {
+  color: var(--bronze);
+}
+.detachpad {
+  margin-inline-start: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  border: 1px solid color-mix(in srgb, var(--navy-hi) 50%, transparent);
+}
+.bench {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bench li {
+  inline-size: 152px;
+}
+
+.p-error {
+  color: var(--bad);
+}
+.p-muted {
+  color: var(--ink-4);
+}
+/* The CARD: one person on the wall.
+ *
+ * The card itself, its band colours, the states a drag puts it in, the fold
+ * pill, what it keeps when the canvas is zoomed far out, and the marks the
+ * Permissions tab asks for (the tick, the dim, "edited"). Where a card GOES
+ * is `org-chart.scss`, loaded before this one by the same component.
+ *
+ * See that file's header for why the two were separated and what was measured.
+ * This half is loaded SECOND, so a rule here still wins a tie against one
+ * there, exactly as it did when they were a single sheet.
+ */
+
+.fold:hover {
+  border-color: var(--navy-hi);
+  color: var(--navy-hi);
+}
+
+/* A card is IN its band's colour (the owner, 27 Sep 2026: "the cards in the
+   org chart should be in the band color, not only accented by it"). It was a
+   12 % tint with a stripe on top, which read as one pale card seventeen
+   times over from any distance — and reading the wall from a distance is
+   what the colours are for.
+
+   The colour still arrives through `--band-c` (set by `b-<code>` in
+   styles.scss), so a card cannot drift from the register's chip, and the
+   text through `--band-ink`, which is one value for every band because they
+   all share one lightness. */
+.ocard {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  inline-size: 100%;
+  padding: 10px 10px 8px;
+  border: 1px solid color-mix(in srgb, var(--band-ink) 20%, var(--band-c));
+  border-radius: var(--r);
+  background: var(--band-c);
+  color: var(--band-ink);
+  box-shadow: var(--sh-1);
+  transition: all var(--fast);
+}
+.ocard[draggable='true'] {
+  cursor: grab;
+}
+.ocard:hover {
+  border-color: var(--band-ink);
+}
+.ocard:focus-visible,
+.fold:focus-visible {
+  outline: 2px solid var(--navy-hi);
+  outline-offset: 2px;
+}
+.ocard .nm {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--band-ink);
+  line-height: 1.25;
+}
+/* Underline alone on hover: a second colour on a coloured card is a guess
+   about contrast that the one ink above has already answered. */
+.ocard .nm:hover {
+  text-decoration: underline;
+}
+.ocard .jt {
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--band-ink) 80%, transparent);
+}
+.ocard .dp {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: color-mix(in srgb, var(--band-ink) 65%, transparent);
+}
+.ocard .seat {
+  margin-block-start: 2px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--band-ink);
+  border: 1px solid color-mix(in srgb, var(--band-ink) 45%, transparent);
+}
+/* A reporting line Valu draws that the seniority law would refuse. Loud on
+   purpose: it stands until somebody in HR draws a better one, and the whole
+   point of taking the line was that nobody should be able to miss it. */
+.ocard .inquestion {
+  margin-block-start: 2px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bad);
+  border: 1px solid var(--bad);
+  /* On a coloured card a 10 % wash of red disappears; the badge carries its
+     own ground so it is as loud on every band. */
+  background: var(--surface);
+  cursor: help;
+}
+.ocard:has(.inquestion) {
+  border-color: var(--bad);
+}
+
+/* The people that matter, marked as the register marks them. */
+.ocard.is-key {
+  border-color: var(--bronze);
+}
+.ocard.dragging {
+  opacity: 0.5;
+  border-color: var(--navy-hi);
+}
+/* Where the card would land, and who may receive it. */
+.ocard.over {
+  border-color: var(--navy-hi);
+  background: color-mix(in srgb, var(--navy) 22%, var(--surface-2));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--navy-hi) 25%, transparent);
+}
+.ocard.receives {
+  border-color: color-mix(in srgb, var(--navy-hi) 55%, var(--line));
+}
+/* A drop that would break the seniority law or make a loop says no first. */
+.ocard.blocked {
+  opacity: 0.35;
+}
+/* A card with no band to wear: the canvas's own surface and its ink, and a
+   border of its own. `--band-c` is not set on this card at all, so the
+   border above resolves to nothing and the card disappears into the wall —
+   which is exactly what it did the first time this was drawn. */
+.ocard.flat {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+  --band-ink: var(--ink);
+}
+
+/* The fold: a pill under every card that carries anybody, with a sign and
+   a count; a shut branch is filled, so what is hidden is seen from afar. */
+.fold {
+  position: absolute;
+  inset-block-end: -11px;
+  // PHYSICAL `left`, deliberately, and it is a FIX (found 3 Oct 2026 while
+  // walking the Permissions tab in Arabic).
+  //
+  // This was `inset-inline-start: 50%` with `translate: -50% 0`. Under RTL
+  // `inset-inline-start` is measured from the RIGHT and `translate` is
+  // always PHYSICAL, so the two pull the same way instead of cancelling and
+  // the pill lands a whole width off centre: measured on a 142 px card, 16
+  // to 53 where the centre is 53 to 89. It has been that way on every
+  // Arabic chart since the fold was written.
+  //
+  // A thing that is CENTRED must not mirror. Logical properties are for
+  // what should swap sides; `left: 50%` with a physical translate is right
+  // in both directions, because the centre of a box is in the same place
+  // whichever way it is read.
+  left: 50%;
+  translate: -50% 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  block-size: 20px;
+  min-inline-size: 34px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-3);
+  font:
+    600 11px/1 'JetBrains Mono',
+    monospace;
+  box-shadow: var(--sh-1);
+  transition: all var(--fast);
+}
+.fold .sign {
+  font-size: 13px;
+}
+.fold.shut {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--on-navy);
+  box-shadow: 0 0 0 2px var(--surface-2);
+}
+.fold.shut:hover {
+  background: var(--navy-hi);
+  border-color: var(--navy-hi);
+}
+
+/* The overview: names only, enlarged against the shrinking canvas. */
+.canvas.tiny .ocard {
+  justify-content: center;
+  padding: 6px;
+}
+.canvas.tiny .ocard .jt,
+.canvas.tiny .ocard .dp,
+.canvas.tiny .ocard .seat {
+  display: none;
+}
+.canvas.tiny .ocard .nm {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+.canvas.tiny .fold {
+  block-size: 36px;
+  min-inline-size: 60px;
+  font-size: 20px;
+  inset-block-end: -19px;
+  padding: 0 12px;
+}
+.canvas.tiny .fold .sign {
+  font-size: 22px;
+}
+
+/* ─── O-252 Part 1: his tick, the dim, and "edited" ───────────────────── */
+// Drawn by the Permissions tab alone; every other screen asks for no marks
+// and none of this applies.
+//
+// Kept SMALL on purpose: this stylesheet is 5.3 kB and the build warns past
+// 6 kB. So the dim is one property rather than a filter plus a hover state.
+// A second set of card styles elsewhere would drift from this one, which is
+// the whole reason the canvas is one component.
+
+// In the card's own corner rather than in the flow: the geometry is computed
+// from a FIXED card size, and a taller card would shear every elbow.
+// `inset-inline-start` mirrors under RTL.
+/* A HIT AREA BIG ENOUGH TO HIT ON PURPOSE (O-351, 5 Oct 2026). The box is
+   14 px, which is a target nobody aims at with a trackpad -- and since a
+   click on the CARD now opens the permissions panel, a near miss does
+   something visible instead of nothing. The label carries the target: 24 px
+   each way, centred on the box, with negative margins so the padding costs
+   the card's own layout nothing and no elbow below it shears. */
+.ocard .tick {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-start: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  margin: -5px;
+  padding: 5px;
+  cursor: pointer;
+  z-index: 1;
+}
+.ocard .tick input {
+  margin: 0;
+  inline-size: 14px;
+  block-size: 14px;
+  accent-color: var(--band-ink);
+  cursor: pointer;
+}
+// Drawn, not pressable: HR's three read who holds the door (A-128), which is
+// what read-only looks like everywhere else in HR.
+.ocard .tick input:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+// THE PILL GOES IN THE BOTTOM CORNER, AND THE MEASUREMENT CHOSE IT.
+//
+// First try: beside the tick, top-start. Measured in a browser at 1280x800
+// it was 49 px of a 142 px card and ran straight over "Agent 01".
+// Second try: top-END corner, with 22 px of padding on the name. Still two
+// cards overlapping -- the pill is 33 px and the padding was 22, and no
+// padding can be "the width of the pill" in CSS.
+// So: the bottom-end corner, where only the centred department line is, and
+// that line is given room. The card's HEIGHT may not change at all (the
+// geometry spaces slots by a fixed card size; a taller card shears every
+// elbow below it), so nothing here adds flow.
+//
+// jsdom has no layout, so none of the three attempts was distinguishable
+// from the others in a spec. A browser is the only instrument for this.
+.ocard > .edited {
+  position: absolute;
+  inset-block-end: 4px;
+  inset-inline-end: 5px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0 4px;
+  border: 1px solid color-mix(in srgb, var(--band-ink) 45%, transparent);
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+// The name keeps clear of the tick whatever its length, rather than at the
+// one width I happened to measure.
+.ocard .tick ~ .nm {
+  padding-inline-start: 22px;
+}
+// And the department line keeps clear of the pill, on the cards that carry
+// one. It is centred, so the padding moves it rather than clipping it.
+.ocard.edited .dp {
+  padding-inline-end: 34px;
+}
+
+// FAR OUT, the card keeps the name alone — the canvas's own rule, which
+// already hides the title, the department and the seat and grows the name
+// and the fold pill so both survive the zoom. The marks follow it:
+//
+//  - the WORD "edited" goes (0.55 rem at 25% zoom is 2 screen pixels, and
+//    measured at 375x812 it sat on top of the name on every edited card);
+//  - the RING stays and thickens, so "not the default" is still readable
+//    as a mark when the word is not;
+//  - the TICK grows, because he ticks at whatever zoom the whole company
+//    happens to stand in — a 14 px box at 25% is 3 screen pixels.
+.canvas.tiny .ocard > .edited {
+  display: none;
+}
+.canvas.tiny .ocard.edited {
+  box-shadow:
+    var(--sh-1),
+    0 0 0 6px var(--band-ink);
+}
+.canvas.tiny .ocard .tick {
+  inset-block-start: 8px;
+  inset-inline-start: 10px;
+}
+.canvas.tiny .ocard .tick input {
+  inline-size: 40px;
+  block-size: 40px;
+}
+.canvas.tiny .ocard .tick ~ .nm {
+  padding-inline-start: 60px;
+}
+
+// "it dims everyone not allowed to this module" -- his words. Dimmed, never
+// hidden and never unreachable: ticking a dimmed card is how he grants the
+// door, so the tick inside stays pressable.
+.ocard.dimmed {
+  opacity: 0.45;
+}
+
+// Changed from the placement's default. A ring, not a colour: the card's
+// colour is already its band, and two meanings on one channel is how a
+// reader learns the wrong thing.
+.ocard.edited {
+  box-shadow:
+    var(--sh-1),
+    0 0 0 2px var(--band-ink);
+}
