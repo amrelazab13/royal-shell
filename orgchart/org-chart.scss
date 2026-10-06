@@ -1,0 +1,239 @@
+/* The CANVAS: the wall the cards stand on.
+ *
+ * Bands, plots, rails, elbows, the zoom and the bench — everything whose job
+ * is WHERE a card goes. What a card LOOKS like is `org-card.scss`, loaded
+ * beside this one by the same component.
+ *
+ * SPLIT 3 October 2026, and the honest reason is two reasons. The timing was
+ * the build's per-component style budget: this sheet reached 6.91 kB against a
+ * 6.00 kB warning and 8.00 kB error, so it was going to turn a release red.
+ * The LINE of the split is not about size: a reader looking for why a card is
+ * dim should not have to walk past the elbow geometry, and vice versa. Both
+ * halves are now comfortably under the budget, which is a consequence of
+ * splitting it in the right place rather than the purpose of splitting it.
+ *
+ * NOTHING ON SCREEN MOVED. Measured before and after on five screens in both
+ * languages, by geometry and computed style, with a control that proved the
+ * measurement could see a 3 px change.
+ *
+ * ORDER MATTERS: this file is listed FIRST in the component's `styleUrls`, so
+ * the cascade is canvas-then-card, as it was when they were one file.
+ */
+
+/* The wall chart's canvas: a row per band, a tree within it, reporting lines
+   as elbows. Extracted from `chart.scss` on 3 October 2026 with the markup it
+   styles (O-252 Part 1, step 1), so the Permissions tab draws the same chart
+   and not a second set of card styles that drift from these.
+
+   Everything above the canvas inside this component takes the page's own
+   margin back; the canvas fills what is left. */
+/* NO `:host` SIZING HERE. The host is sized by the page that stands it in
+   its column (`.page.p-bleed > royal-org-chart` in HR's chart.scss), and the scroll
+   gate refused this file until that copy was gone: six screens once each
+   kept their own copy of a rule the layout already owned, and every one of
+   them was a `:host` block exactly like the one I wrote here first. */
+:host > :not(.canvaswrap) {
+  margin-inline: var(--page-margin);
+  flex: none;
+}
+
+/* What the move will do, said before it happens. */
+.carrying {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-block-end: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r);
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--navy) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--navy-hi) 40%, transparent);
+}
+.carrying b {
+  color: var(--ink);
+}
+.carrying .willdo.dim {
+  color: var(--ink-4);
+}
+.carrying .btn {
+  margin-inline-start: auto;
+}
+
+/* A dozen bands deep needs height; one finger pans, two reach the pinch.
+   It FILLS the page rather than taking a slice of the window: `78vh` left a
+   frame around the canvas where the page had nothing left to scroll, so the
+   wheel over it did nothing at all (the owner, 29 Sep 2026; F53, reopened).
+
+   5 OCT 2026 SUPERSEDES THE WHEEL HALF OF THAT, and the two are not in
+   conflict: on 29 Sep the wheel over the chart did NOTHING, and he wanted it
+   to move something. It now moves THE PAGE, always, and the chart moves by
+   dragging empty space. Filling the content area is still right and still
+   why this is here.
+   The page is `p-bleed`, so what it fills is the content area exactly. */
+.canvaswrap {
+  position: relative;
+  /* THE WHEEL BELONGS TO THE PAGE (the owner, 5 Oct 2026, on both charts).
+     `overflow: auto` with `overscroll-behavior: contain` is the CSS for
+     "this element eats the scroll and passes none on" -- which is exactly
+     what he was complaining about. `hidden` hands the wheel to the page and
+     still allows `scrollLeft` / `scrollTop` to be SET, which is how `fit()`
+     and the drag-to-pan both move the chart. */
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-block-size: 0;
+  /* One finger pans the chart, and the component follows the pointer itself,
+     so the browser must not also claim the gesture. Two fingers still reach
+     the pinch, which is handled in the same place. */
+  touch-action: none;
+  cursor: grab;
+  &:active {
+    cursor: grabbing;
+  }
+  border-block-start: 1px solid var(--line-soft);
+  background:
+    radial-gradient(var(--cv-dot, transparent) 1px, transparent 1px) 0 0/22px 22px,
+    var(--canvas, var(--surface));
+}
+.fitcorner {
+  position: sticky;
+  top: 8px;
+  float: inline-end;
+  margin-inline-end: 8px;
+  z-index: 3;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 15px;
+}
+.fitcorner:hover,
+.canvas {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 34px;
+  min-inline-size: 100%;
+  inline-size: max-content;
+  min-block-size: 260px;
+  padding: 26px 34px 34px;
+}
+.plot {
+  position: relative;
+  flex: none;
+}
+
+/* Band names beside the rows; in the canvas, so it zooms and mirrors. */
+.bandrail {
+  position: relative;
+  flex: none;
+  inline-size: 150px;
+}
+.raillabel {
+  position: absolute;
+  inset-inline-end: 0;
+  translate: 0 -50%;
+  inline-size: 100%;
+  text-align: end;
+  padding-inline-end: 10px;
+  box-sizing: border-box;
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--cv-ink, var(--ink-4));
+  line-height: 1.15;
+  color: var(--band-c, var(--cv-ink, var(--ink-4)));
+}
+.raillabel span {
+  background: color-mix(in srgb, var(--band-c, transparent) 18%, var(--canvas, var(--surface)));
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--band-c, var(--line)) 40%, transparent);
+  font-weight: 700;
+}
+.canvas.tiny .raillabel {
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+/* A faint line through each band: "the same level" seen, not inferred. */
+.bandline {
+  position: absolute;
+  inset-inline: -12px;
+  border-block-start: 1px dashed
+    color-mix(in srgb, var(--band-c, var(--cv-band, var(--line-soft))) 55%, transparent);
+  pointer-events: none;
+}
+.links {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.links path {
+  fill: none;
+  stroke: var(--cv-line, var(--line));
+  stroke-width: 2;
+}
+.slot {
+  position: absolute;
+  inline-size: 152px;
+  z-index: 1;
+}
+
+.none {
+  margin: auto;
+  color: var(--cv-ink, var(--ink-4));
+  font-size: 0.85rem;
+}
+
+.benchwrap {
+  margin-block-start: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 10px 13px 13px;
+  background: var(--surface-2);
+}
+.benchtitle {
+  margin: 0 0 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.benchtitle .n {
+  color: var(--bronze);
+}
+.detachpad {
+  margin-inline-start: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  border: 1px solid color-mix(in srgb, var(--navy-hi) 50%, transparent);
+}
+.bench {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bench li {
+  inline-size: 152px;
+}
+
+.p-error {
+  color: var(--bad);
+}
+.p-muted {
+  color: var(--ink-4);
+}

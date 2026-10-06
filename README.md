@@ -43,6 +43,13 @@ Only the parts that are genuinely the same everywhere:
 - `icons/icons.ts` — the sprite (`<app-icon-sprite />`, once, in the root
   component) and `<app-icon name="…" />`. 54 symbols.
 - `words.ts` — `SHELL_WORDS`, how a shared control asks the module for words.
+- `orgchart/` — HR's org chart, shared (O-368, the owner's rule 9):
+  `<royal-org-chart [chart] [always] [keep]>` (`org-chart.ts`), the band-lane
+  layout (`layout.ts`) and the narrowing (`narrow.ts`). `always` is required
+  (the owner is on every chart); `keep` narrows it to the module's people and
+  makes it read-only. Band colours come from the `b-<code>` classes and
+  `--band-*` / `--band-ink` / `.inverse` canvas properties, which are still in
+  HR's global stylesheet, not in `tokens/`. `band-colour.ts` names the class.
 - `tools/design-system-check.mjs` — the gate.
 - `tools/dates-check.mjs` — the dates gate: a timestamp's UTC day, calendar
   arithmetic through the reader's midnight, or a day parsed as local midnight
