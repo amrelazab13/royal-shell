@@ -36,8 +36,12 @@ export interface Tree<T> {
 }
 
 export interface NarrowOptions<T> {
-  /** Kept whatever `keep` says — rule 9's "the owner is always shown". */
-  always?: (node: T) => boolean;
+  /**
+   * Kept whatever `keep` says: rule 9's "the owner is always shown". REQUIRED,
+   * so no module can build a chart that silently omits him (a module with no
+   * such person passes `() => false` and says so at the call).
+   */
+  always: (node: T) => boolean;
 }
 
 /**
@@ -48,7 +52,7 @@ export interface NarrowOptions<T> {
 export function narrow<T extends Tree<T>>(
   nodes: readonly T[],
   keep: (node: T) => boolean,
-  options: NarrowOptions<T> = {},
+  options: NarrowOptions<T>,
 ): T[] {
   const { always } = options;
   const out: T[] = [];
@@ -58,7 +62,7 @@ export function narrow<T extends Tree<T>>(
     // nearest shown ancestor rather than only one level up: three hidden
     // managers in a row still land their reports on the fourth.
     const kids = narrow(node.reports ?? [], keep, options);
-    if (keep(node) || always?.(node)) {
+    if (keep(node) || always(node)) {
       out.push({ ...node, reports: kids } as T);
     } else {
       out.push(...kids);

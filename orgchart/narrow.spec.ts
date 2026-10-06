@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { narrow } from './narrow';
 
+/** No always-shown person, said at the call rather than defaulted. */
+const NOBODY = { always: () => false };
+
 interface Person {
   id: string;
   reports?: Person[];
@@ -30,12 +33,12 @@ const find = (nodes: Person[], id: string): Person | undefined => {
 
 describe('narrow', () => {
   it('keeps everybody when `keep` admits everybody', () => {
-    expect(ids(narrow(tree(), () => true)).sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(ids(narrow(tree(), () => true, NOBODY)).sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
 
   it('LIFTS a hidden manager’s reports to the nearest shown person above', () => {
     // `b` is hidden; `c` must hang under `a`, not vanish and not go to the root.
-    const out = narrow(tree(), (n) => n.id !== 'b');
+    const out = narrow(tree(), (n) => n.id !== 'b', NOBODY);
     expect(ids(out)).not.toContain('b');
     expect(find(out, 'a')!.reports!.map((n) => n.id).sort()).toEqual(['c', 'e']);
   });
@@ -44,12 +47,12 @@ describe('narrow', () => {
     // The case a one-level implementation gets wrong: b AND c hidden, so d
     // must reach `a`. This is why children are narrowed before the parent is
     // decided.
-    const out = narrow(tree(), (n) => n.id !== 'b' && n.id !== 'c');
+    const out = narrow(tree(), (n) => n.id !== 'b' && n.id !== 'c', NOBODY);
     expect(find(out, 'a')!.reports!.map((n) => n.id).sort()).toEqual(['d', 'e']);
   });
 
   it('promotes reports to the ROOT when every ancestor is hidden', () => {
-    const out = narrow(tree(), (n) => n.id === 'd');
+    const out = narrow(tree(), (n) => n.id === 'd', NOBODY);
     expect(out.map((n) => n.id)).toEqual(['d']);
   });
 
@@ -68,11 +71,11 @@ describe('narrow', () => {
     // module's view must not rewrite the book's own copy.
     const original = tree();
     const snapshot = JSON.stringify(original);
-    narrow(original, (n) => n.id === 'a');
+    narrow(original, (n) => n.id === 'a', NOBODY);
     expect(JSON.stringify(original)).toBe(snapshot);
   });
 
   it('handles a node with no `reports` key at all', () => {
-    expect(narrow([{ id: 'x' }], () => true)).toEqual([{ id: 'x', reports: [] }]);
+    expect(narrow([{ id: 'x' }], () => true, NOBODY)).toEqual([{ id: 'x', reports: [] }]);
   });
 });
