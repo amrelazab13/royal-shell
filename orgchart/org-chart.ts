@@ -159,7 +159,7 @@ export const PERSON_FILE_LINK = (node: ChartNode): CardLink | null => ({
 });
 
 /** One tree on the canvas, placed. */
-interface Placed extends Plot<ChartNode> {
+export interface Placed extends Plot<ChartNode> {
   key: string;
 }
 
@@ -538,7 +538,9 @@ export class OrgChart {
    * (or stand at the top, or on the bench, where nobody above is shown), and
    * the `always` person is kept whatever `keep` says.
    */
-  protected readonly drawn = computed<Chart | null>(() => {
+  /** Public for a host that prints or exports the chart (HR's PDF, O-372):
+   *  read the canvas's own placement rather than recomputing it. */
+  readonly drawn = computed<Chart | null>(() => {
     const chart = this.chart();
     const keep = this.keep();
     if (!chart || !keep) return chart;
@@ -593,7 +595,7 @@ export class OrgChart {
   /** The rows: every band anybody on the canvas holds, most senior first.
    *  Shared by every tree, so two Sales Agents in different branches stand
    *  on one line whoever they report to. */
-  protected readonly bands = computed<Band[]>(() =>
+  readonly bands = computed<Band[]>(() =>
     this.lanes() === 'depth'
       ? []
       : bandsOf(this.roots(), (n) => this.visibleReports(n), OrgChart.bandOf),
@@ -620,7 +622,7 @@ export class OrgChart {
   }
 
   /** Every tree on the canvas, placed. */
-  protected readonly plots = computed<Placed[]>(() => {
+  readonly plots = computed<Placed[]>(() => {
     const rows = this.bands().map((b) => b.key);
     const depths = this.depths();
     const band =
