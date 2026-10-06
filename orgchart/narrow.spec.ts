@@ -13,15 +13,11 @@ interface Person {
 const tree = (): Person[] => [
   {
     id: 'a',
-    reports: [
-      { id: 'b', reports: [{ id: 'c', reports: [{ id: 'd' }] }] },
-      { id: 'e' },
-    ],
+    reports: [{ id: 'b', reports: [{ id: 'c', reports: [{ id: 'd' }] }] }, { id: 'e' }],
   },
 ];
 
-const ids = (nodes: Person[]): string[] =>
-  nodes.flatMap((n) => [n.id, ...ids(n.reports ?? [])]);
+const ids = (nodes: Person[]): string[] => nodes.flatMap((n) => [n.id, ...ids(n.reports ?? [])]);
 const find = (nodes: Person[], id: string): Person | undefined => {
   for (const n of nodes) {
     if (n.id === id) return n;
@@ -40,7 +36,11 @@ describe('narrow', () => {
     // `b` is hidden; `c` must hang under `a`, not vanish and not go to the root.
     const out = narrow(tree(), (n) => n.id !== 'b', NOBODY);
     expect(ids(out)).not.toContain('b');
-    expect(find(out, 'a')!.reports!.map((n) => n.id).sort()).toEqual(['c', 'e']);
+    expect(
+      find(out, 'a')!
+        .reports!.map((n) => n.id)
+        .sort(),
+    ).toEqual(['c', 'e']);
   });
 
   it('lifts THROUGH SEVERAL hidden levels, not just one', () => {
@@ -48,7 +48,11 @@ describe('narrow', () => {
     // must reach `a`. This is why children are narrowed before the parent is
     // decided.
     const out = narrow(tree(), (n) => n.id !== 'b' && n.id !== 'c', NOBODY);
-    expect(find(out, 'a')!.reports!.map((n) => n.id).sort()).toEqual(['d', 'e']);
+    expect(
+      find(out, 'a')!
+        .reports!.map((n) => n.id)
+        .sort(),
+    ).toEqual(['d', 'e']);
   });
 
   it('promotes reports to the ROOT when every ancestor is hidden', () => {

@@ -942,7 +942,9 @@ describe('OrgChart, shared', () => {
   it('BY DEFAULT a chart with no bands folds onto ONE row (why `lanes` exists)', async () => {
     const { el } = await mountLanes(null, bandless());
     expect(canvasNames(el).length).toBe(5);
-    const tops = new Set(['Card Head', 'Card Report One', 'Card Child One'].map((n) => topOf(el, n)));
+    const tops = new Set(
+      ['Card Head', 'Card Report One', 'Card Child One'].map((n) => topOf(el, n)),
+    );
     expect(tops.size).toBe(1);
   });
 
@@ -995,14 +997,20 @@ describe('OrgChart, shared', () => {
       scrollTop: 0,
     } as unknown as HTMLElement;
   }
-  type Fits = { fitCenter(w: HTMLElement, floor?: number): void; scale: { (): number; set(v: number): void } };
+  type Fits = {
+    fitCenter(w: HTMLElement, floor?: number): void;
+    scale: { (): number; set(v: number): void };
+  };
 
   it('the FIRST drawing never opens below the readable boundary, a wide shallow chart included', async () => {
     const { fixture } = await mount({ chart: bandless() });
     const chartOf = fixture.componentInstance as unknown as Fits;
     chartOf.scale.set(1);
     // Royal Me's phone: a 4000px-wide, 4-level wall in a 375px window.
-    chartOf.fitCenter(wrapOf({ cw: 375, ch: 812, sw: 4000, sh: 410 }), fixture.componentInstance.readable);
+    chartOf.fitCenter(
+      wrapOf({ cw: 375, ch: 812, sw: 4000, sh: 410 }),
+      fixture.componentInstance.readable,
+    );
     expect(chartOf.scale()).toBe(0.5);
   });
 
@@ -1018,7 +1026,10 @@ describe('OrgChart, shared', () => {
     const { fixture } = await mount({ chart: bandless() });
     const chartOf = fixture.componentInstance as unknown as Fits;
     chartOf.scale.set(1);
-    chartOf.fitCenter(wrapOf({ cw: 1224, ch: 824, sw: 1600, sh: 800 }), fixture.componentInstance.readable);
+    chartOf.fitCenter(
+      wrapOf({ cw: 1224, ch: 824, sw: 1600, sh: 800 }),
+      fixture.componentInstance.readable,
+    );
     expect(chartOf.scale()).toBe(0.75);
   });
 
@@ -1048,7 +1059,12 @@ describe('OrgChart, shared', () => {
       title_en: 'super_admin',
       title_ar: 'Super.Admin',
     });
-    const head = person({ id: 'head', full_name_en: 'Card Head', title_en: 'Card Title', reports: [vendor] });
+    const head = person({
+      id: 'head',
+      full_name_en: 'Card Head',
+      title_en: 'Card Title',
+      reports: [vendor],
+    });
     return { tree: [head], reports_to_nobody: [] };
   }
 

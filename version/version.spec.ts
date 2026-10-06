@@ -344,7 +344,11 @@ describe('a missing piece of the app', () => {
   });
 
   it('is recognised in each browser\u2019s words, and nothing else is', () => {
-    expect(piecesMissing(new TypeError('Failed to fetch dynamically imported module: https://x/chunk-AB.js'))).toBe(true);
+    expect(
+      piecesMissing(
+        new TypeError('Failed to fetch dynamically imported module: https://x/chunk-AB.js'),
+      ),
+    ).toBe(true);
     expect(piecesMissing(new TypeError('Importing a module script failed.'))).toBe(true);
     expect(piecesMissing(new Error('error loading dynamically imported module'))).toBe(true);
     expect(piecesMissing(new Error('Http failure response for /api/v1/leads/: 500'))).toBe(false);
@@ -379,7 +383,11 @@ describe('a missing piece of the app', () => {
     events.next(new NavigationError(1, '/reports', new Error('Http failure 500')));
     expect(loads).toEqual([]); // an ordinary failure is not ours to hide
     events.next(
-      new NavigationError(2, '/leads/abc', new TypeError('Failed to fetch dynamically imported module: /chunk-Z.js')),
+      new NavigationError(
+        2,
+        '/leads/abc',
+        new TypeError('Failed to fetch dynamically imported module: /chunk-Z.js'),
+      ),
     );
     expect(loads).toEqual(['/leads/abc']);
     running(null);
