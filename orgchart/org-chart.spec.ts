@@ -1101,4 +1101,27 @@ describe('OrgChart, shared', () => {
     expect(chartOf.scale()).toBe(0.5);
     expect(wrap.scrollLeft).toBe((982 - 338) / 2);
   });
+
+  /* ── the whole chart, for a host that prints it ── */
+
+  it('fullPlots places EVERY card, folded or not; plots only the open ones', async () => {
+    const { fixture } = await mount({ chart: company() });
+    const c = fixture.componentInstance;
+    const ids = (ps: { cards: { node: ChartNode }[] }[]) =>
+      ps.flatMap((p) => p.cards.map((k) => k.node.id)).sort();
+    // the first drawing folds below three levels, so the agent is hidden on screen
+    expect(ids(c.plots())).not.toContain('agent');
+    expect(ids(c.fullPlots())).toEqual(['agent', 'chair', 'director', 'manager']);
+    expect(c.fullBands().length).toBe(4);
+  });
+
+  it('fullPlots stands the open cards exactly where the canvas does', async () => {
+    const { fixture } = await mount({ chart: company() });
+    const c = fixture.componentInstance;
+    const at = (ps: { cards: { node: ChartNode; y: number }[] }[], id: string) =>
+      ps.flatMap((p) => p.cards).find((k) => k.node.id === id)!.y;
+    for (const id of ['chair', 'director', 'manager']) {
+      expect(at(c.fullPlots(), id)).toBe(at(c.plots(), id));
+    }
+  });
 });

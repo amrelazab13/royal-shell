@@ -635,6 +635,35 @@ export class OrgChart {
     }));
   });
 
+  /**
+   * The WHOLE chart placed as the canvas would place it with every branch
+   * open, folds ignored — for a host that prints or exports the full chart
+   * without unfolding the person's screen (HR's PDF, O-372: the owner ordered
+   * "the FULL chart"). Same lanes, same order, same geometry as `plots`;
+   * only the folding is left out.
+   */
+  readonly fullBands = computed<Band[]>(() =>
+    this.lanes() === 'depth' ? [] : bandsOf(this.roots(), (n) => n.reports, OrgChart.bandOf),
+  );
+
+  readonly fullPlots = computed<Placed[]>(() => {
+    const rows = this.fullBands().map((b) => b.key);
+    const depth = new Map<string, number>();
+    const walk = (n: ChartNode, d: number) => {
+      depth.set(n.id, d);
+      for (const k of n.reports) walk(k, d + 1);
+    };
+    for (const r of this.roots()) walk(r, 0);
+    const band =
+      this.lanes() === 'depth'
+        ? (n: ChartNode) => depth.get(n.id) ?? 0
+        : (n: ChartNode) => Math.max(0, rows.indexOf(OrgChart.bandOf(n).key));
+    return this.roots().map((root) => ({
+      key: root.id,
+      ...layoutTree(root, (n) => n.reports, band),
+    }));
+  });
+
   /** How tall the rail beside the bands has to be. */
   protected railHeight(): number {
     return Math.max(0, (this.rowCount() - 1) * ROW_H + CARD_H);
