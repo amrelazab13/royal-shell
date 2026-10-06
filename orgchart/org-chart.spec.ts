@@ -981,4 +981,60 @@ describe('OrgChart, shared', () => {
     expect(el.querySelectorAll('.raillabel').length).toBe(3);
     expect(el.querySelectorAll('.bandline').length).toBe(3);
   });
+
+  /* ── opening readable, and no furniture that cannot change ── */
+
+  /** A window and a canvas, measured: jsdom does no layout of its own. */
+  function wrapOf(size: { cw: number; ch: number; sw: number; sh: number }): HTMLElement {
+    return {
+      clientWidth: size.cw,
+      clientHeight: size.ch,
+      scrollWidth: size.sw,
+      scrollHeight: size.sh,
+      scrollLeft: 0,
+      scrollTop: 0,
+    } as unknown as HTMLElement;
+  }
+  type Fits = { fitCenter(w: HTMLElement, floor?: number): void; scale: { (): number; set(v: number): void } };
+
+  it('the FIRST drawing never opens below the readable boundary, a wide shallow chart included', async () => {
+    const { fixture } = await mount({ chart: bandless() });
+    const chartOf = fixture.componentInstance as unknown as Fits;
+    chartOf.scale.set(1);
+    // Royal Me's phone: a 4000px-wide, 4-level wall in a 375px window.
+    chartOf.fitCenter(wrapOf({ cw: 375, ch: 812, sw: 4000, sh: 410 }), fixture.componentInstance.readable);
+    expect(chartOf.scale()).toBe(0.5);
+  });
+
+  it('but ⌖ still stands the WHOLE company in the window, down to the floor', async () => {
+    const { fixture } = await mount({ chart: bandless() });
+    const chartOf = fixture.componentInstance as unknown as Fits;
+    chartOf.scale.set(1);
+    chartOf.fitCenter(wrapOf({ cw: 375, ch: 812, sw: 4000, sh: 410 }));
+    expect(chartOf.scale()).toBe(fixture.componentInstance.minScale);
+  });
+
+  it('a chart that already fits opens at its fit, not pushed up to the boundary', async () => {
+    const { fixture } = await mount({ chart: bandless() });
+    const chartOf = fixture.componentInstance as unknown as Fits;
+    chartOf.scale.set(1);
+    chartOf.fitCenter(wrapOf({ cw: 1224, ch: 824, sw: 1600, sh: 800 }), fixture.componentInstance.readable);
+    expect(chartOf.scale()).toBe(0.75);
+  });
+
+  it('an EMPTY bench is not drawn on a chart nobody may edit', async () => {
+    const { el } = await mount({ chart: bandless(), editable: false });
+    expect(el.querySelector('.benchwrap')).toBeNull();
+  });
+
+  it('an empty bench IS drawn where somebody may be hung on it', async () => {
+    const { el } = await mount({ chart: bandless(), editable: true });
+    expect(el.querySelector('.benchwrap')).not.toBeNull();
+  });
+
+  it('a bench with somebody on it is drawn, read-only or not', async () => {
+    const { el } = await mount({ chart: chart(), editable: false });
+    expect(el.querySelector('.benchwrap')).not.toBeNull();
+    expect(benchNames(el).length).toBeGreaterThan(0);
+  });
 });

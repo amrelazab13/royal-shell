@@ -159,6 +159,11 @@ const NO_BAND = 99999;
  *  window at half size. */
 const MIN_SCALE = 0.12;
 const MAX_SCALE = 1.6;
+/** Below this a card drops its title and department (`.tiny`, org-card.scss):
+ *  the map view. The FIRST drawing never opens below it (Royal Me, 6 Oct
+ *  2026: a wide, shallow chart opened at 0.247, and at the 0.12 floor on a
+ *  phone); ⌖ still stands the whole company in the window on demand. */
+const READABLE = 0.5;
 
 /** Where a card asks to be moved to. `manager: null` means the bench. */
 export interface Move {
@@ -306,6 +311,8 @@ export class OrgChart {
   /** The magnification of the canvas. */
   readonly scale = signal(1);
   readonly minScale = MIN_SCALE;
+  /** The `.tiny` boundary, read by the template so the two never drift. */
+  readonly readable = READABLE;
   readonly maxScale = MAX_SCALE;
 
   /** What the host's own "may edit" answer comes to here. Kept under the old
@@ -469,7 +476,7 @@ export class OrgChart {
       // The whole company at once, the first time it is drawn.
       if (!this.fitted) {
         this.fitted = true;
-        this.fitCenter(el);
+        this.fitCenter(el, READABLE);
       }
       onCleanup(() => {
         el.removeEventListener('wheel', this.wheelZoom);
@@ -853,14 +860,18 @@ export class OrgChart {
   };
 
   /** One press: stand the whole chart in the window, wide and tall, and
-   *  centre it. */
-  protected fitCenter(wrap: HTMLElement): void {
+   *  centre it. `floor` is how far out it may go: the press goes all the way
+   *  (`MIN_SCALE`), the first drawing stops at `READABLE`. */
+  protected fitCenter(wrap: HTMLElement, floor = MIN_SCALE): void {
     const scale = this.scale();
     const wide = wrap.scrollWidth / scale;
     const tall = wrap.scrollHeight / scale;
     if (wide <= 0 || tall <= 0 || wrap.clientWidth <= 0 || wrap.clientHeight <= 0) return;
     this.setScale(
-      Math.min((wrap.clientWidth - 24) / wide, (wrap.clientHeight - 24) / tall, MAX_SCALE),
+      Math.max(
+        floor,
+        Math.min((wrap.clientWidth - 24) / wide, (wrap.clientHeight - 24) / tall, MAX_SCALE),
+      ),
     );
     requestAnimationFrame(() => {
       wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2;

@@ -48,7 +48,7 @@
     </button>
     <!-- Far out, the title and the department are a smear rather than
          words, so the card keeps the name alone and gives it the room. -->
-    <div class="canvas" [class.tiny]="scale() < 0.5" [style.zoom]="scale()">
+    <div class="canvas" [class.tiny]="scale() < readable" [style.zoom]="scale()">
       <!-- One row per band across the whole canvas, a tidy tree within
            it, the reporting lines drawn as elbows across the bands. -->
       <!-- The band written down the side of every line, so a band is read
@@ -188,88 +188,93 @@
     </div>
   </div>
 
-  <!-- Always drawn, empty or not. Everybody the register holds with no
-       manager stands here until HR hangs them on somebody. -->
-  <div class="benchwrap" (dragover)="allowDetach($event)" (drop)="detach($event)">
-    <h2 class="benchtitle">
-      {{ i18n.t('chart.loose') }} <span class="n">{{ bench().length }}</span>
-      @if (canEdit() && holding()) {
-        <button class="detachpad" type="button" (click)="detach()">
-          ⏏ {{ i18n.t('chart.detach') }}
-        </button>
-      }
-    </h2>
-    @if (!bench().length) {
-      <p class="hintline">{{ i18n.t('chart.benchEmpty') }}</p>
-    } @else {
-      <ul class="bench">
-        @for (node of bench(); track node.id) {
-          <li>
-            <div
-              class="ocard flat"
-              [class]="bandClass(node)"
-              [class.is-key]="node.is_key"
-              [class.dimmed]="marks(node).dimmed"
-              [class.edited]="marks(node).edited"
-              [class.dragging]="holding()?.id === node.id"
-              [class.over]="over() === node.id"
-              [class.receives]="!!holding() && canDrop(node)"
-              [attr.draggable]="canEdit()"
-              [attr.tabindex]="canEdit() || opens() ? 0 : null"
-              [attr.role]="canEdit() || opens() ? 'button' : null"
-              [attr.aria-label]="canEdit() ? null : openLabel(node)"
-              (dblclick)="openCard(node, $event)"
-              (keydown.enter)="openCard(node, $event)"
-              (dragstart)="dragStart(node)"
-              (dragend)="dragEnd()"
-              (dragover)="dragOver(node, $event)"
-              (dragleave)="dragLeave(node)"
-              (drop)="drop(node, $event)"
-              (keydown.space)="pick(node, $event)"
-            >
-              @if (marks(node); as mark) {
-                @if (mark.tick !== null && mark.tick !== undefined) {
-                  <label class="tick" (click)="$event.stopPropagation()">
-                    <input
-                      type="checkbox"
-                      [checked]="mark.tick === 'on'"
-                      [disabled]="!!mark.tickDisabled"
-                      [attr.aria-label]="tickLabel(node)"
-                      (click)="pressTick(node, $event)"
-                    />
-                  </label>
-                  @if (mark.edited) {
-                    <span class="edited">{{ i18n.t('chart.edited') }}</span>
+  <!-- Drawn wherever somebody can be hung on it or somebody already is.
+       Everybody the register holds with no manager stands here until HR
+       hangs them on somebody. On a chart nobody may edit, an EMPTY bench
+       is a sentence that cannot change, so it is not drawn (Royal Me,
+       6 Oct 2026: 89px of a phone screen). -->
+  @if (canEdit() || bench().length) {
+    <div class="benchwrap" (dragover)="allowDetach($event)" (drop)="detach($event)">
+      <h2 class="benchtitle">
+        {{ i18n.t('chart.loose') }} <span class="n">{{ bench().length }}</span>
+        @if (canEdit() && holding()) {
+          <button class="detachpad" type="button" (click)="detach()">
+            ⏏ {{ i18n.t('chart.detach') }}
+          </button>
+        }
+      </h2>
+      @if (!bench().length) {
+        <p class="hintline">{{ i18n.t('chart.benchEmpty') }}</p>
+      } @else {
+        <ul class="bench">
+          @for (node of bench(); track node.id) {
+            <li>
+              <div
+                class="ocard flat"
+                [class]="bandClass(node)"
+                [class.is-key]="node.is_key"
+                [class.dimmed]="marks(node).dimmed"
+                [class.edited]="marks(node).edited"
+                [class.dragging]="holding()?.id === node.id"
+                [class.over]="over() === node.id"
+                [class.receives]="!!holding() && canDrop(node)"
+                [attr.draggable]="canEdit()"
+                [attr.tabindex]="canEdit() || opens() ? 0 : null"
+                [attr.role]="canEdit() || opens() ? 'button' : null"
+                [attr.aria-label]="canEdit() ? null : openLabel(node)"
+                (dblclick)="openCard(node, $event)"
+                (keydown.enter)="openCard(node, $event)"
+                (dragstart)="dragStart(node)"
+                (dragend)="dragEnd()"
+                (dragover)="dragOver(node, $event)"
+                (dragleave)="dragLeave(node)"
+                (drop)="drop(node, $event)"
+                (keydown.space)="pick(node, $event)"
+              >
+                @if (marks(node); as mark) {
+                  @if (mark.tick !== null && mark.tick !== undefined) {
+                    <label class="tick" (click)="$event.stopPropagation()">
+                      <input
+                        type="checkbox"
+                        [checked]="mark.tick === 'on'"
+                        [disabled]="!!mark.tickDisabled"
+                        [attr.aria-label]="tickLabel(node)"
+                        (click)="pressTick(node, $event)"
+                      />
+                    </label>
+                    @if (mark.edited) {
+                      <span class="edited">{{ i18n.t('chart.edited') }}</span>
+                    }
                   }
                 }
-              }
-              @if (opens() ? null : linkOf(node); as to) {
-                <a
-                  class="nm"
-                  draggable="false"
-                  [routerLink]="to.commands"
-                  [queryParams]="to.queryParams ?? null"
-                >
-                  <bdi>{{ i18n.pick(node, 'full_name') }}</bdi>
-                </a>
-              } @else {
-                <span class="nm">
-                  <bdi>{{ i18n.pick(node, 'full_name') }}</bdi>
-                </span>
-              }
-              <span class="jt">{{ i18n.pick(node, 'title') }}</span>
-              <span class="dp">{{ departmentName(node.department) }}</span>
-              @if (node.line_in_question) {
-                <span class="inquestion" [title]="node.line_in_question">{{
-                  i18n.t('chart.lineInQuestion')
-                }}</span>
-              }
-            </div>
-          </li>
-        }
-      </ul>
-    }
-  </div>
+                @if (opens() ? null : linkOf(node); as to) {
+                  <a
+                    class="nm"
+                    draggable="false"
+                    [routerLink]="to.commands"
+                    [queryParams]="to.queryParams ?? null"
+                  >
+                    <bdi>{{ i18n.pick(node, 'full_name') }}</bdi>
+                  </a>
+                } @else {
+                  <span class="nm">
+                    <bdi>{{ i18n.pick(node, 'full_name') }}</bdi>
+                  </span>
+                }
+                <span class="jt">{{ i18n.pick(node, 'title') }}</span>
+                <span class="dp">{{ departmentName(node.department) }}</span>
+                @if (node.line_in_question) {
+                  <span class="inquestion" [title]="node.line_in_question">{{
+                    i18n.t('chart.lineInQuestion')
+                  }}</span>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
 } @else {
   <p class="p-muted">{{ i18n.t('common.loading') }}</p>
 }
