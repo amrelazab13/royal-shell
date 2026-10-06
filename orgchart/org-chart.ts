@@ -65,6 +65,10 @@ export const CHART_WORDS: Record<string, { en: string; ar: string }> = {
     en: 'One line per band, so two Professionals stand on one level whoever they report to. Pinch, or hold ⌘ and scroll, to zoom; ⌖ stands the whole company in the window.',
     ar: 'صفٌّ لكل درجة وظيفية، فيقف الزميلان في الدرجة نفسها على مستوى واحد مهما اختلف من يتبعانه. اقرص بإصبعين أو استخدم ⌘ مع التمرير للتكبير، و⌖ يضع الشركة كلها داخل النافذة.',
   },
+  'chart.hintDepth': {
+    en: 'One line per reporting level: a manager above, the people who report to them on the line below. Pinch, or hold ⌘ and scroll, to zoom; ⌖ stands the whole company in the window.',
+    ar: 'صفٌّ لكل مستوى تبعية: المدير في الأعلى، ومن يتبعونه في الصف الذي يليه. اقرص بإصبعين أو استخدم ⌘ مع التمرير للتكبير، و⌖ يضع الشركة كلها داخل النافذة.',
+  },
   'chart.hintEdit': {
     en: 'Drag somebody onto their new manager, or press Space to pick up and Space again to drop. A manager brings their whole branch. Pinch or ⌘-scroll to zoom.',
     ar: 'اسحب الشخص إلى مديره الجديد، أو اضغط المسافة لالتقاط البطاقة ثم المسافة لإسقاطها. المدير ينتقل ومعه فرعه كاملًا. اقرص بإصبعين أو استخدم ⌘ مع التمرير للتكبير.',
@@ -276,6 +280,14 @@ export class OrgChart {
    * this false and keeps its link exactly as it is.
    */
   readonly opens = input(false);
+  /**
+   * What a row means. `'band'` (the default, and HR's wall chart): one row
+   * per seniority band, labelled down the rail. `'depth'`: one row per
+   * reporting level in the tree as drawn, with NO rail labels or band lines,
+   * for a module that may not hold bands (Royal Me, G-64: "reporting lines
+   * only"). Without it a band-less chart folds every card onto one row.
+   */
+  readonly lanes = input<'band' | 'depth'>('band');
 
   /** A card asking to be hung somewhere else. The host performs it. */
   readonly moved = output<Move>();
@@ -325,7 +337,9 @@ export class OrgChart {
 
   /** The line above the canvas: the host's, or the chart page's own. */
   protected hintLine(): string {
-    return this.hint() ?? this.i18n.t(this.canEdit() ? 'chart.hintEdit' : 'chart.hint');
+    if (this.hint() !== null) return this.hint()!;
+    if (this.canEdit()) return this.i18n.t('chart.hintEdit');
+    return this.i18n.t(this.lanes() === 'depth' ? 'chart.hintDepth' : 'chart.hint');
   }
 
   /** What a screen reader hears on the tick: the person it is about, so a
@@ -552,13 +566,39 @@ export class OrgChart {
    *  Shared by every tree, so two Sales Agents in different branches stand
    *  on one line whoever they report to. */
   protected readonly bands = computed<Band[]>(() =>
-    bandsOf(this.roots(), (n) => this.visibleReports(n), OrgChart.bandOf),
+    this.lanes() === 'depth'
+      ? []
+      : bandsOf(this.roots(), (n) => this.visibleReports(n), OrgChart.bandOf),
   );
+
+  /** Under `'depth'`: each drawn person's reporting level, heads at 0. */
+  private readonly depths = computed<Map<string, number>>(() => {
+    const at = new Map<string, number>();
+    if (this.lanes() !== 'depth') return at;
+    const walk = (n: ChartNode, d: number) => {
+      at.set(n.id, d);
+      for (const k of this.visibleReports(n)) walk(k, d + 1);
+    };
+    for (const r of this.roots()) walk(r, 0);
+    return at;
+  });
+
+  /** How many rows the canvas stands on, whichever `lanes` says. */
+  private rowCount(): number {
+    if (this.lanes() !== 'depth') return this.bands().length;
+    let deepest = -1;
+    for (const d of this.depths().values()) deepest = Math.max(deepest, d);
+    return deepest + 1;
+  }
 
   /** Every tree on the canvas, placed. */
   protected readonly plots = computed<Placed[]>(() => {
     const rows = this.bands().map((b) => b.key);
-    const band = (n: ChartNode) => Math.max(0, rows.indexOf(OrgChart.bandOf(n).key));
+    const depths = this.depths();
+    const band =
+      this.lanes() === 'depth'
+        ? (n: ChartNode) => depths.get(n.id) ?? 0
+        : (n: ChartNode) => Math.max(0, rows.indexOf(OrgChart.bandOf(n).key));
     return this.roots().map((root) => ({
       key: root.id,
       ...layoutTree(root, (n) => this.visibleReports(n), band),
@@ -567,7 +607,7 @@ export class OrgChart {
 
   /** How tall the rail beside the bands has to be. */
   protected railHeight(): number {
-    return Math.max(0, (this.bands().length - 1) * ROW_H + CARD_H);
+    return Math.max(0, (this.rowCount() - 1) * ROW_H + CARD_H);
   }
 
   /** Where a band's guide line runs: through the middle of its cards. */

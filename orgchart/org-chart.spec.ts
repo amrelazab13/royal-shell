@@ -916,4 +916,69 @@ describe('OrgChart, shared', () => {
     expect(el.querySelectorAll('.ocard a.nm').length).toBe(0);
     expect(el.querySelectorAll('.ocard span.nm').length).toBeGreaterThan(0);
   });
+
+  /* ── rows by reporting level, for a module that holds no band (G-64) ── */
+
+  /** Five people over three levels, and nobody holds a band: Royal Me's shape. */
+  function bandless(): Chart {
+    const no = { band: null, band_name_en: '', band_name_ar: '', rank: null } as const;
+    const c1 = person({ ...no, id: 'c1', full_name_en: 'Card Child One' });
+    const c2 = person({ ...no, id: 'c2', full_name_en: 'Card Child Two' });
+    const r1 = person({ ...no, id: 'r1', full_name_en: 'Card Report One', reports: [c1, c2] });
+    const r2 = person({ ...no, id: 'r2', full_name_en: 'Card Report Two' });
+    const head = person({ ...no, id: 'head', full_name_en: 'Card Head', reports: [r1, r2] });
+    return { tree: [head], reports_to_nobody: [] };
+  }
+  function topOf(el: HTMLElement, name: string): number {
+    return parseFloat((cardNamed(el, name).closest('.slot') as HTMLElement).style.top);
+  }
+  async function mountLanes(lanes: 'band' | 'depth' | null, drawn: Chart) {
+    const m = await mount({ chart: drawn });
+    if (lanes) m.fixture.componentRef.setInput('lanes', lanes);
+    await settle(m.fixture);
+    return m;
+  }
+
+  it('BY DEFAULT a chart with no bands folds onto ONE row (why `lanes` exists)', async () => {
+    const { el } = await mountLanes(null, bandless());
+    expect(canvasNames(el).length).toBe(5);
+    const tops = new Set(['Card Head', 'Card Report One', 'Card Child One'].map((n) => topOf(el, n)));
+    expect(tops.size).toBe(1);
+  });
+
+  it("lanes 'depth' stands one row per REPORTING LEVEL, head on top", async () => {
+    const { el } = await mountLanes('depth', bandless());
+    expect(canvasNames(el).length).toBe(5);
+    const head = topOf(el, 'Card Head');
+    const r1 = topOf(el, 'Card Report One');
+    const c1 = topOf(el, 'Card Child One');
+    expect(r1).toBeGreaterThan(head);
+    expect(c1).toBeGreaterThan(r1);
+    expect(topOf(el, 'Card Report Two')).toBe(r1);
+    expect(topOf(el, 'Card Child Two')).toBe(c1);
+  });
+
+  it("lanes 'depth' writes NOTHING on the rail and draws no band lines", async () => {
+    const { el } = await mountLanes('depth', bandless());
+    expect(el.querySelectorAll('.raillabel').length).toBe(0);
+    expect(el.querySelectorAll('.bandline').length).toBe(0);
+    expect(el.querySelector('.notice')!.textContent).toContain('reporting level');
+  });
+
+  it("lanes 'depth' ignores bands that ARE held: depth decides, not seniority", async () => {
+    // company(): chair B1 > director D1 > manager M1 (> agent, folded on the
+    // first drawing, which opens three levels). Each drawn level is a row.
+    const { el } = await mountLanes('depth', company());
+    const tops = ['Card Chair', 'Card Director', 'Card Manager'].map((n) => topOf(el, n));
+    expect(new Set(tops).size).toBe(3);
+    expect([...tops].sort((a, b) => a - b)).toEqual(tops);
+    expect(el.querySelectorAll('.raillabel').length).toBe(0);
+  });
+
+  it("lanes 'band' (the default) still labels the rail, HR's wall unchanged", async () => {
+    const { el } = await mountLanes(null, company());
+    // one label per band drawn: B1, D1, M1 (the agent is folded at first)
+    expect(el.querySelectorAll('.raillabel').length).toBe(3);
+    expect(el.querySelectorAll('.bandline').length).toBe(3);
+  });
 });

@@ -47,7 +47,10 @@ Only the parts that are genuinely the same everywhere:
   `<royal-org-chart [chart] [always] [keep]>` (`org-chart.ts`), the band-lane
   layout (`layout.ts`) and the narrowing (`narrow.ts`). `always` is required
   (the owner is on every chart); `keep` narrows it to the module's people and
-  makes it read-only. Band colours come from the `b-<code>` classes and
+  makes it read-only. `[lanes]="'depth'"` stands one row per reporting level
+  with nothing on the rail, for a module that holds no band (Royal Me, G-64);
+  the default `'band'` is HR's wall. A chart HR already narrowed (`feeds/<module>-chart/`,
+  G-77) is passed with no `keep` and `editable` left false. Band colours come from the `b-<code>` classes and
   `--band-*` / `--band-ink` / `.inverse` canvas properties, which are still in
   HR's global stylesheet, not in `tokens/`. `band-colour.ts` names the class.
 - `tools/design-system-check.mjs` — the gate.
