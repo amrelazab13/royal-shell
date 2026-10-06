@@ -33,7 +33,7 @@
    kept their own copy of a rule the layout already owned, and every one of
    them was a `:host` block exactly like the one I wrote here first. */
 :host > :not(.canvaswrap) {
-  margin-inline: var(--page-margin);
+  margin-inline: var(--page-margin, clamp(1rem, 3vw, 2.5rem));
   flex: none;
 }
 

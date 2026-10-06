@@ -1,0 +1,197 @@
+/* The org chart's global half: the canvas that stands in the opposite colour
+   to the page, the seventeen band colours, `--band-ink`, and the `.b-<band>`
+   classes the cards wear. Lifted VERBATIM from HR's styles.scss (6 Oct 2026),
+   where they lived when the chart was HR's alone; every module that shows the
+   shared <royal-org-chart> now imports this ONE copy from its global styles:
+
+       @use 'shared/orgchart/bands';
+
+   A module (HR) that still declares these itself deletes its copy in the same
+   change, or the design gate reads them as redefined. */
+
+/* The org chart's canvas stands in the opposite colour to the page (the
+   owner, 21 Sep 2026): white on the dark theme, deep navy on the light one.
+   Only the canvas turns over (its ground, its dots, its lines and the band
+   names written on it); the cards keep the page's own colours, and that is
+   the point: light cards on navy, dark cards on white, as much contrast as
+   the two themes hold. */
+.inverse {
+  --canvas: #ffffff;
+  --cv-ink: #3e5a6b;
+  --cv-line: #8fa8b7;
+  --cv-band: #d5e2ea;
+  --cv-dot: rgba(4, 22, 31, 0.13);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .inverse {
+    --canvas: #0b2a45;
+    --cv-ink: #b9cfdc;
+    --cv-line: #6f93ad;
+    --cv-band: #1e4666;
+    --cv-dot: rgba(234, 242, 246, 0.14);
+  }
+}
+:root[data-theme='light'] .inverse {
+  --canvas: #0b2a45;
+  --cv-ink: #b9cfdc;
+  --cv-line: #6f93ad;
+  --cv-band: #1e4666;
+  --cv-dot: rgba(234, 242, 246, 0.14);
+}
+
+/* ══ a colour per band ══════════════════════════════════════════════════════
+   The owner, 23 Sep 2026: "for the org chart give a color to each band (just
+   like what we did in CRM)". The CRM tints a card by the role it holds; here
+   the key is the band, because a band is the company's one seniority scale.
+
+   Seventeen bands would be seventeen unrelated colours nobody could read, so
+   every band has a hue of its own, not a shade of its neighbour's (the
+   owner, 23 Sep 2026): seventeen hues a third of the wheel apart, taken in
+   turn, so B1 and B2 are as unlike as B1 and S2 and no two touching bands
+   read as the same colour. Lightness and chroma are one for all of them
+   (OKLCH), so no band shouts louder than another; only the hue changes.
+
+   Declared once, here, keyed by the band code, and never as an inline style:
+   `.b-<code>` only names the colour, and each place that wears it decides
+   what to do with it. Text is always `--ink` on a 16 % tint of the surface,
+   so every chip clears WCAG AA in both themes without a per-colour rule. */
+:root {
+  --band-b1: oklch(78% 0.14 0);
+  --band-b2: oklch(78% 0.14 105.9);
+  --band-b3: oklch(78% 0.14 211.8);
+  --band-c1: oklch(78% 0.14 317.6);
+  --band-c2: oklch(78% 0.14 63.5);
+  --band-d1: oklch(78% 0.14 169.4);
+  --band-d2: oklch(78% 0.14 275.3);
+  --band-m1: oklch(78% 0.14 21.2);
+  --band-m2: oklch(78% 0.14 127.1);
+  --band-m3: oklch(78% 0.14 232.9);
+  --band-s1: oklch(78% 0.14 338.8);
+  --band-s2: oklch(78% 0.14 84.7);
+  --band-e1: oklch(78% 0.14 190.6);
+  --band-e2: oklch(78% 0.14 296.5);
+  --band-e3: oklch(78% 0.14 42.4);
+  --band-a1: oklch(78% 0.14 148.2);
+  --band-a2: oklch(78% 0.14 254.1);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --band-b1: oklch(52% 0.15 0);
+    --band-b2: oklch(52% 0.15 105.9);
+    --band-b3: oklch(52% 0.15 211.8);
+    --band-c1: oklch(52% 0.15 317.6);
+    --band-c2: oklch(52% 0.15 63.5);
+    --band-d1: oklch(52% 0.15 169.4);
+    --band-d2: oklch(52% 0.15 275.3);
+    --band-m1: oklch(52% 0.15 21.2);
+    --band-m2: oklch(52% 0.15 127.1);
+    --band-m3: oklch(52% 0.15 232.9);
+    --band-s1: oklch(52% 0.15 338.8);
+    --band-s2: oklch(52% 0.15 84.7);
+    --band-e1: oklch(52% 0.15 190.6);
+    --band-e2: oklch(52% 0.15 296.5);
+    --band-e3: oklch(52% 0.15 42.4);
+    --band-a1: oklch(52% 0.15 148.2);
+    --band-a2: oklch(52% 0.15 254.1);
+  }
+}
+:root[data-theme='light'] {
+  --band-b1: oklch(52% 0.15 0);
+  --band-b2: oklch(52% 0.15 105.9);
+  --band-b3: oklch(52% 0.15 211.8);
+  --band-c1: oklch(52% 0.15 317.6);
+  --band-c2: oklch(52% 0.15 63.5);
+  --band-d1: oklch(52% 0.15 169.4);
+  --band-d2: oklch(52% 0.15 275.3);
+  --band-m1: oklch(52% 0.15 21.2);
+  --band-m2: oklch(52% 0.15 127.1);
+  --band-m3: oklch(52% 0.15 232.9);
+  --band-s1: oklch(52% 0.15 338.8);
+  --band-s2: oklch(52% 0.15 84.7);
+  --band-e1: oklch(52% 0.15 190.6);
+  --band-e2: oklch(52% 0.15 296.5);
+  --band-e3: oklch(52% 0.15 42.4);
+  --band-a1: oklch(52% 0.15 148.2);
+  --band-a2: oklch(52% 0.15 254.1);
+}
+/* THE INK THAT SITS ON A BAND COLOUR (the owner, 27 Sep 2026: the chart's
+   cards are to be IN the band colour, not merely accented by it).
+
+   One value for all seventeen, not one per band, and that is not a
+   shortcut: every band above shares a single lightness — 78 % where the
+   canvas is dark, 52 % where it is light — and only the hue changes. So a
+   near-black reads on every one of them in the dark theme and a near-white
+   on every one in the light theme, both clearing AA, and a new band added
+   later inherits a legible card without anybody choosing a text colour for
+   it. If a band is ever given its own lightness, this is the line that has
+   to move. */
+:root {
+  --band-ink: oklch(21% 0.02 260);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --band-ink: oklch(99% 0 0);
+  }
+}
+:root[data-theme='light'] {
+  --band-ink: oklch(99% 0 0);
+}
+:root[data-theme='dark'] {
+  --band-ink: oklch(21% 0.02 260);
+}
+/* The one job of a `b-` class: say which colour this thing's band is. */
+.b-b1 {
+  --band-c: var(--band-b1);
+}
+.b-b2 {
+  --band-c: var(--band-b2);
+}
+.b-b3 {
+  --band-c: var(--band-b3);
+}
+.b-c1 {
+  --band-c: var(--band-c1);
+}
+.b-c2 {
+  --band-c: var(--band-c2);
+}
+.b-d1 {
+  --band-c: var(--band-d1);
+}
+.b-d2 {
+  --band-c: var(--band-d2);
+}
+.b-m1 {
+  --band-c: var(--band-m1);
+}
+.b-m2 {
+  --band-c: var(--band-m2);
+}
+.b-m3 {
+  --band-c: var(--band-m3);
+}
+.b-s1 {
+  --band-c: var(--band-s1);
+}
+.b-s2 {
+  --band-c: var(--band-s2);
+}
+.b-e1 {
+  --band-c: var(--band-e1);
+}
+.b-e2 {
+  --band-c: var(--band-e2);
+}
+.b-e3 {
+  --band-c: var(--band-e3);
+}
+.b-a1 {
+  --band-c: var(--band-a1);
+}
+.b-a2 {
+  --band-c: var(--band-a2);
+}
+/* Nobody on a band is not a colour; it is the absence of one. */
+.b-none {
+  --band-c: var(--line);
+}
