@@ -1073,7 +1073,7 @@ describe('OrgChart, shared', () => {
     expect(el.textContent).toContain('Card Title');
   });
 
-  it('an overflowing first fit opens CENTRED, not at the left edge, once the new scale is drawn', async () => {
+  it('an overflowing first fit opens CENTRED, not at the left edge — without waiting for a paint', async () => {
     const { fixture } = await mount({ chart: bandless() });
     const chartOf = fixture.componentInstance as unknown as Fits;
     chartOf.scale.set(1);
@@ -1081,8 +1081,7 @@ describe('OrgChart, shared', () => {
     const wrap = wrapOf({ cw: 338, ch: 820, sw: 982, sh: 410 });
     chartOf.fitCenter(wrap, fixture.componentInstance.readable);
     await settle(fixture);
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    await new Promise((r) => setTimeout(r, 300));
     expect(chartOf.scale()).toBe(0.5);
     expect(wrap.scrollLeft).toBe((982 - 338) / 2);
   });

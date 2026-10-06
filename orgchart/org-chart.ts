@@ -494,6 +494,10 @@ export class OrgChart {
       if (!this.fitted) {
         this.fitted = true;
         this.fitCenter(el, READABLE);
+      } else {
+        // A frame drawn AGAIN starts at scrollLeft 0: centre it at the
+        // person's own scale.
+        this.centreOnceDrawn(el);
       }
       onCleanup(() => {
         el.removeEventListener('wheel', this.wheelZoom);
@@ -890,18 +894,28 @@ export class OrgChart {
         Math.min((wrap.clientWidth - 24) / wide, (wrap.clientHeight - 24) / tall, MAX_SCALE),
       ),
     );
-    // CENTRED ONCE THE NEW SCALE IS DRAWN (HR, 6 Oct 2026, in a real browser:
-    // at the readable floor a phone-wide chart overflowed and opened at its
-    // LEFT edge, scrollLeft 0 where centred was 140, in a frame with no
-    // scrollbar). A frame alone could run before the zoom was rendered and
-    // centre the old width; after the next render the width is the new one.
-    // Both, because a press that leaves the scale unchanged renders nothing.
+    this.centreOnceDrawn(wrap);
+  }
+
+  /**
+   * Centre the chart once the scale it has just been given is drawn.
+   *
+   * NOT IN AN ANIMATION FRAME (6 Oct 2026). Two candidates centred from
+   * `requestAnimationFrame` and a `ResizeObserver`, and a phone-wide chart
+   * still opened at its left edge: both are tied to the browser PAINTING,
+   * which a page not on screen yet (a tab opened behind, a pane, a phone
+   * waking) does not do — the callback simply never ran, measured. The
+   * render callback runs when Angular has drawn, painted or not, and
+   * reading the width there forces the layout it needs. A short timer backs
+   * it for a press that changes nothing and so draws nothing.
+   */
+  private centreOnceDrawn(wrap: HTMLElement): void {
     const centre = () => {
       wrap.scrollLeft = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
       wrap.scrollTop = 0;
     };
-    requestAnimationFrame(centre);
-    afterNextRender({ read: () => requestAnimationFrame(centre) }, { injector: this.injector });
+    afterNextRender({ read: centre }, { injector: this.injector });
+    setTimeout(centre, 250);
   }
 
   /* ── moving somebody ─────────────────────────────────────────────────────── */
