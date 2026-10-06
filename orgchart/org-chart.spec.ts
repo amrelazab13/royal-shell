@@ -1072,4 +1072,18 @@ describe('OrgChart, shared', () => {
     expect(canvasNames(el)).toContain('Card Head');
     expect(el.textContent).toContain('Card Title');
   });
+
+  it('an overflowing first fit opens CENTRED, not at the left edge, once the new scale is drawn', async () => {
+    const { fixture } = await mount({ chart: bandless() });
+    const chartOf = fixture.componentInstance as unknown as Fits;
+    chartOf.scale.set(1);
+    // HR's phone reading: at the 0.5 floor the plot is wider than the frame.
+    const wrap = wrapOf({ cw: 338, ch: 820, sw: 982, sh: 410 });
+    chartOf.fitCenter(wrap, fixture.componentInstance.readable);
+    await settle(fixture);
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    expect(chartOf.scale()).toBe(0.5);
+    expect(wrap.scrollLeft).toBe((982 - 338) / 2);
+  });
 });

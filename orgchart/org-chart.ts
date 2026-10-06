@@ -1,6 +1,8 @@
 import {
   Component,
   ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -251,6 +253,7 @@ const PLAIN: CardMarks = {};
   styleUrls: ['./org-chart.scss', './org-card.scss'],
 })
 export class OrgChart {
+  private readonly injector = inject(Injector);
   protected readonly i18n = chartWordsFor(inject(SHELL_WORDS, { optional: true }));
 
   /** The tree, as whoever is hosting fetched it. */
@@ -887,10 +890,18 @@ export class OrgChart {
         Math.min((wrap.clientWidth - 24) / wide, (wrap.clientHeight - 24) / tall, MAX_SCALE),
       ),
     );
-    requestAnimationFrame(() => {
-      wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2;
+    // CENTRED ONCE THE NEW SCALE IS DRAWN (HR, 6 Oct 2026, in a real browser:
+    // at the readable floor a phone-wide chart overflowed and opened at its
+    // LEFT edge, scrollLeft 0 where centred was 140, in a frame with no
+    // scrollbar). A frame alone could run before the zoom was rendered and
+    // centre the old width; after the next render the width is the new one.
+    // Both, because a press that leaves the scale unchanged renders nothing.
+    const centre = () => {
+      wrap.scrollLeft = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
       wrap.scrollTop = 0;
-    });
+    };
+    requestAnimationFrame(centre);
+    afterNextRender({ read: () => requestAnimationFrame(centre) }, { injector: this.injector });
   }
 
   /* ── moving somebody ─────────────────────────────────────────────────────── */
