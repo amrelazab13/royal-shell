@@ -129,6 +129,15 @@ export class Version {
   /** True once a newer version is live than the one this tab runs. */
   readonly ready = signal(false);
 
+  /**
+   * True when the live build marks itself urgent with
+   * `<meta name="royal-release" content="critical">` in its index.html (the
+   * owner, 11 Oct 2026: a location fix sat unloaded behind open forms while
+   * saves kept failing). An urgent build reloads every open tab without
+   * waiting for the person to finish, and never while a save is on its way.
+   */
+  readonly critical = signal(false);
+
   private readonly running = typeof document === 'undefined' ? null : runningScript();
   private readonly settleMs = inject(VERSION_CHECK, { optional: true })?.settleMs ?? 30_000;
   private asking = false;
@@ -155,7 +164,8 @@ export class Version {
     if (!this.running || this.ready() || this.asking) return;
     this.asking = true;
     try {
-      const live = mainScriptOf(await fetchPage());
+      const page = await fetchPage();
+      const live = mainScriptOf(page);
       // An answer without a main script (an error page, a proxy's page) is
       // no evidence of a new version, and no evidence against one either.
       if (!live) return;
@@ -164,7 +174,10 @@ export class Version {
         return;
       }
       if (this.seen?.script !== live) this.seen = { script: live, at: now };
-      if (now - this.seen.at >= this.settleMs) this.ready.set(true);
+      if (now - this.seen.at >= this.settleMs) {
+        this.critical.set(isCritical(page));
+        this.ready.set(true);
+      }
     } catch {
       // Offline or refused: ask again next time.
     } finally {
@@ -181,6 +194,11 @@ export class Version {
   load(url: string): void {
     window.location.assign(url);
   }
+}
+
+/** Whether a page marks its build urgent. */
+export function isCritical(html: string): boolean {
+  return /<meta[^>]+name="royal-release"[^>]+content="critical"/.test(html);
 }
 
 function defaultFetch(): Promise<string> {
@@ -217,7 +235,10 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
       const midTask = () => unsaved() || typing() || dialogOpen() || writesInFlight() > 0;
       const settle = () => {
         if (reloading) return;
-        if (visible() && version.ready() && !midTask()) {
+        const go = version.critical()
+          ? writesInFlight() === 0 // urgent: open forms do not hold it back
+          : visible() && !midTask();
+        if (version.ready() && go) {
           reloading = true;
           version.reload();
         }

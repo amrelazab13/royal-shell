@@ -9,6 +9,7 @@ import {
   NewVersion,
   Version,
   dialogOpen,
+  isCritical,
   mainScriptOf,
   piecesMissing,
   recover,
@@ -22,6 +23,14 @@ const page = (main: string) =>
   `<!doctype html><html><head><link rel="stylesheet" href="styles-AB12.css"></head>` +
   `<body><app-root></app-root><script src="polyfills-ZZ.js" type="module"></script>` +
   `<script src="${main}" type="module" nonce="n1"></script></body></html>`;
+
+describe('isCritical', () => {
+  it('reads the urgent marker, and nothing else counts', () => {
+    expect(isCritical('<meta name="royal-release" content="critical">')).toBe(true);
+    expect(isCritical('<meta name="royal-release" content="normal">')).toBe(false);
+    expect(isCritical('<html></html>')).toBe(false);
+  });
+});
 
 describe('mainScriptOf', () => {
   it('reads the hashed main script a page loads', () => {
@@ -215,6 +224,39 @@ describe('provideVersionCheck', () => {
     await new Promise((r) => setTimeout(r, 0));
     await Promise.resolve();
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('an URGENT build reloads even with unsaved work and a box in focus', async () => {
+    unsaved = true;
+    const v = boot();
+    const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+    vi.spyOn(v, 'check').mockImplementation(async () => {
+      v.critical.set(true);
+      v.ready.set(true);
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('an URGENT build still never cuts a save off', async () => {
+    unsaved = true;
+    const v = boot();
+    const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+    writesInFlight.set(1);
+    try {
+      vi.spyOn(v, 'check').mockImplementation(async () => {
+        v.critical.set(true);
+        v.ready.set(true);
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(reload).not.toHaveBeenCalled();
+    } finally {
+      writesInFlight.set(0);
+    }
   });
 
   it('never reloads by itself while something is unsaved', async () => {
