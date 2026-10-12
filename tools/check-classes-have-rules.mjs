@@ -44,7 +44,14 @@
  * some sheet that CAN reach the template defines an element of it (`ask__…`).
  * That is BEM's own definition, not an exception carved for a file.
  *
- * There is no allowlist beyond that, on purpose: the first name in an
+ * **A second rule of the same kind: a class a spec selects is a test hook.**
+ * `<p class="p-muted p-sources">` carries its look in `.p-muted`; `.p-sources`
+ * exists so a spec can find the element. A class named inside a string in a
+ * `.spec.ts` beside the component passes (CEO portal, 12 Oct 2026). Ceiling:
+ * a decoration class whose rule was deleted while a spec still selects it
+ * goes quiet here; `unused-css.mjs` and the screen catch that one.
+ *
+ * There is no allowlist beyond those two, on purpose: the first name in an
  * allowlist is the day a gate starts teaching people to scroll past it.
  *
  *   node build/check-classes-have-rules.mjs
@@ -151,6 +158,15 @@ for (const ts of files.filter((f) => f.endsWith('.ts') && !f.endsWith('.spec.ts'
     for (const c of classesIn(block)) own.add(c);
   }
 
+  // Classes this component's sibling specs select, read from string literals
+  // only so `.toBe(` and `.nativeElement` are not mistaken for class names.
+  const hooks = new Set();
+  for (const spec of readdirSync(dirname(ts)).filter((f) => f.endsWith('.spec.ts'))) {
+    for (const [lit] of read(join(dirname(ts), spec)).matchAll(/'[^'\n]*'|"[^"\n]*"|`[^`]*`/g)) {
+      for (const c of classesIn(lit)) hooks.add(c);
+    }
+  }
+
   const templates = [];
   for (const [, href] of source.matchAll(/templateUrl\s*:\s*'([^']+)'/g)) {
     const html = resolve(dirname(ts), href);
@@ -171,6 +187,7 @@ for (const ts of files.filter((f) => f.endsWith('.ts') && !f.endsWith('.spec.ts'
         // A BEM block root whose ELEMENTS are styled here needs no rule of
         // its own; see the note at the top.
         if ([...own].some((c) => c.startsWith(`${name}__`))) continue;
+        if (hooks.has(name)) continue;
         findings.push({
           name,
           where,

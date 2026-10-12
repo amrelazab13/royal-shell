@@ -51,6 +51,7 @@ function project({ global = '', components = [] }) {
       `@Component({ templateUrl: './${c.name}.html'${c.css ? `, styleUrl: './${c.name}.css'` : ''}${c.inline ? `, styles: \`${c.inline}\`` : ''} })\nexport class C {}\n`,
     );
     if (c.css) writeFileSync(join(dir, `${c.name}.css`), c.css);
+    if (c.spec) writeFileSync(join(dir, `${c.name}.spec.ts`), c.spec);
   }
   return root;
 }
@@ -74,6 +75,26 @@ check(
   {
     global: '.known { color: red; }',
     components: [{ name: 'q', html: '<p class="known inl">x</p>', inline: '.inl { color: blue; }' }],
+  },
+  (what, code, out) => {
+    if (code === 0) ok(what);
+    else bad(what, `exit ${code}: ${out.trim()}`);
+  },
+);
+
+// 0b. A class only a spec selects is a test hook, not a finding (CEO portal, 12 Oct).
+//     Case 1 below is its control: the same shape with no spec is reported.
+check(
+  'a class a sibling spec selects is not reported',
+  {
+    global: '.known { color: red; }',
+    components: [
+      {
+        name: 'h',
+        html: '<p class="known hook">x</p>',
+        spec: "expect(el.querySelector('.known.hook')).not.toBeNull();",
+      },
+    ],
   },
   (what, code, out) => {
     if (code === 0) ok(what);
@@ -148,4 +169,4 @@ if (failures) {
   console.error(`check-classes-have-rules.test: ${failures} check(s) failed.`);
   process.exit(1);
 }
-console.log('check-classes-have-rules.test: both faults caught, a sound tree passes, 5 checks.');
+console.log('check-classes-have-rules.test: both faults caught, a sound tree passes, 6 checks.');
