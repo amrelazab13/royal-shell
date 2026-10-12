@@ -146,5 +146,6 @@ if (missing.length) {
 }
 console.log(
   `icons: ${new Set(wanted.map((a) => a.name)).size} name(s) asked for, every one drawn ` +
-    `(${have.size} in the sprite).`,
+    `(${have.size} in the sprite). A name built at run time ('mod-' + slug) ` +
+    'is invisible here; its spec or the screen is its only witness.',
 );
