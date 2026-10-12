@@ -1,0 +1,157 @@
+/* ---------------------------------------------------------------------------
+   The dialog's look, shared: the scrim and the panel `<app-dialog>` draws.
+
+   The CRM, HR and SalesOps each carried the same ~100 lines (`.mscrim`,
+   `.modal`, `.mbody`, `.mfoot`) in their styles.scss, already drifting: three
+   different dims, HR's foot did not wrap, SalesOps' title had no close button
+   row. This is the CRM's version, which was the most complete, plus the one
+   change the owner asked for in the UI round (8 Oct 2026): the page behind
+   is dimmed AND slightly blurred, so a pop-up reads as "in front of" the work
+   rather than one more box on the page (bible §4.11).
+
+   A module: `@use 'shared/dialog/dialog';` near the top of styles.scss, and
+   delete its own `.mscrim` / `.modal` / `.mbody` / `.mfoot` block. Behaviour
+   (focus in, Tab trap, Escape asks, scrim is not a way out, page does not
+   scroll) stays in the module's `core/dialog.ts`, unchanged.
+
+   Load-bearing: the blur sits on `.mscrim::before`, NOT on `.mscrim`.
+   `backdrop-filter` makes its element the containing block for every
+   `position: fixed` descendant, and the date control's pop-up inside a
+   dialog is fixed — on `.mscrim` itself (a scroll container) the calendar
+   would open offset by however far the dialog was scrolled. The pseudo
+   element has no descendants, so nothing inside the panel moves.
+   For the same reason, don't put `opacity`, `filter` or an opacity
+   animation on `.mscrim`: any of those makes it a "backdrop root" and the
+   blur then sees nothing behind it.
+   --------------------------------------------------------------------------- */
+
+.mscrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 16px;
+  overflow-y: auto;
+}
+.mscrim.on {
+  display: flex;
+}
+.mscrim::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+}
+/* A reader who asked the system for less transparency gets today's plain dim. */
+@media (prefers-reduced-transparency: reduce) {
+  .mscrim::before {
+    backdrop-filter: none;
+  }
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: var(--sh-pop);
+  width: min(560px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal > h3 {
+  margin: 0;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal > h3 .sub {
+  margin-inline-start: auto;
+  max-width: 300px;
+  text-align: end;
+  line-height: 1.4;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+}
+.modal > h3 button {
+  margin-inline-start: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--rs);
+  color: var(--ink-3);
+  display: grid;
+  place-items: center;
+  transition: all var(--fast);
+}
+.modal > h3 button:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+.modal > h3 button svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.2;
+}
+/* The short question (delete, unsaved work). */
+.modal.confirmbox h3 {
+  font-size: 14.5px;
+}
+.modal.confirmbox .mbody p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+/* A dialog whose body is one sheet rather than head + body + foot. */
+.modal > .sheet {
+  padding: 20px 22px;
+  overflow: auto;
+  min-height: 0;
+}
+.mbody {
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+.modal .mbody {
+  overflow-x: hidden;
+}
+.modal .tablewrap {
+  overflow-x: auto;
+}
+/* Wraps: a note beside the buttons clipped the primary button off the edge
+   at phone width, inside a dialog the reader cannot scroll sideways
+   (CRM audit 4, a11y item 6). */
+.mfoot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.mfoot .note {
+  font-size: 11.5px;
+  color: var(--ink-4);
+  flex: 1;
+  min-inline-size: 180px;
+}
+.mfoot .note.bad {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+@media print {
+  .mscrim {
+    display: none !important;
+  }
+}
