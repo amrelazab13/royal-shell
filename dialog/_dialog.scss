@@ -128,6 +128,12 @@
 .modal .tablewrap {
   overflow-x: auto;
 }
+/* A module's global `table { min-width: … }` (the CRM's is 1140px) would force
+   every table in a dialog wide enough to scroll sideways; inside a dialog the
+   table fits the dialog (CRM, 12 Oct 2026). */
+.modal .tablewrap table {
+  min-width: 0;
+}
 /* Wraps: a note beside the buttons clipped the primary button off the edge
    at phone width, inside a dialog the reader cannot scroll sideways
    (CRM audit 4, a11y item 6). */
