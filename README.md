@@ -137,7 +137,12 @@ production`, then `node src/shared/tools/fixture-server.mjs`. Layout faults
   language, theme, me. A child without a known slot is not drawn. The module
   name beside the logo and the `.phead` title, caption and actions are here
   too. Load it globally after the rail. (26 Sep 2026, after the owner saw five
-  modules side by side.)
+  modules side by side.) `.phead .caption` is the grey, body-face sentence
+  beside the title; `.cnt` stays for a count (UI round, 12 Oct 2026).
+- `dialog/_dialog.scss` — the look of `<app-dialog>` (bible §4.11): `.mscrim`,
+  `.modal`, `.mbody`, `.mfoot`, with the page behind dimmed (`--scrim`) and
+  blurred 4px. `@use 'shared/dialog/dialog';` in styles.scss and delete the
+  module's own copy. Behaviour stays in the module's `core/dialog.ts`.
 - `tools/masthead-check.mjs` — refuses a masthead with an unknown or missing
   slot, slots out of order, a date control, or a sign-out outside the avatar
   menu. `node src/shared/tools/masthead-check.mjs` finds the shell itself

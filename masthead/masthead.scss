@@ -114,9 +114,10 @@ header.top > [data-slot='module'] {
 }
 
 // ══ the page head ══
-// Title 20px 800 in the body face; beside it one bronze line: a count, or a
-// sentence saying what the screen is for. The landing screen's title is a
-// greeting. Never a display face, never a grey line underneath.
+// Title 20px 800 in the body face; beside it a count (`.cnt`, bronze mono) or
+// a caption (`.caption`): the sentence saying what the screen is for, in the
+// body face and grey (the owner, UI round, 8 Oct 2026). The landing screen's
+// title is a greeting. Never a display face.
 .phead {
   display: flex;
   align-items: center;
@@ -154,6 +155,25 @@ header.top > [data-slot='module'] {
 html[lang='ar'] .phead .cnt {
   font-family: Cairo, sans-serif;
   letter-spacing: 0;
+}
+
+// The caption. --ink-4, not --ink-3: the page head sits on --ground, where
+// --ink-3 reads only 4.4:1 in the light theme; --ink-4 is 4.7:1 light and
+// 7.6:1 dark. Body face, so Arabic needs no rule of its own.
+.phead .caption {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--ink-4);
+}
+
+.phead .caption b {
+  color: var(--ink-2);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .phead .pacts {
