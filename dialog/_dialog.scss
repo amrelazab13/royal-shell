@@ -62,6 +62,9 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  /* A phone's notch and home indicator are where the gesture wins; the panel
+     keeps its buttons clear. 0 everywhere else (O-503, from Royal Me). */
+  margin: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
 }
 .modal > h3 {
   margin: 0;
