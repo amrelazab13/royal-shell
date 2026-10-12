@@ -48,8 +48,11 @@ export function asked(files) {
     for (const m of text.matchAll(/<app-icon\b[^>]*\bname="([\w-]+)"/g)) {
       out.push({ name: m[1], path });
     }
-    // TypeScript: `icon: 'x'` in a nav item or an icon map.
-    for (const m of text.matchAll(/\bicon:\s*'([\w-]+)'/g)) out.push({ name: m[1], path });
+    // TypeScript: `icon: 'x'` in a nav item or an icon map; SalesOps writes
+    // the sprite id itself (`icon: 'i-users'`), so a leading `i-` is dropped.
+    for (const m of text.matchAll(/\bicon:\s*'(?:i-)?([\w-]+)'/g)) out.push({ name: m[1], path });
+    // A bare sprite reference: `<use href="#i-users">` (SalesOps draws its own <svg>).
+    for (const m of text.matchAll(/#i-([\w-]+)/g)) out.push({ name: m[1], path });
     // An icon map's values: `hr: 'mod-hr',` inside MODULE_ICONS.
     const map = text.match(/MODULE_ICONS[^=]*=\s*\{([\s\S]*?)\n\};/);
     if (map) {
@@ -82,6 +85,10 @@ if (process.argv.includes('--self-test')) {
     ['a TS literal that is drawn', "{ icon: 'exit' }", true],
     ['a TS literal that is NOT drawn', "{ icon: 'roadmap' }", false],
     ['a bound name is invisible, not a finding', '<app-icon [name]="item.icon" />', true],
+    ['an i- prefixed TS literal that is drawn', "{ icon: 'i-exit' }", true],
+    ['a use href that is drawn', '<use href="#i-mod-hr" />', true],
+    ['a use href that is NOT drawn', '<use href="#i-nope" />', false],
+    ['an assembled href is invisible, not a finding', "'#i-' + name()", true],
   ];
   const have = drawn(sprite);
   let wrong = 0;
