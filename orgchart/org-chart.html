@@ -56,7 +56,7 @@
       <div class="bandrail" [style.height.px]="railHeight()">
         @for (band of bands(); track band.key; let i = $index) {
           <div class="raillabel {{ bandClass(band.key) }}" [style.top.px]="bandLine(i)">
-            <span>{{ i18n.pick(band, 'label') }}</span>
+            <span><bdi>{{ i18n.pick(band, 'label') }}</bdi></span>
           </div>
         }
       </div>
@@ -139,7 +139,7 @@
                     <bdi>{{ i18n.pick(card.node, 'full_name') }}</bdi>
                   </span>
                 }
-                <span class="jt">{{ i18n.pick(card.node, 'title') }}</span>
+                <span class="jt"><bdi>{{ i18n.pick(card.node, 'title') }}</bdi></span>
                 <span class="dp">{{ departmentName(card.node.department) }}</span>
                 <!-- Never on the always-shown person: his seat is never named. -->
                 @if (showsSeat(card.node)) {
@@ -261,7 +261,7 @@
                     <bdi>{{ i18n.pick(node, 'full_name') }}</bdi>
                   </span>
                 }
-                <span class="jt">{{ i18n.pick(node, 'title') }}</span>
+                <span class="jt"><bdi>{{ i18n.pick(node, 'title') }}</bdi></span>
                 <span class="dp">{{ departmentName(node.department) }}</span>
                 @if (node.line_in_question) {
                   <span class="inquestion" [title]="node.line_in_question">{{
