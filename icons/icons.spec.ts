@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Icon, IconSprite } from './icons';
 
@@ -45,6 +46,17 @@ describe('icons', () => {
     expect(svg.classList.contains('mirror')).toBe(false);
     fixture.componentRef.setInput('mirror', true);
     await fixture.whenStable();
+    expect(svg.classList.contains('mirror')).toBe(true);
+  });
+
+  it('a bare mirror attribute turns the arrow (it used to arrive as "" and do nothing)', async () => {
+    @Component({ imports: [Icon], template: `<app-icon name="back" mirror />` })
+    class Host {}
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [Host] }).compileComponents();
+    const fixture = TestBed.createComponent(Host);
+    await fixture.whenStable();
+    const svg = (fixture.nativeElement as HTMLElement).querySelector('svg')!;
     expect(svg.classList.contains('mirror')).toBe(true);
   });
 });

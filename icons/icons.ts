@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { booleanAttribute, Component, input } from '@angular/core';
 
 /**
  * Every Royal module's icon set — the CRM's, shared from `royal-shell` since
@@ -318,6 +318,8 @@ export class IconSprite {}
 })
 export class Icon {
   readonly name = input.required<string>();
-  /** Mirror under right-to-left, for icons that point a way (back, onward, exit). */
-  readonly mirror = input(false);
+  /** Mirror under right-to-left, for icons that point a way (back, onward, exit).
+   *  A bare `mirror` attribute counts: without the transform it arrives as ""
+   *  (falsy) and the arrow never turned (CRM, 12 Oct). */
+  readonly mirror = input(false, { transform: booleanAttribute });
 }
