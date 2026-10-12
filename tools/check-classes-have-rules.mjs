@@ -145,6 +145,11 @@ for (const ts of files.filter((f) => f.endsWith('.ts') && !f.endsWith('.spec.ts'
     }
     for (const c of classesIn(read(sheet))) own.add(c);
   }
+  // Inline `styles: [`…`]` / `styles: `…`` reach this component's template too
+  // (the CEO portal found 8 false findings without this, 12 Oct 2026).
+  for (const [, block] of source.matchAll(/\bstyles\s*:\s*\[?\s*`([\s\S]*?)`/g)) {
+    for (const c of classesIn(block)) own.add(c);
+  }
 
   const templates = [];
   for (const [, href] of source.matchAll(/templateUrl\s*:\s*'([^']+)'/g)) {

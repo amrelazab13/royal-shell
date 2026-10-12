@@ -48,7 +48,7 @@ function project({ global = '', components = [] }) {
     writeFileSync(join(dir, `${c.name}.html`), c.html);
     writeFileSync(
       join(dir, `${c.name}.ts`),
-      `@Component({ templateUrl: './${c.name}.html'${c.css ? `, styleUrl: './${c.name}.css'` : ''} })\nexport class C {}\n`,
+      `@Component({ templateUrl: './${c.name}.html'${c.css ? `, styleUrl: './${c.name}.css'` : ''}${c.inline ? `, styles: \`${c.inline}\`` : ''} })\nexport class C {}\n`,
     );
     if (c.css) writeFileSync(join(dir, `${c.name}.css`), c.css);
   }
@@ -67,6 +67,19 @@ const check = (what, spec, expect) => {
   const { code, out } = run(root);
   expect(what, code, out);
 };
+
+// 0. A class ruled in the component's INLINE styles is reached (CEO portal, 12 Oct).
+check(
+  'a class ruled in inline styles: is not reported',
+  {
+    global: '.known { color: red; }',
+    components: [{ name: 'q', html: '<p class="known inl">x</p>', inline: '.inl { color: blue; }' }],
+  },
+  (what, code, out) => {
+    if (code === 0) ok(what);
+    else bad(what, `exit ${code}: ${out.trim()}`);
+  },
+);
 
 // 1. A class with no rule anywhere — the `.m-hint` fault.
 check(
