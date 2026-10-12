@@ -119,6 +119,7 @@ const send = (res, status, type, body) => {
   res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
   res.end(body);
 };
+const unanswered = new Set();
 const json = (res, body) => send(res, 200, TYPES['.json'], JSON.stringify(body));
 
 createServer((req, res) => {
@@ -131,7 +132,16 @@ createServer((req, res) => {
       ? send(res, body.status, TYPES['.json'], JSON.stringify(body.body))
       : json(res, body);
   }
-  if (prefixes.some((p) => path.startsWith(p))) return json(res, empty);
+  if (prefixes.some((p) => path.startsWith(p))) {
+    // Said out loud, once per path: an unanswered call gets a LIST shape, and a
+    // screen that expects an object or a bare array then fails in a way that
+    // looks like its own bug (HR's blank Working times dialog, 12 Oct 2026).
+    if (!unanswered.has(path)) {
+      unanswered.add(path);
+      console.warn(`UNANSWERED ${path} -> ${JSON.stringify(empty)} (add it to the fixtures if the screen expects another shape)`);
+    }
+    return json(res, empty);
+  }
 
   // A file out of the build, or the app's own index for a client-side route.
   // `relative` keeps a crafted path inside the build directory; the server is
