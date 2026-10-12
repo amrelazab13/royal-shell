@@ -267,6 +267,169 @@ import { booleanAttribute, Component, input } from '@angular/core';
         />
         <path d="M9.9 9.9a3 3 0 004.2 4.2M2 2l20 20" />
       </symbol>
+
+      <!-- The dictionary's NEW icons (DICTIONARY.md, 12 Oct 2026): one idea,
+           one glyph, suite-wide. Each drawn for this sprite in the same line
+           weight; none repeats a shape above. alert and lock were named by
+           screens before they existed and drew as nothing. -->
+      <symbol id="i-alert" viewBox="0 0 24 24">
+        <path d="M12 3L2 20h20z" />
+        <path d="M12 9.5v4.5M12 17v.01" />
+      </symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24">
+        <rect x="5" y="11" width="14" height="10" rx="2" />
+        <path d="M8 11V7a4 4 0 018 0v4M12 15v2" />
+      </symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M10 9v6M14 9v6" />
+      </symbol>
+      <symbol id="i-rules" viewBox="0 0 24 24">
+        <path d="M2 5h6a4 4 0 014 4v12a3 3 0 00-3-3H2zM22 5h-6a4 4 0 00-4 4v12a3 3 0 013-3h7z" />
+      </symbol>
+      <symbol id="i-breach" viewBox="0 0 24 24">
+        <path d="M8 2h8l6 6v8l-6 6H8l-6-6V8z" />
+        <path d="M9 9l6 6M15 9l-6 6" />
+      </symbol>
+      <symbol id="i-present" viewBox="0 0 24 24">
+        <path d="M2 4h20M4 4v11h16V4M12 15v3M8 21l4-3 4 3M8 8h8M8 11h5" />
+      </symbol>
+      <symbol id="i-trip" viewBox="0 0 24 24">
+        <rect x="4" y="3" width="16" height="15" rx="2" />
+        <path d="M4 11h16M7 18v3M17 18v3M8 14.5v.01M16 14.5v.01" />
+      </symbol>
+      <symbol id="i-installments" viewBox="0 0 24 24">
+        <path d="M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2z" />
+        <path
+          d="M4 6v4c0 1.1 3.6 2 8 2s8-.9 8-2V6M4 10v4c0 1.1 3.6 2 8 2s8-.9 8-2v-4M4 14v4c0 1.1 3.6 2 8 2s8-.9 8-2v-4"
+        />
+      </symbol>
+      <symbol id="i-commission" viewBox="0 0 24 24">
+        <circle cx="7" cy="7" r="2.5" />
+        <circle cx="17" cy="17" r="2.5" />
+        <path d="M19 5L5 19" />
+      </symbol>
+      <symbol id="i-link" viewBox="0 0 24 24">
+        <path d="M9 8H6a4 4 0 000 8h3M15 8h3a4 4 0 010 8h-3M8 12h8" />
+      </symbol>
+      <symbol id="i-pool" viewBox="0 0 24 24">
+        <path d="M3 11h18a9 9 0 01-18 0z" />
+        <circle cx="7" cy="7" r="1.6" />
+        <circle cx="12" cy="4.5" r="1.6" />
+        <circle cx="17" cy="7" r="1.6" />
+      </symbol>
+      <symbol id="i-repeat" viewBox="0 0 24 24">
+        <path d="M16 3l3 3-3 3M5 12v-2a4 4 0 014-4h10M8 21l-3-3 3-3M19 12v2a4 4 0 01-4 4H5" />
+      </symbol>
+      <symbol id="i-recycle" viewBox="0 0 24 24">
+        <path d="M4.5 17l6-10.5M7.7 7.5l2.8-1 .5 3" />
+        <path d="M13.5 6.5l6 10.5M20 14l-.5 3-2.8-1" />
+        <path d="M17.5 20h-11M8.8 18.1L6.5 20l2.3 1.9" />
+      </symbol>
+      <symbol id="i-compare" viewBox="0 0 24 24">
+        <circle cx="9" cy="12" r="6" />
+        <circle cx="15" cy="12" r="6" />
+      </symbol>
+      <symbol id="i-moves" viewBox="0 0 24 24">
+        <circle cx="4.5" cy="18" r="1.5" />
+        <path d="M6 18h8.5a3 3 0 000-6h-5a3 3 0 010-6H19M16.5 3.5L19 6l-2.5 2.5" />
+      </symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24">
+        <path
+          d="M10.2 4.6l.5-2.5h2.6l.5 2.5 2.1.9 2.2-1.4 1.8 1.8-1.4 2.2.9 2.1 2.5.5v2.6l-2.5.5-.9 2.1 1.4 2.2-1.8 1.8-2.2-1.4-2.1.9-.5 2.5h-2.6l-.5-2.5-2.1-.9-2.2 1.4-1.8-1.8 1.4-2.2-.9-2.1-2.5-.5v-2.6l2.5-.5.9-2.1-1.4-2.2 1.8-1.8 2.2 1.4z"
+        />
+        <circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="i-history" viewBox="0 0 24 24">
+        <path d="M3 12a9 9 0 103-6.7L3 8M3 3v5h5M12 7v5l3 2" />
+      </symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24">
+        <path d="M5 22V4h12l-2.5 4 2.5 4H5" />
+      </symbol>
+      <symbol id="i-person" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="10" r="3" />
+        <path d="M6.3 18.5a6.5 6.5 0 0111.4 0" />
+      </symbol>
+      <symbol id="i-team" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="3" />
+        <circle cx="5.5" cy="10" r="2" />
+        <circle cx="18.5" cy="10" r="2" />
+        <path d="M7 20a5 5 0 0110 0M2 19a3.5 3.5 0 015-3.2M22 19a3.5 3.5 0 00-5-3.2" />
+      </symbol>
+      <symbol id="i-contacts" viewBox="0 0 24 24">
+        <rect x="5" y="2" width="15" height="20" rx="2" />
+        <circle cx="12.5" cy="10" r="2.5" />
+        <path d="M3 7h3M3 12h3M3 17h3M8.5 17a4 4 0 018 0" />
+      </symbol>
+      <symbol id="i-activity" viewBox="0 0 24 24">
+        <path d="M2 12h4l3-8 4 16 3-8h6" />
+      </symbol>
+      <symbol id="i-timer" viewBox="0 0 24 24">
+        <circle cx="12" cy="13" r="8" />
+        <path d="M10 2h4M12 2v3M12 13l3-3M19 6l-1.5 1.5" />
+      </symbol>
+      <symbol id="i-annex" viewBox="0 0 24 24">
+        <path d="M16 7v10a4 4 0 01-8 0V6a2.5 2.5 0 015 0v10" />
+      </symbol>
+      <symbol id="i-request" viewBox="0 0 24 24">
+        <path d="M13 3H6a2 2 0 00-2 2v14a2 2 0 002 2h6M8 8h6M8 12h4M15 18h7M19 15l3 3-3 3" />
+      </symbol>
+      <symbol id="i-leaver" viewBox="0 0 24 24">
+        <circle cx="9" cy="7" r="4" />
+        <path d="M2 21v-2a4 4 0 014-4h6M16 18h6M19 15l3 3-3 3" />
+      </symbol>
+      <symbol id="i-theme" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 3v18M12 8h8M12 12h9M12 16h8" />
+      </symbol>
+      <symbol id="i-site" viewBox="0 0 24 24">
+        <path d="M12 22s7-6.5 7-12a7 7 0 00-14 0c0 5.5 7 12 7 12z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </symbol>
+      <symbol id="i-masterplan" viewBox="0 0 24 24">
+        <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" />
+      </symbol>
+      <symbol id="i-deal" viewBox="0 0 24 24">
+        <circle cx="12" cy="9" r="6" />
+        <path d="M8.5 14L7 22l5-3 5 3-1.5-8" />
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24">
+        <rect x="5" y="12" width="3" height="8" />
+        <rect x="10.5" y="6" width="3" height="14" />
+        <rect x="16" y="9" width="3" height="11" />
+        <path d="M3 20h18" />
+      </symbol>
+      <symbol id="i-roadmap" viewBox="0 0 24 24">
+        <path d="M12 3v18M12 5h7l2 2.5-2 2.5h-7M12 12H5l-2 2.5L5 17h7M8 21h8" />
+      </symbol>
+      <symbol id="i-whatsapp" viewBox="0 0 24 24">
+        <path d="M12 3a9 9 0 00-7.8 13.5L3 21l4.6-1.2A9 9 0 1012 3z" />
+        <path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.6-2-1-1 .9a5 5 0 01-2.3-2.3l.9-1-1-2z" />
+      </symbol>
+      <symbol id="i-meeting" viewBox="0 0 24 24">
+        <circle cx="8" cy="7" r="2.5" />
+        <circle cx="16" cy="7" r="2.5" />
+        <path d="M4.5 14a3.5 3.5 0 017 0M12.5 14a3.5 3.5 0 017 0M3 14h18M6 14v6M18 14v6" />
+      </symbol>
+      <symbol id="i-video" viewBox="0 0 24 24">
+        <rect x="2" y="6" width="14" height="12" rx="2" />
+        <path d="M16 10.5L22 7v10l-6-3.5" />
+      </symbol>
+      <symbol id="i-visit" viewBox="0 0 24 24">
+        <path
+          d="M5 17H3v-5l2.2-4.6A2 2 0 017 6.3h10a2 2 0 011.8 1.1L21 12v5h-2M9 17h6M3 12h18"
+        />
+        <circle cx="7" cy="17" r="2" />
+        <circle cx="17" cy="17" r="2" />
+      </symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24">
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <path d="M2.5 6.5L12 13l9.5-6.5" />
+      </symbol>
+      <symbol id="i-note" viewBox="0 0 24 24">
+        <path d="M4 4h16v10l-6 6H4zM14 20v-6h6M8 9h8" />
+      </symbol>
     </svg>
   `,
 })

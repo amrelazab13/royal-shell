@@ -25,6 +25,65 @@ describe('icons', () => {
       expect(svg.querySelector('#' + id)).not.toBeNull();
   });
 
+  it('every NEW icon the dictionary names is drawn — none is an empty symbol', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [IconSprite] }).compileComponents();
+    const fixture = TestBed.createComponent(IconSprite);
+    await fixture.whenStable();
+    const svg = (fixture.nativeElement as HTMLElement).querySelector('svg')!;
+    // DICTIONARY.md "Draw the NEW icons" (38), alert and lock included.
+    const fresh = [
+      'alert',
+      'lock',
+      'pause',
+      'rules',
+      'breach',
+      'present',
+      'trip',
+      'installments',
+      'recycle',
+      'link',
+      'pool',
+      'repeat',
+      'compare',
+      'moves',
+      'settings',
+      'history',
+      'flag',
+      'person',
+      'team',
+      'contacts',
+      'activity',
+      'timer',
+      'annex',
+      'request',
+      'leaver',
+      'theme',
+      'site',
+      'masterplan',
+      'deal',
+      'commission',
+      'chart',
+      'roadmap',
+      'whatsapp',
+      'meeting',
+      'video',
+      'visit',
+      'mail',
+      'note',
+    ];
+    expect(fresh.length).toBe(38);
+    for (const name of fresh) {
+      const symbol = svg.querySelector('#i-' + name);
+      expect(symbol, name).not.toBeNull();
+      const marks = symbol?.querySelectorAll('path, line, circle, rect, polyline').length ?? 0;
+      expect(marks, name + ' draws something').toBeGreaterThan(0);
+    }
+    // One icon, one meaning: no two symbols share an id.
+    const ids = [...svg.querySelectorAll('symbol')].map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('an icon points into the sprite by name', async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({ imports: [Icon] }).compileComponents();
