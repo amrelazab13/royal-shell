@@ -94,9 +94,20 @@ const stripComments = (text, file) => {
     ? noHtml
     : noHtml.replace(/(^|\s)\/\*[\s\S]*?\*\//gm, '$1').replace(/(^|\s)\/\/.*$/gm, '$1');
 };
-const haystack = sources.map((file) => stripComments(readFileSync(file, 'utf8'), file)).join('\n');
-const usedWhole = (name) =>
-  new RegExp(`(^|[^\\w-])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w-])`).test(haystack);
+// A template-ref (`#panel`) or a fragment (`#i-panel`) is never a class, and
+// it spelled one: the dialog's `<div #panel>` kept a dead `.panel` alive.
+const text = (files) =>
+  files.map((file) => stripComments(readFileSync(file, 'utf8'), file).replace(/#[\w-]+/g, '')).join('\n');
+const haystack = text(sources);
+// Templates and other sheets. A name found in TypeScript ONLY may be a
+// template-ref, an icon or an enum value that merely spells the class
+// (`viewChild('panel')` kept a dead `.panel` alive; the CRM, 13 Oct 2026),
+// so such names are listed to judge rather than silently counted as used.
+const markup = text(sources.filter((file) => !file.endsWith('.ts')));
+const wholeIn = (hay, name) =>
+  new RegExp(`(^|[^\\w-])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w-])`).test(hay);
+const usedWhole = (name) => wholeIn(haystack, name);
+const tsOnly = [];
 
 // Where a class name is assembled rather than written. Whatever these build,
 // this tool cannot see — so it says so rather than pretending to be complete.
@@ -152,6 +163,8 @@ for (const sheet of SHEETS) {
       // `_`, so anything else on either side is a boundary.
       if (!usedWhole(name) && !built.some((prefix) => name.startsWith(prefix))) {
         dead.push({ sheet, line: i + 1, name, text: lines[i].trim() });
+      } else if (!wholeIn(markup, name) && !built.some((prefix) => name.startsWith(prefix))) {
+        tsOnly.push({ sheet, line: i + 1, name });
       }
     }
   });
@@ -172,6 +185,14 @@ console.log(
 );
 for (const row of dead) {
   console.log(`  ${row.sheet}:${row.line}  .${row.name}`);
+}
+if (tsOnly.length) {
+  console.log(
+    dim(
+      `\n  ${tsOnly.length} name${tsOnly.length === 1 ? ' is' : 's are'} found only in TypeScript — check each is really a class, not a ref, icon or value:`,
+    ),
+  );
+  for (const row of tsOnly.slice(0, 30)) console.log(dim(`    .${row.name}  (${row.sheet} line ${row.line})`));
 }
 if (building.length) {
   console.log(

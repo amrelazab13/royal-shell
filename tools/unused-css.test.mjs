@@ -20,7 +20,7 @@ try {
   mkdirSync(join(dir, 'src'));
   writeFileSync(
     join(dir, 'src/styles.scss'),
-    ['/* a block comment', '   over three lines */', '.spin { a: b; }', '.go { a: b; }', '.warn { a: b; }', '.alive { a: b; }', '.globbed { a: b; }', '.after { a: b; }'].join('\n'),
+    ['/* a block comment', '   over three lines */', '.spin { a: b; }', '.go { a: b; }', '.warn { a: b; }', '.alive { a: b; }', '.globbed { a: b; }', '.after { a: b; }', '.panel { a: b; }'].join('\n'),
   );
   writeFileSync(
     join(dir, 'src/app.ts'),
@@ -31,9 +31,10 @@ try {
       "el.className = 'globbed';",
       "el.classList.add('after');",
       "const url = 'https://example.invalid/x'; // trailing note",
+      "const box = viewChild.required('panel');",
     ].join('\n'),
   );
-  writeFileSync(join(dir, 'src/app.html'), '<!-- warn the reader -->\n<div class="alive"></div>\n');
+  writeFileSync(join(dir, 'src/app.html'), '<!-- warn the reader -->\n<div class="alive"></div>\n<div #panel></div>\n');
   const run = spawnSync(process.execPath, [TOOL], { cwd: dir, encoding: 'utf8' });
   const out = run.stdout;
   const dead = new Set([...out.matchAll(/styles\.scss:\d+\s+\.([\w-]+)/g)].map((m) => m[1]));
@@ -46,7 +47,10 @@ try {
   expect(run.status === 0, 'exits 0 without --strict');
   for (const name of ['spin', 'go', 'warn']) expect(dead.has(name), `.${name}, named only in a comment, is dead`);
   for (const name of ['alive', 'globbed', 'after']) expect(!dead.has(name), `.${name}, used in code, is alive`);
-  expect(/3 of 6 class names/.test(out), 'counts 3 of 6');
+  expect(/3 of 7 class names/.test(out), 'counts 3 of 7');
+  const tsOnly = out.split('found only in TypeScript')[1] || '';
+  expect(/\.panel\b/.test(tsOnly), '.panel, named only by a viewChild ref, is listed as TypeScript-only');
+  expect(!/\.alive\b/.test(tsOnly), '.alive, used in a template, is not listed as TypeScript-only');
   expect(/styles\.scss:3\s+\.spin/.test(out), '.spin reported at its real line, 3, below a multi-line comment');
 } finally {
   rmSync(dir, { recursive: true, force: true });
