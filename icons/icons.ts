@@ -295,8 +295,8 @@ import { booleanAttribute, Component, input } from '@angular/core';
         <path d="M2 4h20M4 4v11h16V4M12 15v3M8 21l4-3 4 3M8 8h8M8 11h5" />
       </symbol>
       <symbol id="i-trip" viewBox="0 0 24 24">
-        <rect x="4" y="3" width="16" height="15" rx="2" />
-        <path d="M4 11h16M7 18v3M17 18v3M8 14.5v.01M16 14.5v.01" />
+        <!-- An aeroplane, not a train (the owner, 14 Oct 2026). -->
+        <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
       </symbol>
       <symbol id="i-installments" viewBox="0 0 24 24">
         <path d="M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2z" />
