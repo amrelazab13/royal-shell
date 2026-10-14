@@ -98,6 +98,8 @@ const TYPED = new Set(['text', 'email', 'tel', 'number', 'password', 'url', ''])
  * every new build until a hard refresh (the owner, 14 Oct 2026). A SELECT
  * never counts, a search box never counts (a search half typed is not work to
  * lose), and a text box or contentEditable counts only with something in it.
+ * NOT for keyboard shortcuts: a key pressed in an EMPTY box still belongs to
+ * that box. A shortcut asks its own question (the CRM's ⌘K did, 14 Oct 2026).
  */
 export function typing(doc: Document = document): boolean {
   const el = doc.activeElement as HTMLElement | null;
