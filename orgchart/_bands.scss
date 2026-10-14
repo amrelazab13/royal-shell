@@ -9,34 +9,17 @@
    A module (HR) that still declares these itself deletes its copy in the same
    change, or the design gate reads them as redefined. */
 
-/* The org chart's canvas stands in the opposite colour to the page (the
-   owner, 21 Sep 2026): white on the dark theme, deep navy on the light one.
-   Only the canvas turns over (its ground, its dots, its lines and the band
-   names written on it); the cards keep the page's own colours, and that is
-   the point: light cards on navy, dark cards on white, as much contrast as
-   the two themes hold. */
+/* The org chart's canvas is WHITE in both themes (the owner, 14 Oct 2026:
+   "make the background of the canvas white even in the light theme, think it
+   will make it more obvious"; until then it was navy on the light theme, his
+   21 Sep choice). Only the canvas is fixed (its ground, its dots, its lines and
+   the band names written on it); the cards keep their band colours. */
 .inverse {
   --canvas: #ffffff;
   --cv-ink: #3e5a6b;
   --cv-line: #8fa8b7;
   --cv-band: #d5e2ea;
   --cv-dot: rgba(4, 22, 31, 0.13);
-}
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) .inverse {
-    --canvas: #0b2a45;
-    --cv-ink: #b9cfdc;
-    --cv-line: #6f93ad;
-    --cv-band: #1e4666;
-    --cv-dot: rgba(234, 242, 246, 0.14);
-  }
-}
-:root[data-theme='light'] .inverse {
-  --canvas: #0b2a45;
-  --cv-ink: #b9cfdc;
-  --cv-line: #6f93ad;
-  --cv-band: #1e4666;
-  --cv-dot: rgba(234, 242, 246, 0.14);
 }
 
 /* ══ a colour per band ══════════════════════════════════════════════════════
