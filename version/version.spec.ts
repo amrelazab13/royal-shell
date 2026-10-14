@@ -15,6 +15,7 @@ import {
   recover,
   provideVersionCheck,
   runningScript,
+  typing,
   versionWrites,
   writesInFlight,
 } from './version';
@@ -23,6 +24,43 @@ const page = (main: string) =>
   `<!doctype html><html><head><link rel="stylesheet" href="styles-AB12.css"></head>` +
   `<body><app-root></app-root><script src="polyfills-ZZ.js" type="module"></script>` +
   `<script src="${main}" type="module" nonce="n1"></script></body></html>`;
+
+describe('typing', () => {
+  // The live document: a detached one cannot take focus (the CRM, 14 Oct 2026).
+  const mount = (html: string) => {
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    document.body.appendChild(host);
+    return host;
+  };
+  afterEach(() => {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    document.body.innerHTML = '';
+  });
+
+  it('a focused EMPTY text box, a search box or a select is not typing', () => {
+    const host = mount(
+      '<input id="t" type="text"><input id="s" type="search" value="abc"><select id="d"><option>a</option></select>',
+    );
+    for (const id of ['t', 's', 'd']) {
+      (host.querySelector('#' + id) as HTMLElement).focus();
+      expect(document.activeElement?.id).toBe(id); // the focus really landed
+      expect(typing()).toBe(false);
+    }
+  });
+
+  it('a text box or a textarea with something in it is typing', () => {
+    const host = mount('<input id="t" type="text" value="half"><textarea id="a">x</textarea>');
+    for (const id of ['t', 'a']) {
+      (host.querySelector('#' + id) as HTMLElement).focus();
+      expect(typing()).toBe(true);
+    }
+  });
+
+  it('focus on the body is not typing (control)', () => {
+    expect(typing()).toBe(false);
+  });
+});
 
 describe('isCritical', () => {
   it('reads the urgent marker, and nothing else counts', () => {
