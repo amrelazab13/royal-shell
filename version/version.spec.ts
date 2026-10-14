@@ -233,11 +233,12 @@ describe('provideVersionCheck', () => {
     expect(assigned).toEqual([]); // no move was needed
   });
 
-  it('holds while the cursor is in a box, and reloads when the box is left', async () => {
+  it('holds while something is half-typed in a box, and reloads when the box is left', async () => {
     unsaved = false;
     const v = boot();
     const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
     const box = document.createElement('input');
+    box.value = 'half a name'; // focus alone no longer holds (14 Oct 2026)
     document.body.appendChild(box);
     box.focus();
     try {
