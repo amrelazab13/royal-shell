@@ -261,10 +261,14 @@ export function provideVersionCheck(config: VersionCheck = {}): EnvironmentProvi
           version.reload();
         }
       };
-      const ask = () => {
-        if (!visible()) return;
-        void version.check().then(settle);
-      };
+      // Asked while hidden too (the owner, 22 Oct 2026, had to hard-refresh
+      // after a release): a tab behind another window asked nothing during the
+      // rollout, so on his return its 30-second settle only began, and he
+      // looked first. Asking in the background runs that clock while he is
+      // away, and the return reloads at once. The browser slows a hidden
+      // tab's timers to about once a minute, so this costs next to nothing;
+      // `settle` still never reloads a hidden tab.
+      const ask = () => void version.check().then(settle);
       // The moment the person finishes is any of these; each settles at once.
       const finished = () => setTimeout(settle, 0);
       const FINISHES = ['focusout', 'pointerup', 'keyup', 'close'] as const;

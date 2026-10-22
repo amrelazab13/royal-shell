@@ -224,6 +224,29 @@ describe('provideVersionCheck', () => {
     await Promise.resolve();
   }
 
+  it('keeps asking while the tab is hidden, and reloads the moment it is seen (the owner, 22 Oct)', async () => {
+    unsaved = false;
+    let state: DocumentVisibilityState = 'hidden';
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+    try {
+      const v = boot();
+      const reload = vi.spyOn(v, 'reload').mockImplementation(() => undefined);
+      const check = vi.spyOn(v, 'check').mockImplementation(async () => v.ready.set(true));
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(check).toHaveBeenCalled(); // asked while away: the settle clock runs
+      expect(reload).not.toHaveBeenCalled(); // but never reloads a tab nobody sees
+      state = 'visible';
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(reload).toHaveBeenCalledTimes(1);
+    } finally {
+      delete (document as { visibilityState?: unknown }).visibilityState;
+    }
+  });
+
   it('reloads by itself on the screen the person is on (the owner, 29 Sep)', async () => {
     unsaved = false;
     const v = boot();
