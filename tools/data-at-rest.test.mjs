@@ -290,6 +290,26 @@ writeFileSync(
 r = run();
 check('AppIcon-512 at 2x.png is not an address', r.code === 0 && !r.out.includes('Contents.json'));
 rmSync(join(dir, 'Contents.json'));
+
+// The commit attribution mailbox is a machine's; a lookalike beside it is not.
+writeFileSync(
+  join(dir, 'commit-msg.txt'),
+  `Co-Authored-By: Claude <${piece('noreply', '@', 'anthropic.com')}>\n` +
+    `cc ${piece('ops', '@', 'qzvlorm-works.com')}\n`,
+);
+r = run();
+check('the attribution mailbox does not make a second address', r.code === 0);
+writeFileSync(
+  join(dir, 'commit-msg.txt'),
+  `${piece('noreply', '@', 'anthropic.com.qzvlorm.org')} ${piece('xnoreply', '@', 'anthropic.com')} ` +
+    `${piece('ops', '@', 'qzvlorm-works.com')}\n`,
+);
+r = run();
+check(
+  'a lookalike of the attribution mailbox still counts',
+  r.code === 1 && r.out.includes('commit-msg.txt'),
+);
+rmSync(join(dir, 'commit-msg.txt'));
 mkdirSync(join(dir, 'assets', 'icons'), { recursive: true });
 writeFileSync(join(dir, 'assets', 'icons', 'icon-192.png'), Buffer.from('89504e470d0a1a0a', 'hex'));
 writeFileSync(join(dir, 'capture.png'), Buffer.from('89504e470d0a1a0a', 'hex'));

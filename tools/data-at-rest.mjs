@@ -130,6 +130,14 @@ const MACHINE_DOMAINS =
   /(^|\.)(iam\.gserviceaccount\.com|appspot\.gserviceaccount\.com|users\.noreply\.github\.com)$/i;
 
 /**
+ * Whole mailboxes that belong to a machine, matched EXACTLY: the domain may
+ * hold people, so it is never excused, only this one address. The commit
+ * attribution line every module writes (Mobile CRM, 27 Oct 2026: it failed
+ * release scans three times in one day beside one other address).
+ */
+const MACHINE_MAILBOXES = /^noreply@anthropic\.com$/i;
+
+/**
  * A file name, not a mailbox: `AppIcon-512@2x.png` parses as an address at the
  * "domain" `2x.png` (Mobile CRM, 2 Oct 2026: 3 of its 10 findings, and every
  * module with an iOS build carries them). A last label that is a file
@@ -338,6 +346,7 @@ async function countReal(path, { arabic = false } = {}) {
         TEST_DOMAINS.test(m[1]) ||
         RUN_ON_TEST_DOMAIN.test(m[1]) ||
         MACHINE_DOMAINS.test(m[1]) ||
+        MACHINE_MAILBOXES.test(m[0]) ||
         FILE_NAME_DOMAIN.test(m[1])
       )
         continue;
