@@ -12,7 +12,7 @@
  * real-shaped addresses living in the repository is the fault this tool exists
  * to find.
  */
-import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -189,7 +189,15 @@ rmSync(join(dir, 'real.txt'));
   const fakeTmp = mkdtempSync(join(tmpdir(), 'dar-bases-'));
   process.on('exit', () => rmSync(fakeTmp, { recursive: true, force: true }));
   const base = mkdtempSync(join(fakeTmp, 'claude-dar-selftest-'));
-  const ENV = { ...process.env, DATA_AT_REST_SCRATCH_BASES: fakeTmp };
+  // The shared /tmp is the machine's, not this test's: GitHub's runner image
+  // left a root-owned file there on 27 Oct 2026 and four cases failed on it.
+  // Every case reads an empty private one unless it names its own.
+  const quietTmp = mkdtempSync(join(tmpdir(), 'dar-quiet-'));
+  const ENV = {
+    ...process.env,
+    DATA_AT_REST_SCRATCH_BASES: fakeTmp,
+    DATA_AT_REST_SHARED_TMP: quietTmp,
+  };
   const mine = join(base, 'proj-Mine', 's1', 'scratchpad');
   const theirs = join(base, 'proj-Theirs', 's1', 'scratchpad');
   mkdirSync(mine, { recursive: true });
@@ -228,6 +236,9 @@ rmSync(join(dir, 'real.txt'));
     `${invented.company('ops')} ${invented.company('a.other')}\n`,
   );
   writeFileSync(join(sharedTmp, 'clean.txt'), 'nothing here\n');
+  const locked = join(sharedTmp, 'not-ours.txt');
+  writeFileSync(locked, 'someone else\n');
+  chmodSync(locked, 0o000);
   const goShared = (...a) => {
     try {
       return {
@@ -249,9 +260,14 @@ rmSync(join(dir, 'real.txt'));
   );
   check('and a clean one is not listed (the control)', !r.out.includes('clean.txt'));
   check(
+    'an unreadable shared file is named, not a crash',
+    r.code !== null && /could not be read/.test(r.out) && r.out.includes('not-ours.txt'),
+  );
+  check(
     'and it does not set the verdict',
     r.code === go('--in', cwd, '--project', 'proj-Mine').code,
   );
+  chmodSync(locked, 0o600);
   rmSync(sharedTmp, { recursive: true, force: true });
 
   r = go('--project', 'proj-Nobody');

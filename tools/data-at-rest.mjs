@@ -531,18 +531,36 @@ if (pictures.length) {
 // section in the release line; whoever wrote a file moves it to the Trash.
 const SHARED_TMP = process.env.DATA_AT_REST_SHARED_TMP || '/tmp';
 const shared = [];
+// Another user's file in the shared /tmp may be unreadable to us (GitHub's
+// runner image, 27 Oct 2026: a root-owned cpan_install_*.txt crashed every
+// --project scan with EACCES). Not ours, not readable: NAMED, never a crash.
+const unreadable = [];
 if ((PROJECT || !given.length) && existsSync(SHARED_TMP)) {
   for (const e of readdirSync(SHARED_TMP, { withFileTypes: true })) {
     if (!e.isFile()) continue;
     const path = join(SHARED_TMP, e.name);
-    const size = statSync(path).size;
-    if (size === 0 || SCREENSHOT.test(e.name)) continue;
-    const counts = await countReal(path);
+    let size;
+    let counts;
+    try {
+      size = statSync(path).size;
+      if (size === 0 || SCREENSHOT.test(e.name)) continue;
+      counts = await countReal(path);
+    } catch (error) {
+      if (!['EACCES', 'EPERM', 'ENOENT'].includes(error?.code)) throw error;
+      unreadable.push(path);
+      continue;
+    }
     const secrets = Object.values(counts.secrets).reduce((a, b) => a + b, 0);
     const hits = counts.emails + counts.company + counts.phones + counts.foreign;
     if (secrets || hits >= 2 || (SHAPES.test(e.name) && hits))
       shared.push({ path, size, ...counts });
   }
+}
+if (unreadable.length) {
+  console.log(
+    `\ndata-at-rest: ${unreadable.length} file(s) in the SHARED ${SHARED_TMP} could not be read (not ours):`,
+  );
+  for (const path of unreadable) console.log(`  ${path}`);
 }
 if (shared.length) {
   console.log(
