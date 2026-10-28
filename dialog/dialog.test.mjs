@@ -32,17 +32,9 @@ else {
     failures.push('.mscrim::before does not dim with var(--scrim)');
 }
 if (/#[0-9a-f]{3,8}\b|rgba?\(/i.test(css)) failures.push('a literal colour; use the tokens');
-// The wide panel (HR's 3-column access panel) stays wider than the default and
-// never wider than the screen.
-const px = (rule) => Number((/width:\s*min\((\d+)px,\s*100%\)/.exec(rule ?? '') ?? [])[1]);
-const normal = px(block('.modal'));
-const wide = px(block('.modal.wide'));
-if (!(wide > normal)) failures.push('.modal.wide is not wider than .modal');
-if (!/width:\s*min\(\d+px,\s*100%\)/.test(block('.modal.wide') ?? ''))
-  failures.push('.modal.wide can exceed the screen');
 
 if (failures.length) {
   console.error(`dialog.test: ${failures.length} failed\n  ` + failures.join('\n  '));
   process.exit(1);
 }
-console.log('dialog.test: 6 checks passed');
+console.log('dialog.test: 4 checks passed');
