@@ -66,6 +66,12 @@
      keeps its buttons clear. 0 everywhere else (O-503, from Royal Me). */
   margin: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
 }
+/* A panel whose content is a grid (HR's access panel: 3 columns of ticks per
+   section, owner 28 Oct 2026). 720px is HR's measurement: 3 x 210px columns
+   + gaps + padding + border = 704px. Still never wider than the screen. */
+.modal.wide {
+  width: min(720px, 100%);
+}
 .modal > h3 {
   margin: 0;
   padding: 14px 18px;
