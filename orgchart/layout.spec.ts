@@ -116,3 +116,42 @@ describe('the placed tree', () => {
     expect(lone.links).toEqual([]);
   });
 });
+
+describe('elbow, when the person sits above their manager (O-796)', () => {
+  // y1 is the manager's BOTTOM, y2 the person's TOP, as layoutTree gives them.
+  const numbers = (d: string) => d.match(/-?\d+(\.\d+)?/g)!.map(Number);
+
+  it('a person one row up: from the manager\'s top to the person\'s bottom, never back across the manager', () => {
+    const managerTop = 2 * ROW_H;
+    const personTop = 1 * ROW_H;
+    const [x1, start, knee, x2, end] = numbers(
+      elbow({ x1: 400, y1: managerTop + CARD_H, x2: 100, y2: personTop }),
+    );
+    expect([x1, x2]).toEqual([400, 100]);
+    expect(start).toBe(managerTop);
+    expect(end).toBe(personTop + CARD_H);
+    expect(knee).toBeLessThan(managerTop);
+    expect(knee).toBeGreaterThan(personTop + CARD_H);
+  });
+
+  it('a person in the same row: over the top of both cards', () => {
+    const rowTop = 3 * ROW_H;
+    const [, start, knee, , end] = numbers(
+      elbow({ x1: 400, y1: rowTop + CARD_H, x2: 100, y2: rowTop }),
+    );
+    expect(start).toBe(rowTop);
+    expect(end).toBe(rowTop);
+    expect(knee).toBeLessThan(rowTop);
+  });
+
+  it('a person below is drawn as before', () => {
+    expect(elbow({ x1: 10, y1: CARD_H, x2: 50, y2: ROW_H })).toBe(
+      `M 10 ${CARD_H} V ${CARD_H + 20} H 50 V ${ROW_H}`,
+    );
+  });
+
+  it('a card holds two lines of name and two of title, with room between rows for the line', () => {
+    expect(CARD_H).toBeGreaterThanOrEqual(92);
+    expect(ROW_H - CARD_H).toBeGreaterThanOrEqual(38);
+  });
+});

@@ -32,8 +32,11 @@
 // stand on one canvas: 50 people across a dozen bands is a dozen rows deep
 // before anybody is hired.
 export const CARD_W = 152;
-export const CARD_H = 74;
-export const ROW_H = 112;
+// CARD_H holds a name and a title of TWO lines each (O-796, 2 Nov 2026: the
+// exported chart cut his own 48-character title and 30 of 106 names ran past
+// one line). The width stays, so the whole company still fits one canvas.
+export const CARD_H = 92;
+export const ROW_H = 130;
 export const GAP = 14;
 
 export interface Placed<N> {
@@ -137,6 +140,18 @@ export function layoutTree<N>(root: N, kids: (n: N) => N[], band: (n: N) => numb
 /** The elbow of one reporting line: straight down from the manager, across
  *  under them, then straight down to the person — however many bands apart. */
 export function elbow(link: Link): string {
-  const knee = link.y1 + 20;
-  return `M ${link.x1} ${link.y1} V ${knee} H ${link.x2} V ${link.y2}`;
+  if (link.y2 >= link.y1) {
+    const knee = link.y1 + 20;
+    return `M ${link.x1} ${link.y1} V ${knee} H ${link.x2} V ${link.y2}`;
+  }
+  // The person sits in a row at or above their manager's (a line Valu draws
+  // against the band order, kept by the owner, 24 Sep 2026, with an alert).
+  // Leave from the manager's TOP, so the line never doubles back across
+  // the manager's own card: to the person's bottom when they are a row
+  // above, or over both cards into the person's top when they share a row.
+  const top = link.y1 - CARD_H;
+  const below = link.y2 + CARD_H;
+  const knee = below < top ? (below + top) / 2 : top - GAP;
+  const end = below < top ? below : link.y2;
+  return `M ${link.x1} ${top} V ${knee} H ${link.x2} V ${end}`;
 }
