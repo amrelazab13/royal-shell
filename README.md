@@ -53,6 +53,10 @@ Only the parts that are genuinely the same everywhere:
   G-77) is passed with no `keep` and `editable` left false. Band colours come from the `b-<code>` classes and
   `--band-*` / `--band-ink` / `.inverse` canvas properties, which are still in
   HR's global stylesheet, not in `tokens/`. `band-colour.ts` names the class.
+- `idle/` — the warning before an idle sign-out (O-783): `<app-idle-warning />` once in
+  the root component, and the module's idle service calls `IdleWarning.warn(seconds,
+  stay)` when HR's `idle_warning_seconds` window opens (`clear()` on activity).
+  The minutes and seconds are HR's settings (kit `system_settings`), never a constant.
 - `tools/design-system-check.mjs` — the gate.
 - `tools/dates-check.mjs` — the dates gate: a timestamp's UTC day, calendar
   arithmetic through the reader's midnight, or a day parsed as local midnight
