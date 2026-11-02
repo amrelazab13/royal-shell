@@ -152,6 +152,7 @@ describe('elbow, when the person sits above their manager (O-796)', () => {
 
   it('a card holds two lines of name and two of title, with room between rows for the line', () => {
     expect(CARD_H).toBeGreaterThanOrEqual(92);
+    expect(CARD_W).toBeGreaterThanOrEqual(184);
     expect(ROW_H - CARD_H).toBeGreaterThanOrEqual(38);
   });
 });

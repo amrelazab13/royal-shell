@@ -188,7 +188,7 @@
 }
 .slot {
   position: absolute;
-  inline-size: 152px;
+  inline-size: 184px; /* = CARD_W in layout.ts */
   z-index: 1;
 }
 
@@ -235,7 +235,7 @@
   list-style: none;
 }
 .bench li {
-  inline-size: 152px;
+  inline-size: 184px; /* = CARD_W in layout.ts */
 }
 
 .p-error {

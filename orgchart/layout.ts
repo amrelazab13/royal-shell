@@ -31,7 +31,10 @@
 // Tighter than a page of cards would like, because the whole company has to
 // stand on one canvas: 50 people across a dozen bands is a dozen rows deep
 // before anybody is hired.
-export const CARD_W = 152;
+// 184 (was 152, O-796): two lines of a 31-character name or a 48-character
+// title must sit inside one card, not across its neighbour. The two
+// `inline-size` rules in org-chart.scss carry the same number.
+export const CARD_W = 184;
 // CARD_H holds a name and a title of TWO lines each (O-796, 2 Nov 2026: the
 // exported chart cut his own 48-character title and 30 of 106 names ran past
 // one line). The width stays, so the whole company still fits one canvas.
