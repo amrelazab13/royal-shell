@@ -25,6 +25,21 @@ describe('icons', () => {
       expect(svg.querySelector('#' + id)).not.toBeNull();
   });
 
+  it('the Dashboard icon is a bar chart — the owner, 3 Nov 2026', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [IconSprite] }).compileComponents();
+    const fixture = TestBed.createComponent(IconSprite);
+    await fixture.whenStable();
+    const dash = (fixture.nativeElement as HTMLElement).querySelector('#i-dash')!;
+    expect(dash).not.toBeNull();
+    const bars = (el: Element) =>
+      [...el.querySelectorAll('rect')].map((r) => r.getAttribute('height'));
+    expect(bars(dash)).toEqual(['8', '14', '11']);
+    expect(bars(dash)).toEqual(
+      bars((fixture.nativeElement as HTMLElement).querySelector('#i-chart')!),
+    );
+  });
+
   it('every NEW icon the dictionary names is drawn — none is an empty symbol', async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({ imports: [IconSprite] }).compileComponents();

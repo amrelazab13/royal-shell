@@ -31,8 +31,14 @@ import { booleanAttribute, Component, input } from '@angular/core';
   `,
   template: `
     <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- A BAR CHART, the owner 3 Nov 2026: "make the dashboard icon as a
+           bar chart ... unify that in all modules". Drawn here so every
+           module's Dashboard changes with one pin; the same bars as i-chart. -->
       <symbol id="i-dash" viewBox="0 0 24 24">
-        <path d="M3 13h8V3H3zM13 21h8V11h-8zM13 7h8V3h-8zM3 21h8v-4H3z" />
+        <rect x="5" y="12" width="3" height="8" />
+        <rect x="10.5" y="6" width="3" height="14" />
+        <rect x="16" y="9" width="3" height="11" />
+        <path d="M3 20h18" />
       </symbol>
       <symbol id="i-leads" viewBox="0 0 24 24">
         <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
