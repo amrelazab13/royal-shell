@@ -343,3 +343,10 @@
     var(--sh-1),
     0 0 0 2px var(--band-ink);
 }
+
+// Arabic letters join, so any tracking pulls the word apart (owner's Arabic
+// look, A-329, 4 Nov 2026: 0.496px on every card). Last in the cascade, so it
+// beats each rule above that tracks Latin labels.
+:host(:lang(ar)) * {
+  letter-spacing: 0 !important;
+}
