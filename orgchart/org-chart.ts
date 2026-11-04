@@ -246,6 +246,17 @@ const PLAIN: CardMarks = {};
  *    owner rule: "his seat, hat or second role is never named".
  */
 @Component({
+  // **ESCAPE PUTS A HELD CARD DOWN — on the HOST, not on the canvas** (O-831).
+  //
+  // The first version bound it to `.canvaswrap`, and a spec caught that
+  // `.benchwrap` is its SIBLING: somebody who picked up a card from the bench
+  // and pressed Escape would have got nothing. The host covers both regions,
+  // which is what "Escape puts it down" has to mean.
+  //
+  // A MOUSE drag needs none of this — the browser's own Escape cancels it and
+  // fires `dragend` — so this is for the keyboard path, which is the one a
+  // person without a mouse is using.
+  host: { '(keydown.escape)': 'cancelHold($event)' },
   selector: 'royal-org-chart',
   imports: [RouterLink],
   templateUrl: './org-chart.html',
@@ -490,6 +501,9 @@ export class OrgChart {
       // Safari's own pinch, which arrives as a gesture rather than a wheel.
       el.addEventListener('gesturestart', this.gestureStart as EventListener);
       el.addEventListener('gesturechange', this.gestureChange as EventListener);
+      // O-831: the canvas follows a card dragged towards its edge, so a
+      // manager off-screen can be reached without putting the card down.
+      el.addEventListener('dragover', this.edgeScroll);
       // The whole company at once, the first time it is drawn.
       if (!this.fitted) {
         this.fitted = true;
@@ -512,6 +526,7 @@ export class OrgChart {
         el.removeEventListener('pointerleave', this.panUp);
         el.removeEventListener('gesturestart', this.gestureStart as EventListener);
         el.removeEventListener('gesturechange', this.gestureChange as EventListener);
+        el.removeEventListener('dragover', this.edgeScroll);
       });
     });
   }
@@ -569,12 +584,32 @@ export class OrgChart {
     },
   );
 
-  /** The people under a card that the chart draws: none while the branch is
-   *  folded — unless somebody is in hand, when everything unfolds, because a
-   *  hidden card cannot receive. */
+  /**
+   * The people under a card that the chart draws: none while the branch is
+   * folded. **Picking somebody up no longer unfolds anything** (O-831).
+   *
+   * **The owner, 4 November 2026**, with a photo of the HR Supervisor's
+   * screen mid-drag: *"expanding the chart in that behaviour makes it
+   * extremly hard to move someone properly to someone else, what do u
+   * suggest??"*
+   *
+   * This method was the cause, and it said so itself: it returned every
+   * node's reports while anything was in hand, "because a hidden card cannot
+   * receive". So the whole canvas reflowed at the instant of pickup — every
+   * folded branch opened, every card moved, and the card somebody had aimed
+   * at was no longer under the cursor. The chart was fighting the person
+   * using it.
+   *
+   * **A FOLDED HEAD RECEIVES THE DROP INSTEAD**, which is what makes the
+   * unfold unnecessary rather than merely unwanted: a collapsed card is still
+   * drawn and `canDrop` has never asked whether it is folded. It is only its
+   * CHILDREN that are hidden, and nobody aims at a hidden child — they aim at
+   * the manager. Dropping on a folded head hangs the held person under it and
+   * the branch stays folded, which is also the honest outcome: the person
+   * chose not to look inside it.
+   */
   private visibleReports(node: ChartNode): ChartNode[] {
-    if (this.holding() !== null || !this.collapsed().has(node.id)) return node.reports;
-    return [];
+    return this.collapsed().has(node.id) ? [] : node.reports;
   }
 
   private static rankOf(node: ChartNode): number {
@@ -1058,9 +1093,69 @@ export class OrgChart {
     this.ask(held, node.id);
   }
 
+  /** How close to the edge a dragged card must come before the canvas moves,
+   *  and how far it moves each time. Both in CSS pixels. */
+  private static readonly EDGE = 72;
+  private static readonly EDGE_STEP = 28;
+
+  /**
+   * The canvas follows a card dragged towards its edge — O-831.
+   *
+   * **Without it the fix above is only half an answer.** Not unfolding on
+   * pickup stops the chart moving under the cursor, but it does nothing for a
+   * manager who is simply off-screen: a person had to put the card down, pan,
+   * and pick it up again, which is most of what *"extremly hard to move
+   * someone properly to someone else"* described.
+   *
+   * **The ceiling, said rather than hidden:** this moves on `dragover` and
+   * runs no timer of its own. Browsers fire `dragover` repeatedly while a
+   * drag is in progress, including when the pointer is held still, so resting
+   * at the edge does scroll — but the rate is the browser's, not ours, so it
+   * is a nudge rather than a smooth glide. A rAF pump would be smoother and
+   * is a loop to start, stop and cancel on four more paths; if the nudge
+   * proves too coarse in a real hand, that is the upgrade.
+   *
+   * It never calls `preventDefault`: whether this is a legal drop target is
+   * the card's business, and saying so here would make the whole canvas one.
+   */
+  private readonly edgeScroll = (event: DragEvent): void => {
+    if (this.holding() === null) return;
+    const el = this.wrap()?.nativeElement;
+    if (!el) return;
+    const box = el.getBoundingClientRect();
+    const { EDGE, EDGE_STEP } = OrgChart;
+    let byX = 0;
+    let byY = 0;
+    if (event.clientX - box.left < EDGE) byX = -EDGE_STEP;
+    else if (box.right - event.clientX < EDGE) byX = EDGE_STEP;
+    if (event.clientY - box.top < EDGE) byY = -EDGE_STEP;
+    else if (box.bottom - event.clientY < EDGE) byY = EDGE_STEP;
+    if (byX === 0 && byY === 0) return;
+    el.scrollLeft += byX;
+    el.scrollTop += byY;
+  };
+
   protected release(): void {
     this.holding.set(null);
     this.over.set(null);
+  }
+
+  /**
+   * Escape puts the held person down — O-831.
+   *
+   * There was a Put down BUTTON and nothing on the keyboard, so somebody who
+   * had picked the wrong card had to go and find it while the chart was in
+   * the state they wanted out of. Escape is what every other dismissable
+   * thing in this system answers to.
+   *
+   * It is a no-op with nothing in hand, so it never swallows an Escape the
+   * page wanted for something else.
+   */
+  protected cancelHold(event: Event): void {
+    if (this.holding() === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.release();
   }
 
   /** The one write this canvas does NOT make: it asks, and the host writes.

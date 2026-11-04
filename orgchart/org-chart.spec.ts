@@ -1124,4 +1124,135 @@ describe('OrgChart, shared', () => {
       expect(at(c.fullPlots(), id)).toBe(at(c.plots(), id));
     }
   });
+
+  /* ── O-831: picking a card up must not move the chart ────────────────── */
+
+  /**
+   * **The owner, 4 November 2026**, with a photo of the HR Supervisor's
+   * screen mid-drag and the cursor showing not-allowed: *"expanding the chart
+   * in that behaviour makes it extremly hard to move someone properly to
+   * someone else, what do u suggest??"*
+   *
+   * `visibleReports` was the cause and said so in its own comment: it
+   * returned every node's reports while anything was in hand, "because a
+   * hidden card cannot receive". So the whole canvas reflowed at the instant
+   * of pickup — every folded branch opened, every card moved, and the card
+   * aimed at was no longer under the cursor.
+   */
+  function companyWithSomebodyOnTheBench(): Chart {
+    return {
+      ...company(),
+      reports_to_nobody: [person({ id: 'hand', full_name_en: 'Card Hand', rank: 140 })],
+    };
+  }
+
+  it('PICKING A CARD UP DOES NOT CHANGE WHAT IS DRAWN', async () => {
+    // **This is the spec that fails on the code of 4 November morning.**
+    const { fixture, el } = await mount({
+      chart: companyWithSomebodyOnTheBench(),
+      editable: true,
+    });
+    const drawn = () => el.querySelectorAll('.ocard:not(.flat)').length;
+
+    // The control first: something really IS folded, or this test is about a
+    // chart with nothing to unfold and would pass on either code.
+    const before = drawn();
+    expect(el.querySelector('.fold.shut'), 'nothing is folded, so this proves nothing').toBeTruthy();
+    expect(el.textContent).not.toContain('Card Agent');
+
+    cardNamed(el, 'Card Hand').dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true }),
+    );
+    await settle(fixture);
+
+    // In hand — so the state under test is really the held one.
+    expect(el.querySelector('.carrying')).toBeTruthy();
+    expect(drawn()).toBe(before);
+    expect(el.textContent).not.toContain('Card Agent');
+  });
+
+  it('and a FOLDED head still receives the drop, which is what makes that safe', async () => {
+    // The unfold existed because "a hidden card cannot receive". A folded
+    // head is not hidden — only its children are — and nobody aims at a
+    // hidden child, they aim at the manager.
+    const { fixture, el } = await mount({
+      chart: companyWithSomebodyOnTheBench(),
+      editable: true,
+    });
+    const moves: Move[] = [];
+    fixture.componentInstance.moved.subscribe((m) => moves.push(m));
+    const space = () => new KeyboardEvent('keydown', { key: ' ', bubbles: true });
+
+    cardNamed(el, 'Card Hand').dispatchEvent(space());
+    await settle(fixture);
+    cardNamed(el, 'Card Manager').dispatchEvent(space());
+    await settle(fixture);
+
+    expect(moves.length).toBe(1);
+    expect(moves[0].person.id).toBe('hand');
+    expect(moves[0].manager).toBe('manager');
+    // And the branch is STILL folded afterwards, which is the honest outcome:
+    // the person chose not to look inside it.
+    expect(el.textContent).not.toContain('Card Agent');
+  });
+
+  it('ESCAPE puts a held card down', async () => {
+    const { fixture, el } = await mount({
+      chart: companyWithSomebodyOnTheBench(),
+      editable: true,
+    });
+    cardNamed(el, 'Card Hand').dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true }),
+    );
+    await settle(fixture);
+    expect(el.querySelector('.carrying'), 'nothing was picked up').toBeTruthy();
+
+    cardNamed(el, 'Card Hand').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    await settle(fixture);
+    expect(el.querySelector('.carrying')).toBeNull();
+  });
+
+  it('the canvas FOLLOWS a card dragged towards its edge', async () => {
+    const { fixture, el } = await mount({
+      chart: companyWithSomebodyOnTheBench(),
+      editable: true,
+    });
+    cardNamed(el, 'Card Hand').dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true }),
+    );
+    await settle(fixture);
+
+    const wrap = el.querySelector('.canvaswrap') as HTMLElement;
+    // **jsdom does no layout**, so the box is stubbed rather than measured —
+    // the arithmetic under test is "how near the edge is this pointer", and a
+    // box of zeroes would make every pointer near every edge.
+    wrap.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }) as DOMRect;
+    wrap.scrollLeft = 300;
+    wrap.scrollTop = 300;
+
+    // **jsdom has no `DragEvent`.** `MouseEvent` carries the only two fields
+    // the handler reads, and dispatching it under the name `dragover` is what
+    // the listener is bound to — so this exercises the real handler.
+    const nudge = (clientX: number, clientY: number) =>
+      wrap.dispatchEvent(new MouseEvent('dragover', { clientX, clientY, bubbles: true }));
+
+    nudge(10, 300);
+    expect(wrap.scrollLeft, 'the left edge did not pull the canvas').toBeLessThan(300);
+    const afterLeft = wrap.scrollLeft;
+    nudge(790, 300);
+    expect(wrap.scrollLeft).toBeGreaterThan(afterLeft);
+    nudge(400, 590);
+    expect(wrap.scrollTop).toBeGreaterThan(300);
+
+    // THE CONTROL — a pointer in the MIDDLE moves nothing, or the test above
+    // is passing on a handler that scrolls whatever it is told.
+    const still = { x: wrap.scrollLeft, y: wrap.scrollTop };
+    nudge(400, 300);
+    expect(wrap.scrollLeft).toBe(still.x);
+    expect(wrap.scrollTop).toBe(still.y);
+  });
+
 });
