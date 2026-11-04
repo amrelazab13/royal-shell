@@ -1,0 +1,42 @@
+<div class="sw-head">
+  <b>{{ words().title }}</b>
+  <span>{{ words().what }}</span>
+</div>
+
+@if (failed()) {
+  <!-- NOT an empty list: an empty list is a claim that this person may switch
+       nowhere, and "we could not ask" is a different fact. -->
+  <p class="msg bad show" role="alert" data-test="sw-failed">{{ words().failed }}</p>
+} @else if (answer() === null) {
+  <p class="sw-note">{{ words().loading }}</p>
+} @else if (showsNobody()) {
+  <p class="sw-note" data-test="sw-nobody">{{ words().cannotOpen }}</p>
+} @else {
+  <ul class="sw-list">
+    @for (row of rows(); track row.module) {
+      <li class="sw-row" [class.off]="!row.may">
+        @if (row.may) {
+          <button type="button" class="sw-go" data-test="sw-module" (click)="press(row)">
+            <bdi>{{ name(row) }}</bdi>
+          </button>
+        } @else {
+          <!-- Drawn and greyed WITH THE REASON, never dropped: a name missing
+               on purpose is a name somebody hunts for. Not a button, so it is
+               not reachable by keyboard either — HR said no, and the screen
+               says so rather than offering a press that answers 403. -->
+          <span class="sw-go is-off" data-test="sw-module-off" aria-disabled="true">
+            <bdi>{{ name(row) }}</bdi>
+            <small data-test="sw-why">{{ reason(row) }}</small>
+          </span>
+        }
+      </li>
+    }
+  </ul>
+
+  @if (!anyOffered()) {
+    <!-- Every row is a refusal. That is NOT an empty list and must not read
+         as one, so the note sits beneath the reasons rather than replacing
+         them: the person can see which modules exist and why each is shut. -->
+    <p class="sw-note" data-test="sw-none-offered">{{ words().cannotOpen }}</p>
+  }
+}

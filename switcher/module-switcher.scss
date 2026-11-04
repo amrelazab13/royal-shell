@@ -1,0 +1,85 @@
+/* The masthead module switcher (A-338).
+ *
+ * **Tokens only, no module-local colours** — the bible's rule, and the reason
+ * this lives in `royal-shell` and looks like whichever module hosts it.
+ *
+ * Logical properties throughout (`inline-start`, `padding-inline`), so the
+ * whole control mirrors under RTL without a second sheet.
+ */
+
+.sw-head {
+  padding: 6px 8px 8px;
+  border-block-end: 1px solid var(--line);
+  margin-block-end: 6px;
+
+  b {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
+
+  span {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--ink-4);
+    white-space: normal;
+    line-height: 1.35;
+  }
+}
+
+.sw-note {
+  padding: 8px;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--ink-4);
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.sw-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sw-row {
+  margin: 0;
+}
+
+.sw-go {
+  display: block;
+  inline-size: 100%;
+  text-align: start;
+  padding: 7px 8px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border-radius: var(--rs);
+
+  &:hover,
+  &:focus-visible {
+    background: var(--surface-2);
+  }
+
+  /* A row HR refused. It is a `span`, not a disabled button: the reason is
+   * the point, and a disabled control invites the press anyway. */
+  &.is-off {
+    cursor: default;
+    color: var(--ink-4);
+
+    &:hover {
+      background: none;
+    }
+
+    small {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--ink-4);
+      white-space: normal;
+      line-height: 1.3;
+    }
+  }
+}

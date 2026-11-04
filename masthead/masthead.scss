@@ -36,35 +36,51 @@ header.top {
 
 // The one order, start to end (bible §3.3). A module without search, ONLINE or
 // the bell leaves them out; what remains keeps its place.
+//
+// **NUMBERED IN TENS since A-338**, and that is the whole reason this block
+// was renumbered rather than squeezed: adding the module switcher between the
+// bell and the signed-in name had no number to take. Sharing one with `role`
+// would have left two slots at the same `order`, where only DOM order decides
+// and a module writing its template the other way round gets a different
+// masthead — a layout that depends on nothing anybody declared. In tens, the
+// next control is free.
 header.top > [data-slot='burger'] {
-  order: 1;
+  order: 10;
 }
 header.top > [data-slot='logo'] {
-  order: 2;
+  order: 20;
 }
 header.top > [data-slot='module'] {
-  order: 3;
+  order: 30;
 }
 header.top > [data-slot='search'] {
-  order: 4;
+  order: 40;
 }
 header.top > [data-slot='online'] {
-  order: 5;
+  order: 50;
 }
 header.top > [data-slot='bell'] {
-  order: 6;
+  order: 60;
+}
+// A-338: moving between modules without typing a password again. It sits with
+// the account controls and not beside the module NAME, because it is a control
+// and not a title — and anything after the name is pushed to the end edge by
+// the `margin-inline-end: auto` below, so the name's own side is not somewhere
+// a control can be put without undoing that.
+header.top > [data-slot='switcher'] {
+  order: 65;
 }
 header.top > [data-slot='role'] {
-  order: 7;
+  order: 70;
 }
 header.top > [data-slot='language'] {
-  order: 8;
+  order: 80;
 }
 header.top > [data-slot='theme'] {
-  order: 9;
+  order: 90;
 }
 header.top > [data-slot='me'] {
-  order: 10;
+  order: 100;
 }
 
 // Everything after the module name sits at the end edge. The push lives on the
