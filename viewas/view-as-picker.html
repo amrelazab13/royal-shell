@@ -1,0 +1,70 @@
+<div class="va-head">
+  <b>{{ words().title }}</b>
+  <span>{{ words().what }}</span>
+</div>
+
+<label class="va-search">
+  <span class="visually-hidden">{{ words().search }}</span>
+  <input
+    type="search"
+    name="view-as-search"
+    [attr.placeholder]="words().search"
+    [ngModel]="term()"
+    (ngModelChange)="typed($event)"
+  />
+</label>
+
+@if (failed()) {
+  <!-- NOT an empty list: an empty list is a claim that nobody may be looked
+       at, and "we could not ask" is a different fact. -->
+  <p class="msg bad show" role="alert" data-test="va-failed">{{ words().failed }}</p>
+} @else if (answer() === null) {
+  <p class="va-note">{{ words().loading }}</p>
+} @else if (showsNobody()) {
+  <p class="va-note" data-test="va-nobody">{{ words().nobody }}</p>
+} @else if (showsGroups()) {
+  @for (group of answer()!.groups; track group.department) {
+    <div class="va-dept">
+      <button
+        type="button"
+        class="va-dept-head"
+        data-test="va-department"
+        [attr.aria-expanded]="isOpen(group.department)"
+        (click)="toggle(group.department)"
+      >
+        <span class="va-chev" [class.on]="isOpen(group.department)" aria-hidden="true">›</span>
+        <bdi>{{ departmentName(group) }}</bdi>
+        <small>{{ howMany(group) }}</small>
+      </button>
+
+      @if (isOpen(group.department)) {
+        @for (byTitle of group.titles; track byTitle.title) {
+          <div class="va-title" data-test="va-title">
+            <bdi>{{ byTitle.title }}</bdi>
+          </div>
+          @for (person of byTitle.people; track person.employee_hr_id) {
+            <button
+              type="button"
+              class="va-person"
+              data-test="va-person"
+              (click)="chose.emit(person)"
+            >
+              <bdi>{{ name(person) }}</bdi>
+            </button>
+          }
+        }
+      }
+    </div>
+  }
+} @else if (showsFlat()) {
+  <!-- A search answers people. The headings would be in the way of somebody
+       who is typing a name. -->
+  @for (person of answer()!.people; track person.employee_hr_id) {
+    <button type="button" class="va-person flat" data-test="va-person" (click)="chose.emit(person)">
+      <bdi>{{ name(person) }}</bdi>
+      <small
+        ><bdi>{{ title(person) }}</bdi></small
+      >
+    </button>
+  }
+}

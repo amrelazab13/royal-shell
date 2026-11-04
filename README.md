@@ -43,6 +43,12 @@ Only the parts that are genuinely the same everywhere:
 - `icons/icons.ts` — the sprite (`<app-icon-sprite />`, once, in the root
   component) and `<app-icon name="…" />`. 54 symbols.
 - `words.ts` — `SHELL_WORDS`, how a shared control asks the module for words.
+- `viewas/` — the View-as picker, the CRM's shape in every module (O-830,
+  the owner 4 Nov: "this should be every where, but in every module will show
+  its allowed members"): `<royal-view-as-picker [answer] [words] [arabic]
+  [failed] (search) (chose)>`. The host fetches HR's
+  `auth/view-as/targets/?module=<slug>` and supplies every word; the control
+  imports nothing but Angular. Lifted byte-for-byte from HR 9699a8fc.
 - `orgchart/` — HR's org chart, shared (O-368, the owner's rule 9):
   `<royal-org-chart [chart] [always] [keep]>` (`org-chart.ts`), the band-lane
   layout (`layout.ts`) and the narrowing (`narrow.ts`). `always` is required

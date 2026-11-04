@@ -1,0 +1,140 @@
+/* The View-as picker (O-830b).
+ *
+ * **Tokens only, no module-local colours** — the bible's rule, and the
+ * reason this can be lifted into `royal-shell` unchanged: every value here
+ * is a shared token, so it looks like whichever module hosts it.
+ */
+
+.va-head {
+  padding: 6px 8px 8px;
+  border-block-end: 1px solid var(--line);
+  margin-block-end: 6px;
+
+  b {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
+
+  span {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--ink-4);
+    white-space: normal;
+    line-height: 1.35;
+  }
+}
+
+.va-search input {
+  inline-size: 100%;
+  margin-block-end: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--rs);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.va-note {
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  color: var(--ink-4);
+}
+
+.va-dept-head {
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: start;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--surface-2);
+  }
+
+  small {
+    margin-inline-start: auto;
+    font-weight: 400;
+    color: var(--ink-4);
+  }
+}
+
+/* The chevron turns rather than being swapped for another glyph, so it
+   cannot disagree with the state it is drawn from. `rotate` is logical
+   under RTL only if the start state mirrors too — hence `scaleX` through
+   the sheet's own direction rather than a hard-coded 90deg. */
+.va-chev {
+  display: inline-block;
+  transition: transform var(--fast, 120ms) ease;
+  color: var(--ink-4);
+
+  &.on {
+    transform: rotate(90deg);
+  }
+}
+
+[dir='rtl'] .va-chev {
+  transform: scaleX(-1);
+
+  &.on {
+    transform: scaleX(-1) rotate(90deg);
+  }
+}
+
+.va-title {
+  padding: 4px 8px 2px 24px;
+  font-size: 0.7rem;
+  color: var(--ink-4);
+}
+
+[dir='rtl'] .va-title {
+  padding: 4px 24px 2px 8px;
+}
+
+.va-person {
+  inline-size: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 8px 5px 24px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: start;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--surface-2);
+  }
+
+  small {
+    font-size: 0.7rem;
+    color: var(--ink-4);
+  }
+
+  &.flat {
+    padding-inline-start: 8px;
+  }
+}
+
+[dir='rtl'] .va-person {
+  padding: 5px 24px 5px 8px;
+
+  &.flat {
+    padding-inline-end: 8px;
+  }
+}
