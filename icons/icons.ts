@@ -302,7 +302,9 @@ import { booleanAttribute, Component, input } from '@angular/core';
       </symbol>
       <symbol id="i-trip" viewBox="0 0 24 24">
         <!-- An aeroplane, not a train (the owner, 14 Oct 2026). -->
-        <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+        <path
+          d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"
+        />
       </symbol>
       <symbol id="i-installments" viewBox="0 0 24 24">
         <path d="M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2z" />
@@ -389,6 +391,18 @@ import { booleanAttribute, Component, input } from '@angular/core';
         <circle cx="12" cy="12" r="9" />
         <path d="M12 3v18M12 8h8M12 12h9M12 16h8" />
       </symbol>
+      <symbol id="i-modules" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </symbol>
+      <symbol id="i-language" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path
+          d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9s1.3-6.5 3.8-9z"
+        />
+      </symbol>
       <symbol id="i-site" viewBox="0 0 24 24">
         <path d="M12 22s7-6.5 7-12a7 7 0 00-14 0c0 5.5 7 12 7 12z" />
         <circle cx="12" cy="10" r="2.5" />
@@ -423,9 +437,7 @@ import { booleanAttribute, Component, input } from '@angular/core';
         <path d="M16 10.5L22 7v10l-6-3.5" />
       </symbol>
       <symbol id="i-visit" viewBox="0 0 24 24">
-        <path
-          d="M5 17H3v-5l2.2-4.6A2 2 0 017 6.3h10a2 2 0 011.8 1.1L21 12v5h-2M9 17h6M3 12h18"
-        />
+        <path d="M5 17H3v-5l2.2-4.6A2 2 0 017 6.3h10a2 2 0 011.8 1.1L21 12v5h-2M9 17h6M3 12h18" />
         <circle cx="7" cy="17" r="2" />
         <circle cx="17" cy="17" r="2" />
       </symbol>
