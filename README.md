@@ -49,6 +49,11 @@ Only the parts that are genuinely the same everywhere:
   [failed] (search) (chose)>`. The host fetches HR's
   `auth/view-as/targets/?module=<slug>` and supplies every word; the control
   imports nothing but Angular. Lifted byte-for-byte from HR 9699a8fc.
+- `picker/` — the one dropdown of people, teams or anything placed in the chart (the owner, 5 Nov:
+  grouped, and alphabetical at every level): `<royal-grouped-picker [items] [words] [label] [value]
+  [arabic] (picked)>`. Each item carries its place as `group`, department first, as deep as the list
+  needs; the control sorts every level in the reader's language, so no module sorts its own, and
+  search reads both languages and the headings. Imports nothing of any module's.
 - `switcher/` — the masthead's Switch module list (A-338; the owner, 6 Nov: "only those
   modules would show to him/her"): `<royal-module-switcher [answer] [words] [arabic] [failed]
   (chose)>` draws exactly the rows HR's server sends, nothing greyed. `showsSwitcher(answer)` is

@@ -1,0 +1,143 @@
+/* The grouped picker. Tokens only, and logical properties throughout, so the
+ * whole control mirrors under RTL without a second sheet. HR's person-picker's
+ * look, with headings. */
+:host {
+  display: inline-block;
+  position: relative;
+  inline-size: min(100%, 300px);
+}
+
+.gp {
+  position: relative;
+}
+
+input {
+  inline-size: 100%;
+  block-size: 31px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding-inline: 11px 30px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+input::placeholder {
+  color: var(--ink-4);
+}
+
+input:hover {
+  border-color: var(--ink-4);
+  color: var(--ink);
+}
+
+input:focus-visible {
+  outline: 2px solid var(--navy-hi);
+  outline-offset: 1px;
+}
+
+.gp-clear {
+  position: absolute;
+  inset-inline-end: 5px;
+  inset-block-start: 5px;
+  inline-size: 21px;
+  block-size: 21px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-3);
+    color: var(--ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--navy-hi);
+  }
+
+  svg {
+    inline-size: 10px;
+    block-size: 10px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    display: block;
+  }
+}
+
+.gp-pop {
+  position: absolute;
+  z-index: 60;
+  inset-inline-start: 0;
+  inset-block-start: calc(100% + 4px);
+  min-inline-size: 100%;
+  inline-size: max-content;
+  max-inline-size: min(520px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--sh-pop);
+  padding: 4px;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-block-size: 340px;
+  overflow-y: auto;
+}
+
+.gp-head {
+  padding-block: 7px 3px;
+  padding-inline: calc(9px + var(--gp-depth, 0) * 12px) 9px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-3);
+}
+
+.gp-row {
+  padding-block: 6px;
+  padding-inline: calc(9px + var(--gp-depth, 0) * 12px) 9px;
+  border-radius: var(--rs);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.active {
+    background: var(--surface-3);
+  }
+
+  &.current .nm {
+    color: var(--navy-hi);
+  }
+}
+
+.nm {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.dt {
+  color: var(--ink-3);
+}
+
+.gp-note {
+  margin: 0;
+  padding: 6px 9px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}

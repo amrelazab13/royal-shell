@@ -1,0 +1,75 @@
+<div class="gp">
+  <input
+    type="text"
+    role="combobox"
+    autocomplete="off"
+    spellcheck="false"
+    aria-autocomplete="list"
+    data-test="gp-field"
+    [attr.aria-label]="label()"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="listId"
+    [attr.aria-activedescendant]="activeId()"
+    [placeholder]="words().placeholder"
+    [value]="query()"
+    (input)="typed($any($event.target).value)"
+    (keydown)="key($event)"
+    (click)="reveal()"
+    (blur)="left()"
+  />
+  @if (query() || value()) {
+    <button
+      type="button"
+      class="gp-clear"
+      data-test="gp-clear"
+      [attr.aria-label]="words().clear"
+      [title]="words().clear"
+      (mousedown)="$event.preventDefault()"
+      (click)="clear()"
+    >
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+    </button>
+  }
+  <div class="gp-pop" [hidden]="!open()" (mousedown)="$event.preventDefault()">
+    <ul role="listbox" [id]="listId" [attr.aria-label]="label()">
+      @for (row of rows(); track row.key) {
+        @if (row.kind === 'group') {
+          <li
+            role="presentation"
+            class="gp-head"
+            data-test="gp-group"
+            [attr.data-depth]="row.depth"
+            [style.--gp-depth]="row.depth"
+          >
+            <bdi>{{ row.label }}</bdi>
+          </li>
+        } @else {
+          <li
+            role="option"
+            class="gp-row"
+            data-test="gp-item"
+            [id]="optionId(row.key)"
+            [attr.data-depth]="row.depth"
+            [attr.aria-label]="row.path ? row.label + ' — ' + row.path : row.label"
+            [attr.aria-selected]="row.item.id === value()"
+            [class.active]="row.key === activeKey()"
+            [class.current]="row.item.id === value()"
+            [style.--gp-depth]="row.depth"
+            (click)="choose(row.item)"
+            (mousemove)="hover(row.key)"
+          >
+            <bdi class="nm">{{ row.label }}</bdi>
+            @if (row.detail) {
+              <span class="dt">
+                — <bdi>{{ row.detail }}</bdi></span
+              >
+            }
+          </li>
+        }
+      }
+    </ul>
+    @if (!rows().length) {
+      <p class="gp-note" role="status" data-test="gp-none">{{ words().none }}</p>
+    }
+  </div>
+</div>
