@@ -57,7 +57,6 @@ describe('showsSwitcher', () => {
   it('says no to an answer with no modules, rather than throwing in the template', () => {
     expect(showsSwitcher({} as SwitchableAnswer)).toBe(false);
   });
-
 });
 
 describe('ModuleSwitcher', () => {
