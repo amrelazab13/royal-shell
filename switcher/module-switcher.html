@@ -3,11 +3,19 @@
   <span>{{ words().what }}</span>
 </div>
 
-@if (failed()) {
-  <p class="msg bad show" role="alert" data-test="sw-failed">{{ words().failed }}</p>
-} @else if (answer() === null) {
-  <p class="sw-note">{{ words().loading }}</p>
+@if (answer() === null) {
+  @if (failed()) {
+    <p class="msg bad show" role="alert" data-test="sw-failed">{{ words().failed }}</p>
+  } @else {
+    <p class="sw-note">{{ words().loading }}</p>
+  }
 } @else {
+  <!-- A switch that failed leaves the list up, so trying again is one press. -->
+  @if (failed()) {
+    <p class="msg bad show" role="alert" data-test="sw-could-not-move">
+      {{ words().couldNotMove }}
+    </p>
+  }
   <ul class="sw-list">
     @for (row of rows(); track row.module) {
       <li class="sw-row">

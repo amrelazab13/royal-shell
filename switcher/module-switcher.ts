@@ -49,7 +49,10 @@ export function showsSwitcher(answer: SwitchableAnswer | null): boolean {
 export interface SwitcherWords {
   title: string;
   what: string;
+  /** The list could not be read. */
   failed: string;
+  /** The list is there, and the switch just pressed did not work. */
+  couldNotMove: string;
   loading: string;
 }
 
@@ -65,7 +68,7 @@ export class ModuleSwitcher {
   readonly words = input.required<SwitcherWords>();
   /** The reader's language, for which of the two names to show. */
   readonly arabic = input(false);
-  /** The host could not ask, or a switch it started failed. */
+  /** With no answer, the host could not ask; with one, the switch it started failed. */
   readonly failed = input(false);
 
   readonly chose = output<SwitchableModule>();

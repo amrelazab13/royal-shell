@@ -25,6 +25,7 @@ const WORDS: SwitcherWords = {
   title: 'Switch module',
   what: 'No password needed',
   failed: 'Could not ask',
+  couldNotMove: 'Could not move',
   loading: 'One moment',
 };
 
@@ -105,6 +106,15 @@ describe('ModuleSwitcher', () => {
     const { el } = await draw(null, { failed: true });
     expect(el.querySelector('[data-test="sw-failed"]')?.textContent).toContain('Could not ask');
     expect(el.querySelector('[data-test="sw-module"]')).toBeNull();
+  });
+
+  it('a switch that FAILED keeps the list up and says it could not move, not that it could not ask', async () => {
+    const { el } = await draw(answer([row({ module: 'me' })]), { failed: true });
+    expect(el.querySelector('[data-test="sw-could-not-move"]')?.textContent).toContain(
+      'Could not move',
+    );
+    expect(el.querySelector('[data-test="sw-failed"]')).toBeNull();
+    expect(el.querySelectorAll('[data-test="sw-module"]').length).toBe(1);
   });
 
   it('shows the ARABIC name when the page reads right to left', async () => {
