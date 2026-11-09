@@ -1,0 +1,13 @@
+// The small line under a value: the hour under a day, the sub-source under a
+// source, "Cairo time" under a label (bible, "The day with the hour under it").
+// Copied from the CRM's styles.scss, the reference; one meaning everywhere.
+.drv {
+  display: block;
+  font-size: 10px;
+  color: var(--ink-4);
+  margin-top: 1px;
+  font-family: Nunito, sans-serif;
+}
+html[lang='ar'] .drv {
+  font-family: Cairo, sans-serif;
+}

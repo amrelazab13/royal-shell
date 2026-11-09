@@ -62,6 +62,10 @@ header.top > [data-slot='online'] {
 header.top > [data-slot='bell'] {
   order: 60;
 }
+// Messages, Royal Me's (the global rule: a messages icon in every module).
+header.top > [data-slot='messages'] {
+  order: 65;
+}
 header.top > [data-slot='role'] {
   order: 70;
 }

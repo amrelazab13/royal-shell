@@ -25,6 +25,7 @@ const ORDER = [
   'search',
   'online',
   'bell',
+  'messages',
   'role',
   'language',
   'theme',
@@ -59,9 +60,15 @@ if (!shell || !existsSync(shell)) {
 const text = readFileSync(shell, 'utf8');
 const open = text.search(/<header[^>]*class="[^"]*\btop\b/);
 const close = text.indexOf('</header>', open);
-const header = text.slice(open, close);
+// Comments are not markup: a `data-slot="bell"` in a comment read as a slot
+// (Royal Me, 9 Nov 2026). Drop them, then read the attribute only inside a tag.
+const header = text
+  .slice(open, close)
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/^\s*\/\/.*$/gm, '');
 
-const slots = [...header.matchAll(/data-slot="([a-z]+)"/g)].map((m) => m[1]);
+const slots = [...header.matchAll(/<[a-zA-Z][^>]*?\sdata-slot="([a-z]+)"/g)].map((m) => m[1]);
 const found = [];
 
 for (const s of slots) if (!ORDER.includes(s)) found.push(`unknown slot "${s}"`);
