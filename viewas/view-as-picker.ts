@@ -147,6 +147,6 @@ export class ViewAsPicker {
 
   protected readonly showsNobody = computed(() => {
     const said = this.answer();
-    return !!said && said.people.length === 0;
+    return !!said && said.people.length === 0 && (said.groups?.length ?? 0) === 0;
   });
 }

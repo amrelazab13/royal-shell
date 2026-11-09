@@ -136,6 +136,11 @@ describe('ViewAsPicker', () => {
     expect(at(el, 'va-nobody')).toEqual([]);
   });
 
+  it('does not claim nobody over groups that are right there', async () => {
+    const { el } = await draw({ answer: answer({ people: [] }) });
+    expect(at(el, 'va-nobody')).toEqual([]);
+  });
+
   it('and says NOBODY when the answer really is empty', async () => {
     const { el } = await draw({ answer: answer({ people: [], groups: [] }) });
     expect(at(el, 'va-nobody')[0].textContent).toContain('Nobody matches');
