@@ -54,7 +54,7 @@ Only the parts that are genuinely the same everywhere:
   [arabic] (picked)>`. Each item carries its place as `group`, department first, as deep as the list
   needs; the control sorts every level in the reader's language, so no module sorts its own, and
   search reads both languages and the headings. Imports nothing of any module's.
-- `switcher/` — the masthead's Switch module list (A-338; the owner, 6 Nov: "only those
+- `switcher/` — the Switch module list, a row in the menu under the person's name (owner, 9 Nov) (A-338; the owner, 6 Nov: "only those
   modules would show to him/her"): `<royal-module-switcher [answer] [words] [arabic] [failed]
   (chose)>` draws exactly the rows HR's server sends, nothing greyed. `showsSwitcher(answer)` is
   the host's gate: load the list when the shell opens and show the button only on at least one row.

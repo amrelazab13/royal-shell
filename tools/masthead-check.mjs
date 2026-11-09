@@ -25,7 +25,6 @@ const ORDER = [
   'search',
   'online',
   'bell',
-  'switcher', // A-338, order 65 in masthead.scss
   'role',
   'language',
   'theme',

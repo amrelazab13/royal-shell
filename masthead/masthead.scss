@@ -62,14 +62,6 @@ header.top > [data-slot='online'] {
 header.top > [data-slot='bell'] {
   order: 60;
 }
-// A-338: moving between modules without typing a password again. It sits with
-// the account controls and not beside the module NAME, because it is a control
-// and not a title — and anything after the name is pushed to the end edge by
-// the `margin-inline-end: auto` below, so the name's own side is not somewhere
-// a control can be put without undoing that.
-header.top > [data-slot='switcher'] {
-  order: 65;
-}
 header.top > [data-slot='role'] {
   order: 70;
 }
