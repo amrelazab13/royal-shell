@@ -49,6 +49,10 @@ Only the parts that are genuinely the same everywhere:
   [failed] (search) (chose)>`. The host fetches HR's
   `auth/view-as/targets/?module=<slug>` and supplies every word; the control
   imports nothing but Angular. Lifted byte-for-byte from HR 9699a8fc.
+- `switcher/` — the masthead's Switch module list (A-338; the owner, 6 Nov: "only those
+  modules would show to him/her"): `<royal-module-switcher [answer] [words] [arabic] [failed]
+  (chose)>` draws exactly the rows HR's server sends, nothing greyed. `showsSwitcher(answer)` is
+  the host's gate: load the list when the shell opens and show the button only on at least one row.
 - `orgchart/` — HR's org chart, shared (O-368, the owner's rule 9):
   `<royal-org-chart [chart] [always] [keep]>` (`org-chart.ts`), the band-lane
   layout (`layout.ts`) and the narrowing (`narrow.ts`). `always` is required

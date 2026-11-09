@@ -63,23 +63,4 @@
   &:focus-visible {
     background: var(--surface-2);
   }
-
-  /* A row HR refused. It is a `span`, not a disabled button: the reason is
-   * the point, and a disabled control invites the press anyway. */
-  &.is-off {
-    cursor: default;
-    color: var(--ink-4);
-
-    &:hover {
-      background: none;
-    }
-
-    small {
-      display: block;
-      font-size: 0.68rem;
-      color: var(--ink-4);
-      white-space: normal;
-      line-height: 1.3;
-    }
-  }
 }
