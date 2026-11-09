@@ -42,7 +42,7 @@ export interface SwitchableAnswer {
 /** Whether the host shows the button: at least one row. Not loaded yet, or not
  *  loaded at all, is `null`, and that shows no button either. */
 export function showsSwitcher(answer: SwitchableAnswer | null): boolean {
-  return (answer?.modules.length ?? 0) > 0;
+  return (answer?.modules?.length ?? 0) > 0;
 }
 
 /** Every word this control says, supplied by whoever hosts it. */

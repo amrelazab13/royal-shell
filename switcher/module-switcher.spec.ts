@@ -53,6 +53,11 @@ describe('showsSwitcher', () => {
   it('shows no button while loading, or after failing: the host holds null', () => {
     expect(showsSwitcher(null)).toBe(false);
   });
+
+  it('says no to an answer with no modules, rather than throwing in the template', () => {
+    expect(showsSwitcher({} as SwitchableAnswer)).toBe(false);
+  });
+
 });
 
 describe('ModuleSwitcher', () => {
