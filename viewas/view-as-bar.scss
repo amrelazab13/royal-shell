@@ -1,7 +1,7 @@
 // The bar shown while viewing as somebody, the CRM's shape for every module
 // (owner, 10 Nov 2026: Royal Me's was "a very weird banner, not like crm").
 // Markup: <div class="previewbar"><icon eye/><span>{Viewing as} <b><bdi>{name}</bdi></b> · {read-only words}</span>
-//         <button class="btn sec">{Stop previewing}</button></div>
+//         <button>{x} {Stop previewing}</button></div>   (the module's own button class)
 // Words from DICTIONARY.md; copied from crm:src/app/layout/shell.scss.
 .previewbar {
   display: flex;
@@ -21,8 +21,10 @@
   b {
     color: var(--ink);
   }
-  .btn {
+  // The Stop button: the module's own button class, at the end edge. Never
+  // shorter than the tap target (Royal Me, 10 Nov 2026: 26px was below --touch).
+  > button {
     margin-inline-start: auto;
-    height: 26px;
+    min-block-size: var(--touch, 26px);
   }
 }
