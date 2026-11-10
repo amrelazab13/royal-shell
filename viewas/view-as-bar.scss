@@ -25,6 +25,13 @@
   // shorter than the tap target (Royal Me, 10 Nov 2026: 26px was below --touch).
   > button {
     margin-inline-start: auto;
-    min-block-size: var(--touch, 26px);
+  }
+  // The tap target only where there is a finger: on a desk the bar stays the
+  // CRM's compact height even in a module whose own --touch is 48px everywhere
+  // (Royal Me, 10 Nov 2026: 48px on a desk made the bar 63px, "not like crm").
+  @media (pointer: coarse) {
+    > button {
+      min-block-size: var(--touch, 48px);
+    }
   }
 }
