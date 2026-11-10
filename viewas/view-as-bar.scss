@@ -25,6 +25,10 @@
   // shorter than the tap target (Royal Me, 10 Nov 2026: 26px was below --touch).
   > button {
     margin-inline-start: auto;
+    // One line at any width: squeezed to 74px on a phone it broke mid-phrase
+    // (Royal Me, 10 Nov 2026).
+    flex: none;
+    white-space: nowrap;
   }
   // The tap target only where there is a finger: on a desk the bar stays the
   // CRM's compact height even in a module whose own --touch is 48px everywhere

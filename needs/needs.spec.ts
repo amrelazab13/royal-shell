@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { DestroyRef, inject, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { NeedsAnswer, needsCount, needsLabel, needsState } from './needs';
@@ -80,5 +80,20 @@ describe('needsState', () => {
     expect(asked).toBe(3);
     expect(needs.count('leads')).toBe(0);
     expect(needs.asOf()).toBe('C');
+  });
+
+  it('a fetch that injects lazily still works on every later ask, not only the first', async () => {
+    let asked = 0;
+    const needs = TestBed.runInInjectionContext(() =>
+      needsState(() => {
+        inject(DestroyRef); // throws NG0203 outside an injection context
+        asked++;
+        return Promise.resolve({ as_of: String(asked), items: [{ key: 'leads.overdue', count: asked }] });
+      }, 60_000),
+    );
+    await needs.refresh(); // outside TestBed's context, as a timer would call it
+    await needs.refresh();
+    expect(asked).toBeGreaterThanOrEqual(3);
+    expect(needs.count('leads')).toBe(asked);
   });
 });

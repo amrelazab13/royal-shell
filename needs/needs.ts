@@ -1,4 +1,4 @@
-import { DestroyRef, Signal, inject, signal } from '@angular/core';
+import { DestroyRef, Injector, Signal, inject, runInInjectionContext, signal } from '@angular/core';
 
 /**
  * "What needs me": the red counters that lead a person to the thing they
@@ -92,6 +92,11 @@ export function needsState(fetch: () => Promise<NeedsAnswer>, everyMs = 30_000):
   const asOf = signal<string | null>(null);
   let inFlight: Promise<void> | null = null;
   let queued: Promise<void> | null = null;
+  // Every later call (the timer, a tab coming back, refresh()) runs outside the
+  // injection context, so a fetch that injects lazily threw NG0203 and the
+  // counters never moved after the first load (Royal Me, 10 Nov 2026). Run it
+  // in the shell's injector, and turn a synchronous throw into a rejection.
+  const injector = inject(Injector);
 
   const refresh = (): Promise<void> => {
     // One question at a time, so an old answer can never land on top of a
@@ -104,7 +109,8 @@ export function needsState(fetch: () => Promise<NeedsAnswer>, everyMs = 30_000):
         return refresh();
       }));
     }
-    inFlight = fetch()
+    inFlight = Promise.resolve()
+      .then(() => runInInjectionContext(injector, fetch))
       .then((answer) => {
         items.set(Array.isArray(answer?.items) ? answer.items : []);
         asOf.set(answer?.as_of ?? null);
