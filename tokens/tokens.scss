@@ -203,3 +203,13 @@
   --sh-2: 0 2px 6px rgba(4, 22, 31, 0.07), 0 18px 40px -26px rgba(4, 22, 31, 0.35);
   --sh-pop: 0 4px 10px rgba(4, 22, 31, 0.1), 0 24px 60px -20px rgba(4, 22, 31, 0.35);
 }
+
+// The smallest tap target, on a touch screen only, so a desk keeps the CRM's
+// compact rows. Royal Me's 48px (its own styles.scss) is the reference; the
+// View-as bar's Stop button reads it (CEO portal, 10 Nov 2026: --touch was
+// used and defined nowhere, so its fallback always won).
+@media (pointer: coarse) {
+  :root {
+    --touch: 48px;
+  }
+}
