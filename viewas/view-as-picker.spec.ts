@@ -174,8 +174,8 @@ describe('ViewAsPicker', () => {
 describe('lookName', () => {
   const base = {
     employee_hr_id: 'hr-1',
-    full_name_en: 'A Test Card',
-    full_name_ar: 'بطاقة اختبار',
+    full_name_en: 'test card 7',
+    full_name_ar: 'بطاقة رقم 7',
     title_en: '',
     title_ar: '',
     department: '',
