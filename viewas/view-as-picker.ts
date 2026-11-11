@@ -21,13 +21,23 @@ import { FormsModule } from '@angular/forms';
 
 /** One person, exactly as `auth/view-as/targets/` serves them. */
 export interface ViewAsPerson {
-  username: string;
+  /** Absent for a person with no CRM username (80 of 110, 11 Nov 2026): look through `lookName`. */
+  username?: string;
   employee_hr_id: string;
   full_name_en: string;
   full_name_ar: string;
   title_en: string;
   title_ar: string;
   department: string;
+}
+
+/**
+ * The one name a look is entered under: the username, else HR's id, else
+ * nothing, and nothing means no look (Royal Me, 11 Nov 2026: an absent
+ * username became the header "undefined" and HR refused every page).
+ */
+export function lookName(person: ViewAsPerson): string | null {
+  return person.username?.trim() || person.employee_hr_id?.trim() || null;
 }
 
 /** The people under one title, inside one department. */
@@ -113,7 +123,7 @@ export class ViewAsPicker {
 
   protected name(person: ViewAsPerson): string {
     const first = this.arabic() ? person.full_name_ar : person.full_name_en;
-    return first || person.full_name_en || person.full_name_ar || person.username;
+    return first || person.full_name_en || person.full_name_ar || lookName(person) || '';
   }
 
   protected title(person: ViewAsPerson): string {

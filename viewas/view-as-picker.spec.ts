@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ViewAsAnswer, ViewAsPicker, ViewAsPerson, ViewAsWords } from './view-as-picker';
+import { lookName, ViewAsAnswer, ViewAsPicker, ViewAsPerson, ViewAsWords } from './view-as-picker';
 
 /**
  * O-830b. The control the owner asked for, tested ON ITS OWN.
@@ -168,5 +168,22 @@ describe('ViewAsPicker', () => {
       arabic: true,
     });
     expect(at(el, 'va-person')[0].textContent).toContain('Agent Alpha');
+  });
+});
+
+describe('lookName', () => {
+  const base = {
+    employee_hr_id: 'hr-1',
+    full_name_en: 'A Test Card',
+    full_name_ar: 'بطاقة اختبار',
+    title_en: '',
+    title_ar: '',
+    department: '',
+  };
+  it('names a look by the username, else HR\'s id, else nobody', () => {
+    expect(lookName({ ...base, username: 'a.card' })).toBe('a.card');
+    expect(lookName({ ...base })).toBe('hr-1');
+    expect(lookName({ ...base, username: '  ' })).toBe('hr-1');
+    expect(lookName({ ...base, employee_hr_id: '' })).toBeNull();
   });
 });
