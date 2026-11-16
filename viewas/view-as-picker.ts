@@ -92,9 +92,9 @@ export interface ViewAsWords {
   nobody: string;
   failed: string;
   loading: string;
-  /** What to draw in place of a forbidden word (the module's "Technical
-   *  account"). Optional so older hosts still compile; absent, it draws nothing. */
-  technical?: string;
+  /** What to draw in place of a forbidden word (DICTIONARY: "Technical
+   *  account" / "حساب تقني"). REQUIRED: a host that forgets it must not compile, or a caught value draws blank. */
+  technical: string;
 }
 
 @Component({
@@ -145,7 +145,7 @@ export class ViewAsPicker {
   /** Every value drawn passes here: the guard follows the data into whatever
    *  shape it arrives in, so no host has to remember to walk it. */
   protected shown(value: string | null | undefined): string {
-    return readable(value, this.words().technical ?? '');
+    return readable(value, this.words().technical);
   }
 
   protected name(person: ViewAsPerson): string {

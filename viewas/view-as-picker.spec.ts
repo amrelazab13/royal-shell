@@ -18,6 +18,7 @@ describe('ViewAsPicker', () => {
     nobody: 'Nobody matches.',
     failed: 'Could not open those eyes.',
     loading: 'Loading…',
+    technical: 'Technical account',
   };
 
   const person = (extra: Partial<ViewAsPerson> = {}): ViewAsPerson => ({
