@@ -161,6 +161,91 @@ describe('ViewAsPicker', () => {
     expect(at(el, 'va-person')[0].textContent).not.toContain('Agent Alpha');
   });
 
+  describe('sections (O-891)', () => {
+    // Invented people in invented sections: a fixture never uses a real name.
+    const inUnit = (id: string, full: string) =>
+      person({ employee_hr_id: id, username: id, full_name_en: full });
+    const withUnits = () =>
+      answer({
+        groups: [
+          {
+            department: 'engineering',
+            name_en: 'Engineering',
+            name_ar: 'الهندسة',
+            titles: [],
+            units: [
+              {
+                unit: 'u-bridges',
+                name_en: 'Bridges',
+                name_ar: 'الجسور',
+                kind: 'section',
+                titles: [{ title: 'Site Engineer', people: [inUnit('b1', 'Bridge Person')] }],
+              },
+              {
+                unit: 'u-tunnels',
+                name_en: 'Tunnels',
+                name_ar: 'الأنفاق',
+                kind: 'arm',
+                titles: [{ title: 'Site Engineer', people: [inUnit('t1', 'Tunnel Person')] }],
+              },
+              {
+                unit: null,
+                name_en: '',
+                name_ar: '',
+                titles: [{ title: 'Site Engineer', people: [inUnit('n1', 'Loose Person')] }],
+              },
+            ],
+          },
+        ],
+      });
+
+    async function opened(extra: Partial<Record<string, unknown>> = {}) {
+      const drawn = await draw({ answer: withUnits(), ...extra });
+      at(drawn.el, 'va-department')[0].click();
+      drawn.fixture.detectChanges();
+      return drawn;
+    }
+
+    it('gives each section its own heading, in the order HR sent', async () => {
+      const { el } = await opened();
+      expect(at(el, 'va-unit').map((u) => u.textContent?.trim())).toEqual(['Bridges', 'Tunnels']);
+    });
+
+    it('puts each person under their own section, not mixed together', async () => {
+      const { el } = await opened();
+      const order = [...el.querySelectorAll<HTMLElement>('[data-test="va-unit"], [data-test="va-person"]')].map(
+        (n) => n.textContent?.trim(),
+      );
+      expect(order).toEqual(['Bridges', 'Bridge Person', 'Tunnels', 'Tunnel Person', 'Loose Person']);
+    });
+
+    it('draws NO heading for the people in no section', async () => {
+      const { el } = await opened();
+      // Two headings for three groups: the null unit has none, never a "—".
+      expect(at(el, 'va-unit').length).toBe(2);
+      expect(el.textContent).not.toContain('—');
+    });
+
+    it('counts everyone in every section on the closed heading', async () => {
+      const { el } = await draw({ answer: withUnits() });
+      expect(at(el, 'va-department')[0].textContent).toContain('3');
+    });
+
+    it('names a section in Arabic for an Arabic reader', async () => {
+      const { el } = await opened({ arabic: true });
+      expect(at(el, 'va-unit')[0].textContent).toContain('الجسور');
+      expect(at(el, 'va-unit')[0].textContent).not.toContain('Bridges');
+    });
+
+    it('still draws an older HR answer that has titles and no units', async () => {
+      const { fixture, el } = await draw({ answer: answer() });
+      at(el, 'va-department')[0].click();
+      fixture.detectChanges();
+      expect(at(el, 'va-unit')).toEqual([]);
+      expect(at(el, 'va-person')[0].textContent).toContain('Agent Alpha');
+    });
+  });
+
   it('falls back to the other language rather than drawing nothing', async () => {
     const only = person({ full_name_ar: '', title_ar: '' });
     const { el } = await draw({

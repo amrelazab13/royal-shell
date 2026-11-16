@@ -38,19 +38,28 @@
       </button>
 
       @if (isOpen(group.department)) {
-        @for (byTitle of group.titles; track byTitle.title) {
-          <div class="va-title" data-test="va-title">
-            <bdi>{{ byTitle.title }}</bdi>
-          </div>
-          @for (person of byTitle.people; track person.employee_hr_id) {
-            <button
-              type="button"
-              class="va-person"
-              data-test="va-person"
-              (click)="chose.emit(person)"
-            >
-              <bdi>{{ name(person) }}</bdi>
-            </button>
+        @for (unit of sections(group); track $index) {
+          <!-- A section gets its own heading; the people in no section sit
+               straight under the department, never under a "—" heading. -->
+          @if (unit.unit) {
+            <div class="va-unit" data-test="va-unit">
+              <bdi>{{ unitName(unit) }}</bdi>
+            </div>
+          }
+          @for (byTitle of unit.titles; track byTitle.title) {
+            <div class="va-title" data-test="va-title">
+              <bdi>{{ byTitle.title }}</bdi>
+            </div>
+            @for (person of byTitle.people; track person.employee_hr_id) {
+              <button
+                type="button"
+                class="va-person"
+                data-test="va-person"
+                (click)="chose.emit(person)"
+              >
+                <bdi>{{ name(person) }}</bdi>
+              </button>
+            }
           }
         }
       }

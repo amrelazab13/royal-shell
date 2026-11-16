@@ -92,6 +92,15 @@
   }
 }
 
+/* A section heading (O-891): between the department and its titles. */
+.va-unit {
+  padding-block: 8px 2px;
+  padding-inline: 16px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
 .va-title {
   padding: 4px 8px 2px 24px;
   font-size: 0.7rem;

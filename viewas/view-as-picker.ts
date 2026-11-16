@@ -46,12 +46,29 @@ export interface ViewAsTitleGroup {
   people: ViewAsPerson[];
 }
 
-/** One department, and the titles inside it. */
+/**
+ * One section or arm inside a department (O-891). The owner, 16 Nov 2026:
+ * "always separate between sections (e.g. broker section separate from
+ * sales, tele sales separate as well)". HR orders them; `unit: null` (last)
+ * holds the people in no unit, drawn under the department with NO heading.
+ * `kind` is for wording only, never for grouping.
+ */
+export interface ViewAsUnitGroup {
+  unit: string | null;
+  name_en: string;
+  name_ar: string;
+  kind?: string;
+  titles: ViewAsTitleGroup[];
+}
+
+/** One department, and the sections (or, from an older HR, the titles) inside it. */
 export interface ViewAsDepartmentGroup {
   department: string;
   name_en: string;
   name_ar: string;
   titles: ViewAsTitleGroup[];
+  /** Since O-891. Absent from an HR that predates it: then `titles` is drawn. */
+  units?: ViewAsUnitGroup[];
 }
 
 /**
@@ -142,7 +159,23 @@ export class ViewAsPicker {
    *  ORDERS anything here — the server sorts alphabetically — it only says
    *  how much is behind a closed heading. */
   protected howMany(group: ViewAsDepartmentGroup): number {
-    return group.titles.reduce((all, one) => all + one.people.length, 0);
+    return this.sections(group).reduce(
+      (all, unit) => all + unit.titles.reduce((n, one) => n + one.people.length, 0),
+      0,
+    );
+  }
+
+  /** The department's sections in HR's order; an older HR's flat titles read
+   *  as one unheaded section, so both answers draw through one path. */
+  protected sections(group: ViewAsDepartmentGroup): ViewAsUnitGroup[] {
+    return group.units?.length
+      ? group.units
+      : [{ unit: null, name_en: '', name_ar: '', titles: group.titles }];
+  }
+
+  protected unitName(unit: ViewAsUnitGroup): string {
+    const first = this.arabic() ? unit.name_ar : unit.name_en;
+    return first || unit.name_en || unit.name_ar || '';
   }
 
   protected readonly showsGroups = computed(() => {
