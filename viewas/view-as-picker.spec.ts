@@ -246,6 +246,58 @@ describe('ViewAsPicker', () => {
     });
   });
 
+  describe('the forbidden words never draw, in any shape', () => {
+    const POISON = 'Super Admin';
+    const WORDS_T = { ...WORDS, technical: 'Technical account' };
+    const poisoned = (): ViewAsAnswer =>
+      answer({
+        groups: [
+          {
+            department: 'engineering',
+            name_en: POISON,
+            name_ar: 'الهندسة',
+            titles: [],
+            units: [
+              {
+                unit: 'u-x',
+                name_en: 'super_admin',
+                name_ar: 'قسم',
+                titles: [
+                  {
+                    title: 'Super.Admin',
+                    people: [person({ employee_hr_id: 'p1', full_name_en: POISON, title_en: POISON })],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+    it('inside a section: department, section, title and person all guarded', async () => {
+      const { fixture, el } = await draw({ answer: poisoned(), words: WORDS_T });
+      at(el, 'va-department')[0].click();
+      fixture.detectChanges();
+      // THE CONTROL: the section and the person were drawn, so the guard ran
+      // over drawn values, not over an empty list.
+      expect(at(el, 'va-unit').length).toBe(1);
+      expect(at(el, 'va-person').length).toBe(1);
+      expect(el.textContent).not.toMatch(/super[\s._-]*admin/i);
+      expect(el.textContent).toContain('Technical account');
+    });
+
+    it('in a search, the flat list is guarded too', async () => {
+      const flat = answer({
+        searching: true,
+        groups: [],
+        people: [person({ full_name_en: POISON, title_en: POISON })],
+      });
+      const { el } = await draw({ answer: flat, words: WORDS_T });
+      expect(at(el, 'va-person').length).toBe(1);
+      expect(el.textContent).not.toMatch(/super[\s._-]*admin/i);
+    });
+  });
+
   it('falls back to the other language rather than drawing nothing', async () => {
     const only = person({ full_name_ar: '', title_ar: '' });
     const { el } = await draw({

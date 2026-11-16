@@ -1,5 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { readable } from '../forbidden';
 
 /**
  * The View-as picker: department → title → people, collapsible.
@@ -91,6 +92,9 @@ export interface ViewAsWords {
   nobody: string;
   failed: string;
   loading: string;
+  /** What to draw in place of a forbidden word (the module's "Technical
+   *  account"). Optional so older hosts still compile; absent, it draws nothing. */
+  technical?: string;
 }
 
 @Component({
@@ -138,21 +142,27 @@ export class ViewAsPicker {
     this.search.emit(value);
   }
 
+  /** Every value drawn passes here: the guard follows the data into whatever
+   *  shape it arrives in, so no host has to remember to walk it. */
+  protected shown(value: string | null | undefined): string {
+    return readable(value, this.words().technical ?? '');
+  }
+
   protected name(person: ViewAsPerson): string {
     const first = this.arabic() ? person.full_name_ar : person.full_name_en;
-    return first || person.full_name_en || person.full_name_ar || lookName(person) || '';
+    return this.shown(first || person.full_name_en || person.full_name_ar || lookName(person) || '');
   }
 
   protected title(person: ViewAsPerson): string {
     const first = this.arabic() ? person.title_ar : person.title_en;
-    return first || person.title_en || person.title_ar || '';
+    return this.shown(first || person.title_en || person.title_ar || '');
   }
 
   protected departmentName(group: ViewAsDepartmentGroup): string {
     const first = this.arabic() ? group.name_ar : group.name_en;
     // A person with no department: the server sorts them last and sends no
     // name. Saying nothing is better than inventing a heading for them.
-    return first || group.name_en || group.name_ar || '';
+    return this.shown(first || group.name_en || group.name_ar || '');
   }
 
   /** How many people are under a department, for the heading. A count never
@@ -175,7 +185,7 @@ export class ViewAsPicker {
 
   protected unitName(unit: ViewAsUnitGroup): string {
     const first = this.arabic() ? unit.name_ar : unit.name_en;
-    return first || unit.name_en || unit.name_ar || '';
+    return this.shown(first || unit.name_en || unit.name_ar || '');
   }
 
   protected readonly showsGroups = computed(() => {

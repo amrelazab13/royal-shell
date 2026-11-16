@@ -11,6 +11,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { FORBIDDEN_WORDS } from '../forbidden';
 import { RouterLink } from '@angular/router';
 
 import { bandClass } from '../band-colour';
@@ -99,7 +100,7 @@ export const CHART_WORDS: Record<string, { en: string; ar: string }> = {
  * 2026: "⌖ 7 · Band Seven  Super Admin  Super Admin" beside a list that read
  * "Technical account"). Guarded HERE, once, so no consumer has to find it.
  */
-const FORBIDDEN = /super[\s._-]*admin|سوبر\s*[أا]دمن/i;
+const FORBIDDEN = FORBIDDEN_WORDS;
 
 /** What the template asks of words: HR's `t` and `pick`, nothing more. */
 export interface ChartWords {
