@@ -85,19 +85,26 @@ for (const [, name, value] of declarations.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+
 // "#fff is --surface" — and telling somebody to replace white with a token
 // that is dark navy half the time is worse advice than saying nothing. One
 // theme decides the names; the rest are that theme's alternatives.
-const defaultBlock = declarations.slice(
-  declarations.indexOf(':root'),
-  (() => {
-    const i = declarations.search(/@media|\[data-theme/);
-    return i === -1 ? declarations.length : i;
-  })(),
-);
+//
+// The block is the first `:root` rule, to its closing brace. It used to end at
+// the first `@media` or `[data-theme`, and since 25 Sep 2026 the default block
+// opens `:root, [data-theme='dark'] {`, so it ended before its own brace: no
+// value was read and rule 2 passed every hardcoded hex in every module for
+// seven weeks (found by gates-can-fail.test.mjs, 17 Nov 2026). Token blocks
+// hold no nested braces, so the first `}` closes it.
+const rootAt = declarations.indexOf(':root');
+const defaultBlock = rootAt === -1 ? '' : declarations.slice(rootAt, declarations.indexOf('}', rootAt));
 const byValue = new Map();
 for (const [, name, value] of defaultBlock.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)) {
   const clean = value.trim();
   if (/^#[0-9a-f]{3,8}$/i.test(clean) && !byValue.has(normaliseHex(clean))) {
     byValue.set(normaliseHex(clean), name);
   }
+}
+// A check that read no colour cannot say "none hardcoded" (F40).
+if (byValue.size === 0) {
+  console.error(red(`\nCOULD NOT CHECK: no colour token read from the default block of ${TOKENS}.`));
+  process.exit(2);
 }
 
 const problems = [];
@@ -192,7 +199,9 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
       }
     }
 
-    for (const [hex] of line.matchAll(/#[0-9a-f]{3}(?:[0-9a-f]{3}(?:[0-9a-f]{2})?)?\b/gi)) {
+    // Code, not prose: a comment quoting the hex it replaced is not a hardcode
+    // (Royal Me's styles.scss tells that story at line 54).
+    for (const [hex] of code.matchAll(/#[0-9a-f]{3}(?:[0-9a-f]{3}(?:[0-9a-f]{2})?)?\b/gi)) {
       const token = byValue.get(normaliseHex(hex));
       if (token) {
         problems.push({
@@ -260,7 +269,7 @@ for (const file of walk(join(ROOT, LOOK_IN))) {
 
 if (!problems.length) {
   console.log(
-    `Design system: clean. ${named.size} shared tokens, none redefined and none hardcoded; no component rule aimed at <html>.`,
+    `Design system: clean. ${named.size} shared tokens (${byValue.size} colours), none redefined and none hardcoded; no component rule aimed at <html>.`,
   );
   process.exit(0);
 }
