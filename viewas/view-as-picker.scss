@@ -72,8 +72,8 @@
 
 /* The chevron turns rather than being swapped for another glyph, so it
    cannot disagree with the state it is drawn from. `rotate` is logical
-   under RTL only if the start state mirrors too — hence `scaleX` through
-   the sheet's own direction rather than a hard-coded 90deg. */
+   under RTL only if the start state mirrors too: here the BROWSER mirrors the
+   start state (the glyph is Bidi-mirrored), so RTL only reverses the turn. */
 .va-chev {
   display: inline-block;
   transition: transform var(--fast, 120ms) ease;
@@ -84,12 +84,13 @@
   }
 }
 
-[dir='rtl'] .va-chev {
-  transform: scaleX(-1);
-
-  &.on {
-    transform: scaleX(-1) rotate(90deg);
-  }
+/* NO FLIP UNDER RTL (17 Nov 2026, CEO portal's finding). The glyph is `›`,
+   U+203A, which is Bidi-mirrored: the browser already draws it pointing left
+   in Arabic, so a `scaleX` here turned it back to point right, and the open
+   state then pointed UP. Closed needs nothing; open turns the left-pointing
+   glyph the other way, down. */
+[dir='rtl'] .va-chev.on {
+  transform: rotate(-90deg);
 }
 
 /* A section heading (O-891): between the department and its titles. */
