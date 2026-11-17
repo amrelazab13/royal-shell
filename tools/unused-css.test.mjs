@@ -55,4 +55,65 @@ try {
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
+
+/**
+ * F286 (the CEO portal, 12 Oct 2026): a bulk delete cut a slice ending
+ * mid-line and left `} /* detail tabs … {` where `*\/` and `.dtabs {` had
+ * been. Sass reads from that `/*` to the NEXT comment's `*\/`, so 640 lines
+ * stopped compiling for a fortnight, and `--strict` stayed green: the gate
+ * agreed with Sass, so the swallowed names were not dead, they were gone.
+ * The sheet below is that shape: clean, it passes; with the one clause
+ * planted, the gate must fail and name the line.
+ */
+const CLEAN = [
+  '/* The page frame */',
+  '.frame { display: grid; }',
+  '.frame-head { padding: 4px; } /* the tabs — each section is a tab */',
+  '.tabs {',
+  '  display: flex;',
+  '}',
+  '.tabs-item { color: inherit; }',
+  '/* Footer */',
+  '.foot { margin: 0; }',
+].join('\n');
+const USES = '<div class="frame frame-head tabs tabs-item foot late"></div>\n';
+const run = (sheet, ...args) => {
+  const d = mkdtempSync(join(tmpdir(), 'unused-css-f286-'));
+  try {
+    mkdirSync(join(d, 'src'));
+    writeFileSync(join(d, 'src/styles.scss'), sheet);
+    writeFileSync(join(d, 'src/app.html'), USES);
+    return spawnSync(process.execPath, [TOOL, ...args], { cwd: d, encoding: 'utf8' });
+  } finally {
+    rmSync(d, { recursive: true, force: true });
+  }
+};
+const plant = (from, to) => {
+  const out = CLEAN.replace(from, to);
+  if (out === CLEAN) throw new Error(`the plant did not apply: ${from}`);
+  return out;
+};
+const check = (cond, msg) => {
+  if (!cond) {
+    failed += 1;
+    console.error(`FAIL ${msg}`);
+  } else console.log(`ok   ${msg}`);
+};
+{
+  const strict = (sheet) => run(sheet, '--strict');
+  const r = strict(CLEAN + '\n.late { a: b; }');
+  check(r.status === 0, `a sheet whose comments all close passes --strict (exit ${r.status})`);
+  // The real F286 clause: the comment's `*/` and the next selector cut away.
+  const broken = plant('each section is a tab */\n.tabs {', 'each section is a tab {') + '\n.late { a: b; }';
+  const cut = strict(broken);
+  check(cut.status === 1, `a comment that runs past another comment's opening fails (exit ${cut.status})`);
+  check(/styles\.scss:3\b/.test(cut.stdout + cut.stderr), 'and names the line the comment opens on, 3');
+  // And one never closed at all: the browser drops the rest of the file.
+  const open = strict(CLEAN + '\n/* a trailing note\n.late { a: b; }');
+  check(open.status === 1, `a comment never closed fails (exit ${open.status})`);
+  check(/styles\.scss:10\b/.test(open.stdout + open.stderr), 'and names the line it opens on, 10');
+  // Report-only mode is no excuse: a swallowed rule is not a judgement call.
+  const lax = run(broken);
+  check(lax.status === 1, `and fails without --strict too (exit ${lax.status})`);
+}
 process.exit(failed ? 1 : 0);

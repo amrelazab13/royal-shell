@@ -17,7 +17,8 @@
  *
  *   node src/shared/tools/unused-css.mjs [stylesheet …]
  *
- * Default: `src/styles.scss`. Exits 0 unless `--strict` (see below).
+ * Default: `src/styles.scss`. Exits 0 unless `--strict` (see below), or a
+ * comment swallows rules (F286, below), which exits 1 in either mode.
  *
  * **It reads CLASS names only.** An attribute condition is invisible to it:
  * `.m-input[aria-invalid='true']` counts as alive while `.m-input` is used,
@@ -76,6 +77,42 @@ function walk(dir, out = []) {
 const keepLines = (m) => m.replace(/[^\n]/g, '');
 const uncomment = (css) =>
   css.replace(/\/\*[\s\S]*?\*\//g, keepLines).replace(/(^|\s)\/\/.*$/gm, '$1');
+
+/**
+ * F286 (the CEO portal, 12 Oct 2026): a bulk delete left `} /* detail tabs {`
+ * where a comment's `*\/` and the next selector had been. Sass reads from that
+ * `/*` to the NEXT comment's `*\/`: 640 lines stopped compiling for a
+ * fortnight while `--strict` read "0 dead", because this tool agreed with Sass
+ * and the swallowed names were not dead, they were gone. So a comment that
+ * runs past another comment's opening, or never closes, is a finding of its
+ * own, in either mode: it is not a judgement call. A `//` line comment in
+ * .scss is skipped whole, as Sass skips it. Checked against every module
+ * sheet (249, 17 Nov 2026): none trips it; the CEO portal's pre-fix sheet
+ * trips it at all five places.
+ */
+function swallowing(css, scss) {
+  const out = [];
+  const at = (i) => css.slice(0, i).split('\n').length;
+  const re = scss ? /\/\*|(?:^|(?<=\s))\/\/[^\n]*/gm : /\/\*/g;
+  for (let m; (m = re.exec(css)); ) {
+    if (m[0] !== '/*') continue;
+    const end = css.indexOf('*/', m.index + 2);
+    if (end === -1) {
+      out.push({ line: at(m.index), why: 'a comment that never closes: the rest of the sheet is not read' });
+      break;
+    }
+    const inner = css.slice(m.index + 2, end).indexOf('/*');
+    if (inner !== -1) {
+      out.push({
+        line: at(m.index),
+        why: `a comment that runs to line ${at(end)}, past another comment opening at line ${at(m.index + 2 + inner)}: every rule between is swallowed`,
+      });
+    }
+    re.lastIndex = end + 2;
+  }
+  return out;
+}
+const swallowed = [];
 
 const sources = walk(join(ROOT, LOOK_IN)).filter(
   (file) => !SHEETS.some((sheet) => file.endsWith(sheet.replace(/^\.\//, ''))),
@@ -137,6 +174,7 @@ for (const sheet of SHEETS) {
     unread.push(sheet);
     continue;
   }
+  for (const row of swallowing(css, sheet.endsWith('.scss'))) swallowed.push({ sheet, ...row });
   const lines = css.split('\n');
   const seen = new Set();
   // A family built at run time (`'st-' + state`) is declared once, beside its
@@ -170,6 +208,12 @@ for (const sheet of SHEETS) {
   });
 }
 
+if (swallowed.length) {
+  console.error(bold(`\n${swallowed.length} comment(s) swallow rules the browser never sees (F286):\n`));
+  for (const row of swallowed) console.error(`  ${row.sheet}:${row.line}  ${row.why}`);
+  console.error('\n  Close the comment where it was meant to end. This fails with or without --strict.\n');
+  process.exit(1);
+}
 if (unread.length || total === 0) {
   console.error(
     bold(
