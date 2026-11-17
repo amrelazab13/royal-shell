@@ -68,9 +68,13 @@ function withoutPrint(css) {
 }
 const globalCss = withoutPrint(strip(readFileSync(globalSheet, 'utf8')));
 
+// The selector is what follows the last `;`: every module's sheet opens with
+// `@use 'shared/fonts/fonts';`, and the match took that line as part of the
+// next selector, so the first rule of the sheet was never a bare global class
+// (gates-can-fail.test.mjs, 17 Nov 2026). Same for a `$var: x;` or `@forward`.
 function rules(css) {
   return [...strip(css).matchAll(/([^@{}\n][^{}]*)\{([^{}]*)\}/g)].map(([, sel, body]) => ({
-    sel: sel.trim(),
+    sel: sel.split(';').pop().trim(),
     props: [...body.matchAll(/([a-z-]+)\s*:\s*([^;]+);/g)].map(([, p, v]) => [p.trim(), v.trim()]),
   }));
 }
