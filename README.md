@@ -95,6 +95,11 @@ Only the parts that are genuinely the same everywhere:
   SERVED (the phone: 917 rules before, 725 after): same rendering,
   demonstrably different stylesheet. And read every place the app builds a
   class name; no report can do that for you.
+- `tools/gates-can-fail.test.mjs` — every gate above, run as the modules' CI runs it
+  over one module-shaped tree: clean it must pass and say what it read; with ONE wrong
+  clause planted it must fail and name it (a crash is not a pass). A gate change comes
+  with its plant here. Beside it, `unused-css.test.mjs` holds the F286 swallowed
+  comment. All `tools/*.test.mjs` run on every push (`.github/workflows/self-tests.yml`).
 - `tools/fixture-server.mjs` — look at a module's real production build in a
   browser without anyone's password: serves `dist/` on 127.0.0.1 only, with
   API answers from the module's own `fixtures/local.mjs` (**invented people
