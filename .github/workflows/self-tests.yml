@@ -1,0 +1,32 @@
+# The gates' own tests, on every push. Each module runs the gates; nothing ran
+# the tests that prove the gates can fail, so a gate could go blind here and
+# every module would inherit it green (design-system-check's hex rule read no
+# colour for seven weeks; unused-css passed F286). Plain node, no install.
+name: self-tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  self-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Every tools/*.test.mjs, each held to its own exit code
+        run: |
+          n=0
+          for t in tools/*.test.mjs; do
+            echo "::group::$t"
+            node "$t" || { echo "::error::$t failed"; exit 1; }
+            echo "::endgroup::"
+            n=$((n + 1))
+          done
+          # A loop over nothing passes: say how many ran, and refuse too few.
+          [ "$n" -ge 4 ] || { echo "::error::only $n test file(s) found"; exit 2; }
+          echo "$n test files passed"
+      - name: The icon check's self-test
+        run: node tools/check-icons-exist.mjs --self-test
