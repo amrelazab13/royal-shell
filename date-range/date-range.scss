@@ -318,7 +318,10 @@
     line-height: 1.2;
   }
 
-  .chev {
+  // `drv-chev`, never a bare `.chev` (17 Nov 2026): several modules' global
+  // sheets flip `html[dir='rtl'] .chev`, and that rule reached this DOWN
+  // chevron and pointed every date pill's arrow UP in Arabic (CEO portal).
+  .drv-chev {
     display: grid;
     place-items: center;
 
