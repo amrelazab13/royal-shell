@@ -44,14 +44,17 @@ export function lookName(person: ViewAsPerson): string | null {
 /** The people under one title, inside one department. */
 export interface ViewAsTitleGroup {
   title: string;
+  /** HR's seniority for this title, highest first; `null` for a title with no band (sorts last). */
+  rank?: number | null;
   people: ViewAsPerson[];
 }
 
 /**
  * One section or arm inside a department (O-891). The owner, 16 Nov 2026:
  * "always separate between sections (e.g. broker section separate from
- * sales, tele sales separate as well)". HR orders them; `unit: null` (last)
- * holds the people in no unit, drawn under the department with NO heading.
+ * sales, tele sales separate as well)". HR orders them; `unit: null` comes FIRST
+ * (owner, 16 Nov 2026) and holds the people in no unit, drawn straight under
+ * the department with NO heading. Render HR's array order; never re-sort.
  * `kind` is for wording only, never for grouping.
  */
 export interface ViewAsUnitGroup {
