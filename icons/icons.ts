@@ -312,6 +312,10 @@ import { booleanAttribute, Component, input } from '@angular/core';
           d="M4 6v4c0 1.1 3.6 2 8 2s8-.9 8-2V6M4 10v4c0 1.1 3.6 2 8 2s8-.9 8-2v-4M4 14v4c0 1.1 3.6 2 8 2s8-.9 8-2v-4"
         />
       </symbol>
+      <symbol id="i-gift" viewBox="0 0 24 24">
+        <rect x="3" y="8" width="18" height="4" rx="1" />
+        <path d="M5 12v8h14v-8M12 8v12M12 8c-1.5-3-5-3.5-5-1.5S10 8 12 8zm0 0c1.5-3 5-3.5 5-1.5S14 8 12 8z" />
+      </symbol>
       <symbol id="i-commission" viewBox="0 0 24 24">
         <circle cx="7" cy="7" r="2.5" />
         <circle cx="17" cy="17" r="2.5" />

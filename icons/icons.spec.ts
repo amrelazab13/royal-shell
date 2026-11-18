@@ -88,8 +88,9 @@ describe('icons', () => {
       'note',
       'modules',
       'language',
+      'gift',
     ];
-    expect(fresh.length).toBe(40);
+    expect(fresh.length).toBe(41);
     for (const name of fresh) {
       const symbol = svg.querySelector('#i-' + name);
       expect(symbol, name).not.toBeNull();
