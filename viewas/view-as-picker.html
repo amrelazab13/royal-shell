@@ -48,7 +48,7 @@
           }
           @for (byTitle of unit.titles; track byTitle.title) {
             <div class="va-title" data-test="va-title">
-              <bdi>{{ shown(byTitle.title) }}</bdi>
+              <bdi>{{ groupTitle(byTitle) }}</bdi>
             </div>
             @for (person of byTitle.people; track person.employee_hr_id) {
               <button

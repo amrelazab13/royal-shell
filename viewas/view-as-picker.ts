@@ -43,7 +43,11 @@ export function lookName(person: ViewAsPerson): string | null {
 
 /** The people under one title, inside one department. */
 export interface ViewAsTitleGroup {
+  /** The title in the language HR read the request in; kept for an older HR. */
   title: string;
+  /** Both words (HR O-911): the picker shows the reader's, never the browser's. */
+  title_en?: string;
+  title_ar?: string;
   /** HR's seniority for this title, highest first; `null` for a title with no band (sorts last). */
   rank?: number | null;
   people: ViewAsPerson[];
@@ -159,6 +163,11 @@ export class ViewAsPicker {
   protected title(person: ViewAsPerson): string {
     const first = this.arabic() ? person.title_ar : person.title_en;
     return this.shown(first || person.title_en || person.title_ar || '');
+  }
+
+  protected groupTitle(group: ViewAsTitleGroup): string {
+    const first = this.arabic() ? group.title_ar : group.title_en;
+    return this.shown(first || group.title || group.title_en || group.title_ar || '');
   }
 
   protected departmentName(group: ViewAsDepartmentGroup): string {

@@ -162,6 +162,29 @@ describe('ViewAsPicker', () => {
     expect(at(el, 'va-person')[0].textContent).not.toContain('Agent Alpha');
   });
 
+  it('draws the TITLE HEADING in the reader\'s language, not the word HR read the browser in (O-911)', async () => {
+    const { fixture, el } = await draw({
+      answer: answer({
+        groups: [
+          {
+            department: 'engineering',
+            name_en: 'Engineering',
+            name_ar: 'الهندسة',
+            // HR read an English browser, so `title` is English: the reader is Arabic.
+            titles: [{ title: 'Site Engineer', title_en: 'Site Engineer', title_ar: 'مهندس موقع', people: [person()] }],
+          },
+        ],
+      }),
+      arabic: true,
+    });
+    at(el, 'va-department')[0].click();
+    fixture.detectChanges();
+    const heading = at(el, 'va-title').map((n) => n.textContent ?? '').join('|');
+    expect(heading, 'the department opened and drew its title').not.toBe('');
+    expect(heading).toContain('مهندس موقع');
+    expect(heading).not.toContain('Site Engineer');
+  });
+
   describe('sections (O-891)', () => {
     // Invented people in invented sections: a fixture never uses a real name.
     const inUnit = (id: string, full: string) =>
